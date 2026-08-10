@@ -8,7 +8,9 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "typecheck": "tsc -b --noEmit",
+    "verify": "npm run typecheck && npm test"
   },
   "dependencies": {
     "react": "^19.2.8",
