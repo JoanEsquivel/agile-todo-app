@@ -10,7 +10,7 @@ description: Launch the Agile Todo App dev server and drive it in a real browser
 
 # Running and smoke-testing the Agile Todo App
 
-This is a Vite + React SPA. `npm test` (Vitest + jsdom) covers logic and component behavior, but some things can only be proven in a real browser: clipboard writes, `window.confirm`, actual file downloads, `prefers-color-scheme`, and genuinely persisted `localStorage` across a real page reload. That's what this skill is for.
+This is a Vite + React SPA. `npm test` (Vitest + jsdom) covers logic and component behavior, but some things can only be proven in a real browser: clipboard writes, actual file downloads, `prefers-color-scheme`, focus behavior around `inert` (jsdom doesn't enforce it), and genuinely persisted `localStorage` across a real page reload. That's what this skill is for.
 
 ## 1. Start the dev server
 
@@ -61,7 +61,7 @@ Copy it in, don't `import` it from the repo path — Node's ESM resolution for a
 
 - **A todo's title renders twice in the DOM** — once in the day column, once in the Reminders panel (when it has an overdue/upcoming reminder). A bare `page.getByText('...')` throws a Playwright strict-mode violation. Use `.first()`.
 - **Standup section headings are visually uppercased by CSS** (`text-transform: uppercase` on `<h3>`), so `element.innerText` returns `"BLOCKERS"`, not `"Blockers"`. A case-sensitive `.includes('Blockers')` on `innerText` will incorrectly report failure — the underlying text content and the clipboard output are correctly capitalized. Assert case-insensitively, or check `textContent` directly.
-- **`window.confirm` on "Generate new fortnight"** needs a dialog handler registered *before* the click: `page.on('dialog', (d) => d.accept())`.
+- **"Generate new fortnight" opens an in-app `ConfirmDialog`, not a native `window.confirm`** — no `page.on('dialog', ...)` handler needed or wanted (registering one is dead code now, it'll simply never fire). Wait for the dialog, then click its "Generate" button: `await page.getByRole('dialog', { name: 'Generate new fortnight?' }).waitFor(); await page.getByRole('button', { name: 'Generate' }).click();`.
 - **Clipboard access** ("Copy to clipboard" in the standup modal) needs explicit permission: `context.grantPermissions(['clipboard-read', 'clipboard-write'])`.
 - **File downloads** (Export backup) — `Promise.all([page.waitForEvent('download'), page.click(...)])`, then `download.saveAs(path)`.
 

@@ -8,6 +8,7 @@ import { RemindersPanel } from './components/reminders/RemindersPanel';
 import { StandupModal } from './components/standup/StandupModal';
 import { FortnightSwitcher } from './components/history/FortnightSwitcher';
 import { BackupControls } from './components/common/BackupControls';
+import { ConfirmDialog } from './components/common/ConfirmDialog';
 import styles from './App.module.css';
 
 export default function App() {
@@ -16,6 +17,7 @@ export default function App() {
   const fn = selectViewedFortnight(state);
   const regenerateFortnight = useAppStore((s) => s.regenerateFortnight);
   const [standupOpen, setStandupOpen] = useState(false);
+  const [confirmRegenerateOpen, setConfirmRegenerateOpen] = useState(false);
   return (
     <div className={styles.app}>
       <a className={styles.skipLink} href="#main">Skip to content</a>
@@ -30,11 +32,7 @@ export default function App() {
         </div>
         <div className={styles.headerActions}>
           <button className={styles.primaryAction} onClick={() => setStandupOpen(true)}>Standup</button>
-          <button onClick={() => {
-            if (window.confirm('Generate a new fortnight starting this week? Incomplete todos will carry over.')) {
-              regenerateFortnight();
-            }
-          }}>Generate new fortnight</button>
+          <button onClick={() => setConfirmRegenerateOpen(true)}>Generate new fortnight</button>
           <FortnightSwitcher />
           <BackupControls />
         </div>
@@ -56,6 +54,15 @@ export default function App() {
         <RemindersPanel />
       </div>
       {standupOpen && <StandupModal onClose={() => setStandupOpen(false)} />}
+      {confirmRegenerateOpen && (
+        <ConfirmDialog
+          title="Generate new fortnight?"
+          message="Incomplete todos carry over automatically. This can't be undone."
+          confirmLabel="Generate"
+          onConfirm={() => { regenerateFortnight(); setConfirmRegenerateOpen(false); }}
+          onCancel={() => setConfirmRegenerateOpen(false)}
+        />
+      )}
     </div>
   );
 }

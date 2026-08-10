@@ -114,9 +114,10 @@ async function run() {
   record('7. export/clear/import round trip', backupBytes > 0 && clearedCount === 0,
     `backup=${backupBytes}B, cleared-count=${clearedCount}`);
 
-  // 8. Regenerate fortnight
-  page.on('dialog', (d) => d.accept());
+  // 8. Regenerate fortnight (in-app ConfirmDialog, not a native browser dialog)
   await page.getByRole('button', { name: 'Generate new fortnight' }).click();
+  await page.getByRole('dialog', { name: 'Generate new fortnight?' }).waitFor();
+  await page.getByRole('button', { name: 'Generate' }).click();
   await page.getByRole('combobox', { name: 'Fortnight' }).waitFor();
   await shot(page, 'after-regenerate');
   const switcherOptions = await page

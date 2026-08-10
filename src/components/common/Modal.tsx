@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, type ReactNode } from 'react';
+import { useEffect, useId, useRef, type ReactNode, type RefObject } from 'react';
 import { createPortal } from 'react-dom';
 import styles from './Modal.module.css';
 
@@ -34,8 +34,11 @@ function unlockAppInteraction() {
   document.body.style.overflow = '';
 }
 
-export function Modal({ title, onClose, children }: {
+export function Modal({ title, onClose, children, initialFocusRef }: {
   title: string; onClose: () => void; children: ReactNode;
+  /** Focused on open instead of the dialog container -- e.g. ConfirmDialog
+   * defaults focus to Cancel rather than the (destructive) confirm action. */
+  initialFocusRef?: RefObject<HTMLButtonElement | null>;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const titleId = useId();
@@ -50,7 +53,7 @@ export function Modal({ title, onClose, children }: {
     const prev = document.activeElement as HTMLElement | null;
     const overlayEl = ref.current?.parentElement;
     if (overlayEl) lockAppInteraction(overlayEl);
-    ref.current?.focus();
+    (initialFocusRef?.current ?? ref.current)?.focus();
 
     const trap = (e: KeyboardEvent) => {
       if (e.key !== 'Tab' || !ref.current) return;
