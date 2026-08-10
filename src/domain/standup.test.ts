@@ -74,7 +74,16 @@ describe('formatStandup', () => {
       '2026-08-18',
     );
     expect(formatStandup(s)).toBe(
-      '*Yesterday*\n- Ship feature\n\n*Today*\n- None\n\n*Blockers*\n- None',
+      '*Yesterday*\n- Ship feature\n\n*Today*\n- ~Ship feature~\n\n*Blockers*\n- None',
     );
+  });
+
+  it('today includes done todos scheduled on effective day, struck through', () => {
+    const todos = {
+      a: makeTodo({ id: 'a', title: 'In progress', done: false, scheduledDay: '2026-08-18' }),
+      b: makeTodo({ id: 'b', title: 'Completed early', done: true, scheduledDay: '2026-08-18', completedAt: doneAt(2026, 8, 17) }),
+    };
+    const s = buildStandup(todos, {}, 'f1', '2026-08-18');
+    expect(s.today.map((t) => t.id).sort()).toEqual(['a', 'b']);
   });
 });

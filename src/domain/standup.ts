@@ -27,7 +27,7 @@ export function buildStandup(
     .sort((a, b) => a.completedAt!.localeCompare(b.completedAt!));
 
   const todayTodos = all
-    .filter((t) => t.fortnightId === activeFortnightId && t.scheduledDay === effectiveDay && !t.done)
+    .filter((t) => t.fortnightId === activeFortnightId && t.scheduledDay === effectiveDay)
     .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
 
   const blockers = Object.values(notes)
@@ -40,9 +40,10 @@ export function buildStandup(
 export function formatStandup(data: StandupData): string {
   const section = (title: string, lines: string[]): string =>
     [`*${title}*`, ...(lines.length ? lines.map((l) => `- ${l}`) : ['- None'])].join('\n');
+  const todayLines = data.today.map((t) => (t.done ? `~${t.title}~` : t.title));
   return [
     section('Yesterday', data.yesterday.map((t) => t.title)),
-    section('Today', data.today.map((t) => t.title)),
+    section('Today', todayLines),
     section('Blockers', data.blockers.map((n) => n.text)),
   ].join('\n\n');
 }
