@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useAppStore } from './store/store';
 import { useDayChangeWatcher } from './hooks/useDayChangeWatcher';
+import { useShortcuts } from './hooks/useShortcuts';
 import { selectViewedFortnight, selectFortnightExpired, selectIsReadOnly } from './store/selectors';
 import { formatDayLabel } from './domain/dates';
 import { FortnightBoard } from './components/board/FortnightBoard';
@@ -8,16 +9,47 @@ import { RemindersPanel } from './components/reminders/RemindersPanel';
 import { StandupModal } from './components/standup/StandupModal';
 import { FortnightSwitcher } from './components/history/FortnightSwitcher';
 import { BackupControls } from './components/common/BackupControls';
+import { ConfirmDialog } from './components/common/ConfirmDialog';
+import { Announcer } from './components/common/Announcer';
+import { CommandPalette, type CommandAction } from './components/commands/CommandPalette';
+import { ShortcutsOverlay } from './components/commands/ShortcutsOverlay';
 import styles from './App.module.css';
 
 export default function App() {
   useDayChangeWatcher();
   const state = useAppStore();
   const fn = selectViewedFortnight(state);
+  const readOnly = selectIsReadOnly(state);
   const regenerateFortnight = useAppStore((s) => s.regenerateFortnight);
+  const setComposeIntent = useAppStore((s) => s.setComposeIntent);
   const [standupOpen, setStandupOpen] = useState(false);
+  const [confirmRegenerateOpen, setConfirmRegenerateOpen] = useState(false);
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  useShortcuts({
+    onOpenStandup: () => setStandupOpen(true),
+    onOpenPalette: () => setPaletteOpen(true),
+    onOpenShortcutsOverlay: () => setShortcutsOpen(true),
+  });
+
+  // Excludes the two compose actions while read-only, same as the N/Shift+N
+  // shortcuts refusing to fire there -- offering an action that would just
+  // silently no-op (see setComposeIntent's own INV-9 guard) is a dead end,
+  // not a choice.
+  const paletteActions: CommandAction[] = [
+    ...(readOnly ? [] : [
+      { id: 'add-todo', label: 'Add todo', run: () => setComposeIntent('todo') },
+      { id: 'add-note', label: 'Add note', run: () => setComposeIntent('note') },
+    ]),
+    { id: 'standup', label: 'Standup', run: () => setStandupOpen(true) },
+    { id: 'generate-fortnight', label: 'Generate new fortnight', run: () => setConfirmRegenerateOpen(true) },
+    { id: 'keyboard-shortcuts', label: 'Keyboard shortcuts', run: () => setShortcutsOpen(true) },
+  ];
+
   return (
     <div className={styles.app}>
+      <Announcer />
+      <a className={styles.skipLink} href="#main">Skip to content</a>
       <header className={styles.header}>
         <div className={styles.headerTitle}>
           <h1 className={styles.heading}>Agile Todo</h1>
@@ -29,11 +61,7 @@ export default function App() {
         </div>
         <div className={styles.headerActions}>
           <button className={styles.primaryAction} onClick={() => setStandupOpen(true)}>Standup</button>
-          <button onClick={() => {
-            if (window.confirm('Generate a new fortnight starting this week? Incomplete todos will carry over.')) {
-              regenerateFortnight();
-            }
-          }}>Generate new fortnight</button>
+          <button onClick={() => setConfirmRegenerateOpen(true)}>Generate new fortnight</button>
           <FortnightSwitcher />
           <BackupControls />
         </div>
@@ -55,6 +83,17 @@ export default function App() {
         <RemindersPanel />
       </div>
       {standupOpen && <StandupModal onClose={() => setStandupOpen(false)} />}
+      {confirmRegenerateOpen && (
+        <ConfirmDialog
+          title="Generate new fortnight?"
+          message="Incomplete todos carry over automatically. This can't be undone."
+          confirmLabel="Generate"
+          onConfirm={() => { regenerateFortnight(); setConfirmRegenerateOpen(false); }}
+          onCancel={() => setConfirmRegenerateOpen(false)}
+        />
+      )}
+      {paletteOpen && <CommandPalette onClose={() => setPaletteOpen(false)} actions={paletteActions} />}
+      {shortcutsOpen && <ShortcutsOverlay onClose={() => setShortcutsOpen(false)} />}
     </div>
   );
 }

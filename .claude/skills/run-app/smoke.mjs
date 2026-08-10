@@ -114,9 +114,10 @@ async function run() {
   record('7. export/clear/import round trip', backupBytes > 0 && clearedCount === 0,
     `backup=${backupBytes}B, cleared-count=${clearedCount}`);
 
-  // 8. Regenerate fortnight
-  page.on('dialog', (d) => d.accept());
+  // 8. Regenerate fortnight (in-app ConfirmDialog, not a native browser dialog)
   await page.getByRole('button', { name: 'Generate new fortnight' }).click();
+  await page.getByRole('dialog', { name: 'Generate new fortnight?' }).waitFor();
+  await page.getByRole('button', { name: 'Generate' }).click();
   await page.getByRole('combobox', { name: 'Fortnight' }).waitFor();
   await shot(page, 'after-regenerate');
   const switcherOptions = await page
@@ -133,6 +134,29 @@ async function run() {
   await page.reload({ waitUntil: 'networkidle' });
   await shot(page, 'dark-mode');
   record('9. mobile + dark mode screenshots', true);
+
+  // 10. Keyboard layer: ? shortcuts overlay, Cmd/Ctrl+K command palette
+  await page.getByRole('heading', { name: 'Agile Todo' }).click(); // move focus off any control first
+  await page.keyboard.press('?');
+  await page.getByRole('dialog', { name: 'Keyboard shortcuts' }).waitFor();
+  await shot(page, 'shortcuts-overlay');
+  await page.keyboard.press('Escape');
+  await page.getByRole('dialog', { name: 'Keyboard shortcuts' }).waitFor({ state: 'detached' });
+
+  await page.keyboard.press('Control+k');
+  const paletteDialog = page.getByRole('dialog', { name: 'Command palette' });
+  await paletteDialog.waitFor();
+  // Native <select> elements (FortnightSwitcher, present once step 8 has
+  // created a second fortnight) also expose role="combobox" -- an unnamed
+  // getByRole('combobox') is ambiguous at this point in the flow. Scope to
+  // the dialog to get the palette's own search input unambiguously.
+  await paletteDialog.getByRole('combobox').fill('standup');
+  const paletteHasStandup = await page.getByRole('listbox', { name: 'Results' }).getByText('Standup').count();
+  await shot(page, 'command-palette');
+  await page.keyboard.press('Escape');
+  await page.getByRole('dialog', { name: 'Command palette' }).waitFor({ state: 'detached' });
+  record('10. keyboard layer (? overlay, Cmd/Ctrl+K palette)', paletteHasStandup > 0,
+    `palette found "Standup" action: ${paletteHasStandup > 0}`);
 
   await browser.close();
 

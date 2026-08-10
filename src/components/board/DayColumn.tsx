@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useRef } from 'react';
 import { useAppStore } from '../../store/store';
 import { selectIsReadOnly, selectNotesForDay, selectTodosForDay, selectViewedFortnight } from '../../store/selectors';
 import { formatDayLabel } from '../../domain/dates';
@@ -11,18 +11,23 @@ import styles from './DayColumn.module.css';
 
 export function DayColumn() {
   const state = useAppStore();
+  const setComposeIntent = useAppStore((s) => s.setComposeIntent);
   const fn = selectViewedFortnight(state);
-  const [adding, setAdding] = useState(false);
-  const [addingNote, setAddingNote] = useState(false);
+  const adding = state.composeIntent === 'todo';
+  const addingNote = state.composeIntent === 'note';
+  const addTodoButtonRef = useRef<HTMLButtonElement>(null);
+  const addNoteButtonRef = useRef<HTMLButtonElement>(null);
+  const todoFormId = useId();
+  const noteFormId = useId();
 
-  // Reset any open "add" form whenever the viewed fortnight changes (e.g. via
-  // FortnightSwitcher, which is always enabled). This guarantees a form left
-  // open while viewing the active fortnight cannot survive a switch to a
-  // read-only past fortnight.
+  // Belt-and-braces alongside viewFortnight's own explicit clear: an
+  // automatic fortnight switch (rollover via checkDayTick, or
+  // regenerateFortnight) changes `fn?.id` without going through
+  // viewFortnight at all, and a form left open must not survive that either
+  // — see INV-9 and the stale-open-form regression this guards against.
   useEffect(() => {
-    setAdding(false);
-    setAddingNote(false);
-  }, [fn?.id]);
+    setComposeIntent(null);
+  }, [fn?.id, setComposeIntent]);
 
   if (!fn) return null;
   const day = state.selectedDay ?? fn.days[0];
@@ -30,17 +35,36 @@ export function DayColumn() {
   const todos = selectTodosForDay(state, fn.id, day);
   const notes = selectNotesForDay(state, fn.id, day);
 
+  const closeTodoForm = () => {
+    setComposeIntent(null);
+    addTodoButtonRef.current?.focus();
+  };
+  const closeNoteForm = () => {
+    setComposeIntent(null);
+    addNoteButtonRef.current?.focus();
+  };
+
   return (
     <div className={styles.column}>
       <h2 className={styles.heading}>{formatDayLabel(day)}</h2>
       <section className={styles.section} aria-label="Todos">
         <div className={styles.sectionHead}>
           <h3 className={styles.sectionLabel}>Todos</h3>
-          {!readOnly && !adding && (
-            <button className={styles.addButton} onClick={() => setAdding(true)}>Add todo</button>
+          {/* Stays mounted while the form is open — aria-expanded on a button
+             that vanishes the moment it's "expanded" would be meaningless. */}
+          {!readOnly && (
+            <button
+              ref={addTodoButtonRef}
+              className={styles.addButton}
+              aria-expanded={adding}
+              aria-controls={todoFormId}
+              onClick={() => setComposeIntent(adding ? null : 'todo')}
+            >
+              Add todo
+            </button>
           )}
         </div>
-        {!readOnly && adding && <TodoForm day={day} days={fn.days} onClose={() => setAdding(false)} />}
+        {!readOnly && adding && <TodoForm id={todoFormId} day={day} days={fn.days} onClose={closeTodoForm} />}
         {todos.length === 0
           ? <EmptyState message="No todos for this day" />
           : <ul className={styles.list}>{todos.map((t) => <TodoItem key={t.id} todo={t} readOnly={readOnly} />)}</ul>}
@@ -48,11 +72,19 @@ export function DayColumn() {
       <section className={styles.section} aria-label="Notes">
         <div className={styles.sectionHead}>
           <h3 className={styles.sectionLabel}>Notes</h3>
-          {!readOnly && !addingNote && (
-            <button className={styles.addButton} onClick={() => setAddingNote(true)}>Add note</button>
+          {!readOnly && (
+            <button
+              ref={addNoteButtonRef}
+              className={styles.addButton}
+              aria-expanded={addingNote}
+              aria-controls={noteFormId}
+              onClick={() => setComposeIntent(addingNote ? null : 'note')}
+            >
+              Add note
+            </button>
           )}
         </div>
-        {!readOnly && addingNote && <NoteForm day={day} onClose={() => setAddingNote(false)} />}
+        {!readOnly && addingNote && <NoteForm id={noteFormId} day={day} onClose={closeNoteForm} />}
         {notes.length === 0
           ? <EmptyState message="No notes for this day" />
           : <ul className={styles.list}>{notes.map((n) => <NoteCard key={n.id} note={n} readOnly={readOnly} />)}</ul>}

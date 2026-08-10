@@ -1,12 +1,14 @@
 # CLAUDE.md — Agile Todo App
 
-> This app is **finished, tested (89 tests), and deployed**. It is not a scaffold to build out — it's a working product. Changes here should be surgical, not exploratory. Every change ships with tests. Read the invariants below before editing anything under `src/`.
+> This app is **finished, tested (205 tests), and deployed**. It is not a scaffold to build out — it's a working product. Changes here should be surgical, not exploratory. Every change ships with tests. Read the invariants below before editing anything under `src/`.
 
 ## Orientation
 
 Browser-only fortnight (2-week, workdays-only) todo board. No backend, no network calls, no accounts — everything lives in one versioned JSON document in `localStorage`.
 
 **Stack:** React 19 + TypeScript 7 (strict) + Vite 8 + Zustand 5 (`persist` middleware) + Vitest 4 + React Testing Library + CSS Modules. **No ESLint, no Prettier** — `tsc` with `strict` + `noUnusedLocals` + `noUnusedParameters` is the linter.
+
+**Keyboard model.** `src/hooks/useShortcuts.ts` is a global `keydown` listener mounted once in `App.tsx`: `⌘K`/`Ctrl+K` opens the command palette (`src/components/commands/CommandPalette.tsx`), `?` opens the shortcuts overlay, `←`/`→`/`Home`/`End` move the selected day (the fortnight tape, `src/components/board/FortnightTape.tsx`, has its own roving-tabindex handler for when focus is already on a day button — the two compose via `e.preventDefault()`/`e.defaultPrevented`, not by one knowing about the other), `T` jumps to today, `N`/`Shift+N` open the todo/note compose form, `S` opens Standup. Every shortcut but `⌘K` bails while focus is in a text-entry control or a `[role=dialog]` is mounted. Escape is deliberately *not* handled there — `Modal.tsx` and `TodoForm`/`NoteForm` each own their own, which is what lets Escape work from inside a text field.
 
 **Where to look for what:**
 - Product behavior, edge cases, the "why" behind a rule → [`docs/superpowers/specs/2026-08-10-agile-todo-app-design.md`](docs/superpowers/specs/2026-08-10-agile-todo-app-design.md) (the approved design spec — product authority)
@@ -20,7 +22,7 @@ Browser-only fortnight (2-week, workdays-only) todo board. No backend, no networ
 | Command | What it does |
 |---|---|
 | `npm run dev` | Dev server at `http://localhost:5173` |
-| `npm test` | `vitest run` — 89 tests, ~3s |
+| `npm test` | `vitest run` — 205 tests, ~3s |
 | `npm run typecheck` | `tsc -b --noEmit` — the real typecheck, ~0.3s |
 | `npm run verify` | typecheck + test — **this is the definition of done** |
 | `npm run build` | `tsc -b && vite build` — production build |
@@ -79,7 +81,7 @@ Numbered so they can be cited precisely (a hook message might say "violates INV-
 
 ### INV-6. `partialize` is an allowlist — schema changes need a ritual
 **Rule.** `PersistedState` (`src/domain/types.ts`) has 6 fields; `partialize` in `src/store/store.ts` explicitly lists all 6. **Adding a field to `PersistedState` and forgetting to add it to `partialize` means it silently never persists** — no error, no warning, just data loss on reload.
-**Why.** An allowlist (vs. "persist everything except UI state") is the safer default for a store that also holds ephemeral fields (`viewedFortnightId`, `selectedDay`, `rehydrationError`) — an accidental leak the other direction would be much harder to notice.
+**Why.** An allowlist (vs. "persist everything except UI state") is the safer default for a store that also holds ephemeral fields (`viewedFortnightId`, `selectedDay`, `rehydrationError`, `announcement`, `composeIntent`) — an accidental leak the other direction would be much harder to notice. When adding a new ephemeral field, the correct amount of ritual is *none*: put it on `AppState` only, never `PersistedState`, and don't bump `SCHEMA_VERSION`. Add one assertion to `storePersistence.test.ts` confirming it's absent from the persisted blob — that's the whole checklist, and it's the opposite of the 6-step recipe below.
 **Check.** `src/store/storePersistence.test.ts` asserts the ephemeral fields are absent from the persisted blob.
 → See the schema-change recipe below for the full 6-step ritual.
 
@@ -94,12 +96,13 @@ Numbered so they can be cited precisely (a hook message might say "violates INV-
 **Check.** `src/store/storePersistence.test.ts` — the test that imports a backup with an extra key matching an action name and asserts the action still works.
 
 ### INV-9. Read-only history mode is derived, passed down, and must gate the *form*
-**Rule.** There is no `readOnly` field in state. It's computed once via `selectIsReadOnly(s) = s.viewedFortnightId !== s.activeFortnightId` (in `src/store/selectors.ts`), computed once in `DayColumn`, and passed **down as a prop** to leaf components (`TodoItem`, `NoteCard`). When adding any mutating UI:
+**Rule.** There is no `readOnly` field in state. It's computed once via `selectIsReadOnly(s) = s.viewedFortnightId !== s.activeFortnightId` (in `src/store/selectors.ts`), computed once in `DayColumn`, and passed **down as a prop** to leaf components (`TodoItem`, `NoteCard`). Whether a compose form is open lives in the store as `composeIntent: 'todo' | 'note' | null` (`src/store/store.ts`), not local `useState` — the command palette and the keyboard shortcuts (`N`/`Shift+N`) need to open it from outside `DayColumn`. When adding any mutating UI:
 1. Gate the render of the mutating element itself on `!readOnly` — not just its trigger button. (An "Add" button hidden while the form it opens keeps rendering is a real, previously-shipped bug.)
-2. Reset any open-form local state when the viewed fortnight changes (a `useEffect` keyed on the fortnight id) — the fortnight switcher is always enabled, so a stale open form can otherwise survive a switch into read-only mode.
+2. `setComposeIntent` itself refuses in the reducer when `viewedFortnightId !== activeFortnightId` and the caller is trying to *open* (closing, `null`, is always allowed) — this is the one that matters most, since it's the only guard a keyboard shortcut or palette action can't route around. Don't add a second way to set `composeIntent` that bypasses this action.
+3. Reset any open-form state when the viewed fortnight changes (`DayColumn`'s `useEffect` keyed on `fn?.id`) — the fortnight switcher is always enabled, and an automatic fortnight switch (rollover, regenerate) changes `fn?.id` without going through `viewFortnight`'s own explicit clear, so this is a second, independent guard, not a duplicate of it.
 
-**Why.** A todo/note created while viewing a read-only fortnight gets `fortnightId` from the *active* fortnight (via the store action) but `day`/context from the *viewed* (read-only, different) fortnight — producing an orphan that's permanently invisible on every board, and if it's a blocker note, one that shows up forever in the standup with no way to resolve or delete it. This exact bug was a Critical finding in the final review; see `src/components/board/DayColumn.tsx` for the current fix (form gated on `!readOnly`, `useEffect` reset on `fn?.id`).
-**Check.** `src/components/notes/notes.test.tsx` and `src/components/todos/todos.test.tsx` — the read-only-mode regression tests.
+**Why.** A todo/note created while viewing a read-only fortnight gets `fortnightId` from the *active* fortnight (via the store action) but `day`/context from the *viewed* (read-only, different) fortnight — producing an orphan that's permanently invisible on every board, and if it's a blocker note, one that shows up forever in the standup with no way to resolve or delete it. This exact bug was a Critical finding in the final review, and the keyboard/palette layer added later is exactly the kind of new door it could have reopened through if `setComposeIntent`'s own refusal weren't the thing actually stopping it. See `src/components/board/DayColumn.tsx` and `src/store/store.ts`'s `setComposeIntent`.
+**Check.** `src/components/notes/notes.test.tsx` and `src/components/todos/todos.test.tsx` — the read-only-mode regression tests — plus `src/store/store.test.ts`'s `setComposeIntent` describe block and `src/hooks/useShortcuts.test.tsx`.
 
 ### INV-10. Test conventions
 **Rule.**
@@ -134,9 +137,9 @@ Numbered so they can be cited precisely (a hook message might say "violates INV-
 **Why.** This is what makes dark mode and design changes a token edit instead of a component-by-component chase, and what keeps CSS Modules from accumulating global leakage over time.
 
 ### INV-13. Semantic `data-*` attributes are public API
-**Rule.** `data-priority` (`'high'|'medium'|'low'`), `data-category` (`'blocker'|'info'`), `data-done`, `data-resolved`, `data-today` are read by both CSS and tests — treat renaming or removing one as a breaking change. Boolean/presence attributes use the pattern `cond ? '' : undefined` — **never `data-x={false}`**, which React renders as the literal string `data-x="false"`, and CSS/test selectors like `[data-x]` still match it.
+**Rule.** `data-priority` (`'high'|'medium'|'low'`), `data-category` (`'blocker'|'info'`), `data-done`, `data-resolved`, `data-today` are read by both CSS and tests — treat renaming or removing one as a breaking change. Boolean/presence attributes use the pattern `cond ? '' : undefined` — **never `data-x={false}`**, which React renders as the literal string `data-x="false"`, and CSS/test selectors like `[data-x]` still match it. `FortnightTape`'s per-todo segments (`src/components/board/FortnightTape.tsx`) reuse `data-priority`/`data-done` with the identical values `TodoItem` uses rather than inventing new attribute names for the same concepts — reuse an existing `data-*` vocabulary before adding a new one. `data-today` is paired with a real accessible indication (`VisuallyHidden`, " (today)" appended to the day button's name) — the attribute alone was never sufficient for screen-reader users, only for CSS/tests.
 **Why.** Tests assert against these directly; a rename that "looks cosmetic" breaks the suite in confusing ways if you don't grep for the old value first.
-**Note.** `data-overdue` on `TodoItem` is currently a known **dead** hook — no CSS consumes it, no test asserts it (see `docs/TECH-DEBT.md` TD-8). Don't treat its presence as proof it's load-bearing; check before relying on any `data-*` you haven't verified.
+**Note.** Don't treat a `data-*` attribute's presence as proof it's load-bearing — check whether anything actually selects on it (`grep` for `[data-x]` in both `*.module.css` and `*.test.tsx`) before relying on or "preserving" one you haven't verified. `TodoItem`'s `data-overdue` was exactly this trap (dead, `TD-8`) until it was removed in the studio-console redesign.
 
 ## Recipes
 
@@ -174,4 +177,4 @@ A scannable version of the invariants above — this is deliberately redundant w
 
 ## Known tech debt
 
-See [`docs/TECH-DEBT.md`](docs/TECH-DEBT.md) — roughly 20 triaged, deliberately parked items. Don't fix them opportunistically mid-feature; if you want to fix one, do it as its own commit with its own test, and delete its row.
+See [`docs/TECH-DEBT.md`](docs/TECH-DEBT.md) — roughly 15 triaged, deliberately parked items. Don't fix them opportunistically mid-feature; if you want to fix one, do it as its own commit with its own test, and delete its row.

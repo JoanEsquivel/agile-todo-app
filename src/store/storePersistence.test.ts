@@ -11,7 +11,8 @@ describe('store persistence', () => {
     useAppStore.setState({
       schemaVersion: 1, fortnights: [], activeFortnightId: null,
       todos: {}, notes: {}, lastRolloverDay: null,
-      viewedFortnightId: null, selectedDay: null, rehydrationError: null,
+      viewedFortnightId: null, selectedDay: null, rehydrationError: null, announcement: null,
+      composeIntent: null,
     });
   });
 
@@ -26,6 +27,20 @@ describe('store persistence', () => {
     expect(Object.keys(persisted.state.todos)).toHaveLength(1);
     expect(persisted.state.viewedFortnightId).toBeUndefined();
     expect(persisted.state.selectedDay).toBeUndefined();
+    // announcement is ephemeral like the two above -- never in partialize,
+    // never persisted (INV-6). addTodo above set a real announcement value
+    // in memory, so this only proves something if it's actually excluded.
+    expect(useAppStore.getState().announcement).not.toBeNull();
+    expect(persisted.state.announcement).toBeUndefined();
+  });
+
+  it('composeIntent is ephemeral -- never persisted (INV-6)', () => {
+    useAppStore.getState().initApp();
+    useAppStore.getState().setComposeIntent('todo');
+    expect(useAppStore.getState().composeIntent).toBe('todo'); // set in memory...
+    appStorage.flush();
+    const persisted = JSON.parse(localStorage.getItem('agile-todo-app.v-state')!);
+    expect(persisted.state.composeIntent).toBeUndefined(); // ...but excluded from the persisted blob.
   });
 
   it('importState replaces persisted fields and re-derives the view', () => {

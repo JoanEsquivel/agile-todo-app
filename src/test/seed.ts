@@ -5,7 +5,7 @@ export function seedApp() {
   useAppStore.setState({
     schemaVersion: 1, fortnights: [], activeFortnightId: null,
     todos: {}, notes: {}, lastRolloverDay: null,
-    viewedFortnightId: null, selectedDay: null,
+    viewedFortnightId: null, selectedDay: null, composeIntent: null,
   });
   useAppStore.getState().initApp();
   return useAppStore.getState();

@@ -5,9 +5,13 @@ import type {
 } from '../domain/types';
 import { generateFortnightDays, effectiveBoardDay, carryOverTodos } from '../domain/fortnight';
 import { applyRollover } from '../domain/rollover';
+import { formatDayLabel } from '../domain/dates';
 import { nowIso, todayLocal } from './clock';
 import { createDebouncedStorage } from './persistence';
 import { runMigrations, SCHEMA_VERSION } from './migrations';
+
+/** What DayColumn's compose form is currently showing for the selected day, if any. */
+export type ComposeIntent = 'todo' | 'note' | null;
 
 export interface AppState extends PersistedState {
   viewedFortnightId: string | null;
@@ -15,6 +19,13 @@ export interface AppState extends PersistedState {
   /** Set when zustand's persist rehydration failed (corrupt JSON, unsupported
    *  schema, etc). Never persisted itself — purely an in-memory UI signal. */
   rehydrationError: string | null;
+  /** Latest message for the polite live-region announcer. Ephemeral, like
+   *  the fields above — never persisted, never added to `partialize`. */
+  announcement: string | null;
+  /** Ephemeral like the fields above. Guarded by `setComposeIntent`, not
+   *  written directly — see INV-9: a compose form must never be openable
+   *  while viewing a read-only fortnight, including via this field. */
+  composeIntent: ComposeIntent;
 
   initApp: () => void;
   checkDayTick: () => void;          // implemented in Task 12
@@ -34,6 +45,8 @@ export interface AppState extends PersistedState {
   selectDay: (day: ISODate) => void;
   viewFortnight: (id: string) => void;
   importState: (state: PersistedState) => void;
+  announce: (message: string) => void;
+  setComposeIntent: (intent: ComposeIntent) => void;
 }
 
 function buildFortnight(anchor: ISODate): Fortnight {
@@ -83,6 +96,8 @@ export const useAppStore = create<AppState>()(
         viewedFortnightId: null,
         selectedDay: null,
         rehydrationError: null,
+        announcement: null,
+        composeIntent: null,
 
         initApp: () => {
           // A failed rehydration means whatever is in localStorage could not be
@@ -169,7 +184,7 @@ export const useAppStore = create<AppState>()(
             rolledOver: false,
             reminderAt: input.reminderAt,
           };
-          set((s) => ({ todos: { ...s.todos, [id]: todo } }));
+          set((s) => ({ todos: { ...s.todos, [id]: todo }, announcement: `Added todo: ${todo.title}` }));
         },
 
         updateTodo: (id, patch) =>
@@ -187,8 +202,8 @@ export const useAppStore = create<AppState>()(
 
         deleteTodo: (id) =>
           set((s) => {
-            const { [id]: _removed, ...rest } = s.todos;
-            return { todos: rest };
+            const { [id]: removed, ...rest } = s.todos;
+            return { todos: rest, announcement: removed ? `Deleted todo: ${removed.title}` : s.announcement };
           }),
 
         addNote: (input) => {
@@ -202,7 +217,7 @@ export const useAppStore = create<AppState>()(
             resolved: false,
             createdAt: nowIso(),
           };
-          set((s) => ({ notes: { ...s.notes, [id]: note } }));
+          set((s) => ({ notes: { ...s.notes, [id]: note }, announcement: `Added note` }));
         },
 
         updateNote: (id, patch) =>
@@ -213,11 +228,11 @@ export const useAppStore = create<AppState>()(
 
         deleteNote: (id) =>
           set((s) => {
-            const { [id]: _removed, ...rest } = s.notes;
-            return { notes: rest };
+            const { [id]: removed, ...rest } = s.notes;
+            return { notes: rest, announcement: removed ? `Deleted note` : s.announcement };
           }),
 
-        selectDay: (day) => set({ selectedDay: day }),
+        selectDay: (day) => set({ selectedDay: day, announcement: formatDayLabel(day) }),
         viewFortnight: (id) =>
           set((s) => {
             const fn = s.fortnights.find((f) => f.id === id);
@@ -229,6 +244,10 @@ export const useAppStore = create<AppState>()(
               viewedFortnightId: id,
               selectedDay:
                 id === s.activeFortnightId ? effectiveBoardDay(fn, today) ?? fn.days[0] : fn.days[0],
+              // A compose form left open by whichever fortnight was viewed
+              // before this switch must not survive into the new one — see
+              // INV-9 and the stale-open-form regression this guards against.
+              composeIntent: null,
             };
           }),
 
@@ -256,6 +275,17 @@ export const useAppStore = create<AppState>()(
           // safe even if a tick already happened this session.
           get().checkDayTick();
         },
+
+        announce: (message) => set({ announcement: message }),
+
+        // Refuses in the reducer, not just in the UI that calls it: opening a
+        // compose form (intent !== null) while viewing a read-only fortnight
+        // is exactly the door the INV-9 orphan-todo bug shipped through once
+        // (a form's own !readOnly gate is trivially bypassable by anything
+        // that calls this action directly — a keyboard shortcut, a command
+        // palette action). Closing (intent === null) is always allowed.
+        setComposeIntent: (intent) =>
+          set((s) => (intent !== null && s.viewedFortnightId !== s.activeFortnightId ? {} : { composeIntent: intent })),
       };
     },
     {

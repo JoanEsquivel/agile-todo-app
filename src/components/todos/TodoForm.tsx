@@ -4,9 +4,9 @@ import { formatDayLabel } from '../../domain/dates';
 import { useAppStore } from '../../store/store';
 import styles from './TodoForm.module.css';
 
-interface Props { day: ISODate; days: ISODate[]; onClose: () => void; todo?: Todo }
+interface Props { day: ISODate; days: ISODate[]; onClose: () => void; todo?: Todo; id?: string }
 
-export function TodoForm({ day, days, onClose, todo }: Props) {
+export function TodoForm({ day, days, onClose, todo, id }: Props) {
   const addTodo = useAppStore((s) => s.addTodo);
   const updateTodo = useAppStore((s) => s.updateTodo);
   const rescheduleTodo = useAppStore((s) => s.rescheduleTodo);
@@ -29,9 +29,18 @@ export function TodoForm({ day, days, onClose, todo }: Props) {
   };
 
   return (
-    <form className={styles.form} onSubmit={submit}>
+    <form
+      id={id}
+      className={styles.form}
+      onSubmit={submit}
+      onKeyDown={(e) => { if (e.key === 'Escape') { e.preventDefault(); onClose(); } }}
+    >
       <label className={styles.field}>Title
-        <input className={styles.input} required value={title} onChange={(e) => setTitle(e.target.value)} />
+        {/* Autofocus is deliberate here, not a default left in place: opening
+           this form (add or edit) is always a user-initiated action, and
+           without it focus was falling through to <body> — see INV-9's
+           form-open focus-management requirement. */}
+        <input className={styles.input} required autoFocus value={title} onChange={(e) => setTitle(e.target.value)} />
       </label>
       <label className={styles.field}>Description
         <textarea className={styles.textarea} value={description} onChange={(e) => setDescription(e.target.value)} />

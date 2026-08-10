@@ -61,8 +61,41 @@ describe('todos on the board', () => {
     render(<App />);
 
     expect(screen.getByRole('checkbox', { name: 'Archived task' })).toBeDisabled();
-    expect(screen.queryByRole('button', { name: 'Edit' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Delete' })).not.toBeInTheDocument();
+    // Exact accessible names, not a bare "Edit"/"Delete" — those would be
+    // vacuously absent under the per-item naming below regardless of what
+    // actually renders, silently gutting this INV-9 regression guard.
+    expect(screen.queryByRole('button', { name: 'Edit todo: Archived task' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Delete todo: Archived task' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Add todo' })).not.toBeInTheDocument();
+  });
+
+  it('exposes disclosure state on Add todo and manages focus in and back out', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    const addButton = screen.getByRole('button', { name: 'Add todo' });
+    expect(addButton).toHaveAttribute('aria-expanded', 'false');
+
+    await user.click(addButton);
+    expect(addButton).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByLabelText('Title')).toHaveFocus();
+
+    await user.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(addButton).toHaveAttribute('aria-expanded', 'false');
+    expect(addButton).toHaveFocus();
+    expect(screen.queryByLabelText('Title')).not.toBeInTheDocument();
+  });
+
+  it('gives each todo its own unambiguous Edit/Delete accessible name', async () => {
+    const user = userEvent.setup();
+    useAppStore.getState().addTodo({ title: 'Ship the deck', priority: 'high', scheduledDay: '2026-08-18' });
+    useAppStore.getState().addTodo({ title: 'Review PR #204', priority: 'medium', scheduledDay: '2026-08-18' });
+    render(<App />);
+
+    // Ambiguous "Delete" would throw here if both rows shared one name —
+    // this only compiles into a meaningful assertion because they don't.
+    await user.click(screen.getByRole('button', { name: 'Delete todo: Review PR #204' }));
+
+    expect(screen.getByText('Ship the deck')).toBeInTheDocument();
+    expect(screen.queryByText('Review PR #204')).not.toBeInTheDocument();
   });
 });

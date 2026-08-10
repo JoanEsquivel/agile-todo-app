@@ -1,0 +1,142 @@
+.tape {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-1) var(--space-4);
+}
+
+.navButton {
+  flex: 0 0 auto;
+  color: var(--color-text-muted);
+}
+
+.weeks {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-5); /* the week boundary — a real gap, not a rule or label */
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  padding-bottom: var(--space-2); /* room for the today playhead dot below */
+}
+
+.week {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-2);
+}
+
+.day {
+  position: relative;
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: 3.75rem;
+  padding: var(--space-2) var(--space-2) var(--space-1);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.day:hover:not(:disabled):not([aria-current='date']) {
+  background: var(--color-surface-hover);
+}
+
+/* Selected = ink fill, the one primary/selected treatment in this palette —
+   never a brand color (there isn't one). */
+.day[aria-current='date'] {
+  border-color: var(--color-ink);
+  background: var(--color-ink);
+}
+
+.day[aria-current='date'] .date,
+.day[aria-current='date'] .count {
+  color: var(--color-on-ink);
+}
+
+/* The today playhead — a small ink dot beneath the day, independent of
+   whether that day is also selected. Deliberately achromatic: the violet
+   focus ring is reserved for focus alone (see tokens.css), so "today" can't
+   borrow it without making a focus indicator ambiguous with a status. */
+.day[data-today]::after {
+  content: '';
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--color-ink);
+}
+
+.date {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-semibold);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text);
+}
+
+/* A fixed track (always the same background regardless of selection state)
+   so priority segments read consistently — including when the day itself
+   is ink-filled, where the segment colors alone wouldn't have reliable
+   contrast against a near-black background. */
+.segments {
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: stretch;
+  gap: 2px;
+  width: 100%;
+  padding: 2px;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-sunken);
+}
+
+.segment {
+  flex: 0 0 auto;
+  height: 3px;
+  border-radius: 1px;
+  background: var(--color-priority-low);
+}
+
+.segment[data-priority='high'] {
+  background: var(--color-priority-high);
+}
+
+.segment[data-priority='medium'] {
+  background: var(--color-priority-medium);
+}
+
+.segment[data-done] {
+  opacity: 0.4;
+}
+
+.emptyTick {
+  align-self: center;
+  width: 60%;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--color-text-faint);
+}
+
+.count {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .weeks {
+    scroll-behavior: smooth;
+  }
+
+  .day {
+    transition: background var(--transition-fast), border-color var(--transition-fast);
+  }
+}

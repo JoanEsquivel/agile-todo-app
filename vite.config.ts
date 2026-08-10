@@ -9,5 +9,11 @@ export default defineConfig(({ command }) => ({
     environment: 'jsdom',
     globals: true,
     setupFiles: './src/test/setup.ts',
+    // CSS is stubbed by default (test.css.include defaults to []) so that
+    // *.module.css imports resolve to a cheap proxy instead of paying for a
+    // real CSS transform. tokens.css is the one exception: tokens.test.ts
+    // reads its actual custom-property values via `?raw` to enforce
+    // contrast, so it alone opts into real processing.
+    css: { include: [/tokens\.css/] },
   },
 }));

@@ -23,7 +23,7 @@ describe('notes on the board', () => {
     const card = screen.getByText('Waiting on credentials');
     expect(card).toHaveAttribute('data-category', 'blocker');
 
-    await user.click(screen.getByRole('button', { name: 'Resolve' }));
+    await user.click(screen.getByRole('button', { name: 'Resolve blocker: Waiting on credentials' }));
     expect(Object.values(useAppStore.getState().notes)[0].resolved).toBe(true);
   });
 
@@ -31,7 +31,38 @@ describe('notes on the board', () => {
     useAppStore.getState().addNote({ day: '2026-08-18', category: 'info', text: 'FYI: release Friday' });
     render(<App />);
     expect(screen.getByText('FYI: release Friday')).toHaveAttribute('data-category', 'info');
-    expect(screen.queryByRole('button', { name: 'Resolve' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^Resolve blocker:/ })).not.toBeInTheDocument();
+  });
+
+  it('exposes disclosure state on Add note and manages focus in and back out', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    const addButton = screen.getByRole('button', { name: 'Add note' });
+    expect(addButton).toHaveAttribute('aria-expanded', 'false');
+
+    await user.click(addButton);
+    expect(addButton).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByLabelText('Text')).toHaveFocus();
+
+    await user.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(addButton).toHaveAttribute('aria-expanded', 'false');
+    expect(addButton).toHaveFocus();
+    expect(screen.queryByLabelText('Text')).not.toBeInTheDocument();
+  });
+
+  it('gives each blocker its own unambiguous Resolve accessible name', async () => {
+    const user = userEvent.setup();
+    useAppStore.getState().addNote({ day: '2026-08-18', category: 'blocker', text: 'Waiting on design review' });
+    useAppStore.getState().addNote({ day: '2026-08-18', category: 'blocker', text: 'Blocked on API keys' });
+    render(<App />);
+
+    // Ambiguous "Resolve" would throw here if both blockers shared one name.
+    await user.click(screen.getByRole('button', { name: 'Resolve blocker: Blocked on API keys' }));
+
+    const resolved = Object.values(useAppStore.getState().notes).find((n) => n.text === 'Blocked on API keys')!;
+    const stillOpen = Object.values(useAppStore.getState().notes).find((n) => n.text === 'Waiting on design review')!;
+    expect(resolved.resolved).toBe(true);
+    expect(stillOpen.resolved).toBe(false);
   });
 
   it('closes a stale open Add note form when the viewed fortnight switches to read-only (regression)', async () => {
@@ -73,7 +104,7 @@ describe('notes on the board', () => {
     render(<App />);
 
     expect(screen.getByText('Archived blocker')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Resolve' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Resolve blocker: Archived blocker' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Delete note: Archived blocker' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Add note' })).not.toBeInTheDocument();
   });

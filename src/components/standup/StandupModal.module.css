@@ -4,12 +4,14 @@
   gap: var(--space-2);
 }
 
+/* Matches DayColumn's own section-label treatment (muted, not accented --
+   there's no accent hue anymore, and the two were inconsistent before). */
 .sectionLabel {
   font-size: var(--text-xs);
   font-weight: var(--font-weight-semibold);
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--color-accent);
+  letter-spacing: var(--tracking-label);
+  color: var(--color-text-muted);
 }
 
 .list {
@@ -30,13 +32,13 @@
 
 .copyButton {
   align-self: flex-start;
-  background: var(--color-accent);
-  border-color: var(--color-accent);
-  color: var(--color-on-accent);
+  background: var(--color-ink);
+  border-color: var(--color-ink);
+  color: var(--color-on-ink);
   font-weight: var(--font-weight-medium);
 }
 
 .copyButton:hover:not(:disabled) {
-  background: var(--color-accent-strong);
-  border-color: var(--color-accent-strong);
+  background: var(--color-ink-hover);
+  border-color: var(--color-ink-hover);
 }

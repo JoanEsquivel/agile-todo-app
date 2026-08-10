@@ -27,7 +27,7 @@ export function TodoItem({ todo, readOnly }: { todo: Todo; readOnly: boolean }) 
           <div className={styles.titleRow}>
             <span className={styles.title}>{todo.title}</span>
             <PriorityBadge priority={todo.priority} />
-            {overdue && <span className={styles.overdueBadge} data-overdue="">Overdue</span>}
+            {overdue && <span className={styles.overdueBadge}>Overdue</span>}
             {todo.rolledOver && <span className={styles.rolloverBadge}>Rolled over</span>}
           </div>
           {todo.description && <p className={styles.description}>{todo.description}</p>}
@@ -35,8 +35,8 @@ export function TodoItem({ todo, readOnly }: { todo: Todo; readOnly: boolean }) 
       </div>
       {!readOnly && (
         <div className={styles.actions}>
-          <button className={styles.actionButton} onClick={() => setEditing(true)}>Edit</button>
-          <button className={styles.actionButton} onClick={() => deleteTodo(todo.id)}>Delete</button>
+          <button className={styles.actionButton} onClick={() => setEditing(true)} aria-label={`Edit todo: ${todo.title}`}>Edit</button>
+          <button className={styles.actionButton} onClick={() => deleteTodo(todo.id)} aria-label={`Delete todo: ${todo.title}`}>Delete</button>
         </div>
       )}
     </li>
