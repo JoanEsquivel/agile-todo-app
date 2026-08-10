@@ -2,7 +2,8 @@ import { create } from 'zustand';
 import type {
   Fortnight, ISODate, LocalDateTime, Note, NoteCategory, PersistedState, Priority, Todo,
 } from '../domain/types';
-import { generateFortnightDays, effectiveBoardDay } from '../domain/fortnight';
+import { generateFortnightDays, effectiveBoardDay, carryOverTodos } from '../domain/fortnight';
+import { applyRollover } from '../domain/rollover';
 import { nowIso, todayLocal } from './clock';
 import { SCHEMA_VERSION } from './migrations';
 
@@ -66,8 +67,38 @@ export const useAppStore = create<AppState>()((set, get) => ({
     }
   },
 
-  checkDayTick: () => { /* Task 12 */ },
-  regenerateFortnight: () => { /* Task 12 */ },
+  checkDayTick: () => {
+    const today = todayLocal();
+    const s = get();
+    if (s.lastRolloverDay === today || !s.activeFortnightId) return;
+    const active = s.fortnights.find((f) => f.id === s.activeFortnightId)!;
+    const { todos } = applyRollover(s.todos, active, today);
+    const effective = effectiveBoardDay(active, today);
+    set({
+      todos,
+      lastRolloverDay: today,
+      selectedDay:
+        s.viewedFortnightId === s.activeFortnightId && effective !== null
+          ? effective
+          : s.selectedDay,
+    });
+  },
+
+  regenerateFortnight: () => {
+    const today = todayLocal();
+    const s = get();
+    const oldId = s.activeFortnightId;
+    const fn = buildFortnight(today);
+    const todos = oldId ? carryOverTodos(s.todos, oldId, fn, today) : s.todos;
+    set({
+      fortnights: [...s.fortnights, fn],
+      activeFortnightId: fn.id,
+      viewedFortnightId: fn.id,
+      todos,
+      selectedDay: effectiveBoardDay(fn, today),
+      lastRolloverDay: today,
+    });
+  },
 
   addTodo: (input) => {
     const id = crypto.randomUUID();
