@@ -16,7 +16,15 @@ export function DayStrip() {
     : null;
 
   return (
-    <nav className={styles.strip} aria-label="Fortnight days">
+    <nav
+      className={styles.strip}
+      aria-label="Fortnight days"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'ArrowRight' && idx < fn.days.length - 1) state.selectDay(fn.days[idx + 1]);
+        if (e.key === 'ArrowLeft' && idx > 0) state.selectDay(fn.days[idx - 1]);
+      }}
+    >
       <button className={styles.navButton} aria-label="Previous day" disabled={idx <= 0}
         onClick={() => state.selectDay(fn.days[idx - 1])}>‹</button>
       {fn.days.map((day) => {
