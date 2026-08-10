@@ -30,18 +30,55 @@ describe('skip link', () => {
   });
 });
 
-describe('keyboard navigation', () => {
+describe('fortnight tape: roving tabindex', () => {
   beforeEach(() => seedApp());
 
-  it('arrow keys move the selected day on the strip', async () => {
+  it('is exactly one tab stop, not thirteen', async () => {
+    // The old chip strip was a focusable <nav> plus prev + 10 chips + next
+    // -- 13 consecutive stops. The tape must be exactly one: whichever day
+    // button is selected, every other day button is tabIndex=-1.
+    render(<App />);
+    const dayButtons = screen.getAllByRole('button', { name: /Aug \d+/ });
+    expect(dayButtons).toHaveLength(10);
+    const tabbable = dayButtons.filter((b) => b.tabIndex === 0);
+    expect(tabbable).toHaveLength(1);
+    expect(tabbable[0]).toHaveTextContent('Tue, Aug 18'); // seedApp's selected day
+  });
+
+  it('arrows move both focus and selection together, and the tab stop follows', async () => {
     const user = userEvent.setup();
     render(<App />);
-    screen.getByRole('navigation', { name: 'Fortnight days' }).focus();
+    screen.getByRole('button', { name: /Tue, Aug 18/ }).focus();
+
     await user.keyboard('{ArrowRight}');
+    const wed = screen.getByRole('button', { name: /Wed, Aug 19/ });
+    expect(wed).toHaveFocus();
+    expect(wed).toHaveAttribute('tabIndex', '0');
+    expect(screen.getByRole('button', { name: /Tue, Aug 18/ })).toHaveAttribute('tabIndex', '-1');
     expect(screen.getByRole('heading', { name: /Wed, Aug 19/ })).toBeInTheDocument();
+
     await user.keyboard('{ArrowLeft}{ArrowLeft}');
+    expect(screen.getByRole('button', { name: /Mon, Aug 17/ })).toHaveFocus();
     expect(screen.getByRole('heading', { name: /Mon, Aug 17/ })).toBeInTheDocument();
   });
+
+  it('Home and End jump to the first and last day of the fortnight', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    screen.getByRole('button', { name: /Tue, Aug 18/ }).focus();
+
+    await user.keyboard('{End}');
+    expect(screen.getByRole('heading', { name: /Fri, Aug 28/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Fri, Aug 28/ })).toHaveFocus();
+
+    await user.keyboard('{Home}');
+    expect(screen.getByRole('heading', { name: /Mon, Aug 17/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Mon, Aug 17/ })).toHaveFocus();
+  });
+});
+
+describe('keyboard navigation', () => {
+  beforeEach(() => seedApp());
 
   it('modal moves focus in and restores it on close', async () => {
     const user = userEvent.setup();
@@ -107,11 +144,11 @@ describe('Announcer', () => {
     expect(live).toHaveTextContent('Deleted todo: Ship it');
   });
 
-  it('announces the selected day when navigating the day strip', async () => {
+  it('announces the selected day when navigating the tape', async () => {
     const user = userEvent.setup();
     render(<App />);
     const live = screen.getByRole('status', { name: 'Announcements' });
-    screen.getByRole('navigation', { name: 'Fortnight days' }).focus();
+    screen.getByRole('button', { name: /Tue, Aug 18/ }).focus();
     await user.keyboard('{ArrowRight}');
     expect(live).toHaveTextContent('Wed, Aug 19');
   });
