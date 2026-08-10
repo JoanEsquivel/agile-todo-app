@@ -18,6 +18,7 @@ export default function App() {
   const [standupOpen, setStandupOpen] = useState(false);
   return (
     <div className={styles.app}>
+      <a className={styles.skipLink} href="#main">Skip to content</a>
       <header className={styles.header}>
         <div className={styles.headerTitle}>
           <h1 className={styles.heading}>Agile Todo</h1>

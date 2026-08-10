@@ -2,11 +2,33 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from './App';
 import { seedApp } from './test/seed';
+import { VisuallyHidden } from './components/common/VisuallyHidden';
 
 vi.mock('./store/clock', () => ({
   todayLocal: () => '2026-08-18',
   nowIso: () => '2026-08-18T12:00:00.000Z',
 }));
+
+describe('VisuallyHidden', () => {
+  it('exposes its text to the accessibility tree without a visible role', () => {
+    render(<VisuallyHidden>context for screen readers</VisuallyHidden>);
+    expect(screen.getByText('context for screen readers')).toBeInTheDocument();
+  });
+});
+
+describe('skip link', () => {
+  beforeEach(() => seedApp());
+
+  it('is the first focusable element and targets #main', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.tab();
+    const link = screen.getByRole('link', { name: 'Skip to content' });
+    expect(link).toHaveFocus();
+    expect(link).toHaveAttribute('href', '#main');
+    expect(document.getElementById('main')?.tagName).toBe('MAIN');
+  });
+});
 
 describe('keyboard navigation', () => {
   beforeEach(() => seedApp());

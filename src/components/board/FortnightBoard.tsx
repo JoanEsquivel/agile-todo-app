@@ -4,7 +4,7 @@ import styles from './FortnightBoard.module.css';
 
 export function FortnightBoard() {
   return (
-    <main className={styles.board}>
+    <main id="main" className={styles.board}>
       <DayStrip />
       <DayColumn />
     </main>

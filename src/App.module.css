@@ -8,6 +8,27 @@
   gap: var(--space-4);
 }
 
+/* Off-screen until focused — the first tab stop on the page, so a keyboard
+ * or screen-reader user isn't forced through the whole header on every
+ * load just to reach the board. */
+.skipLink {
+  position: fixed;
+  top: var(--space-2);
+  left: var(--space-2);
+  z-index: 200;
+  transform: translateY(-150%);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--color-ink);
+  color: var(--color-on-ink);
+  font-weight: var(--font-weight-medium);
+  text-decoration: none;
+}
+
+.skipLink:focus-visible {
+  transform: translateY(0);
+}
+
 .header {
   display: flex;
   flex-wrap: wrap;
