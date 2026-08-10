@@ -53,3 +53,39 @@ describe('keyboard navigation', () => {
     expect(trigger).toHaveFocus();
   });
 });
+
+describe('Modal hardening', () => {
+  beforeEach(() => seedApp());
+
+  it('portals to document.body, names itself via aria-labelledby, and locks the app underneath', async () => {
+    const user = userEvent.setup();
+    const { container } = render(<App />);
+    await user.click(screen.getByRole('button', { name: 'Standup' }));
+
+    const dialog = screen.getByRole('dialog', { name: 'Daily standup' });
+    expect(container.contains(dialog)).toBe(false);
+    expect(document.body.contains(dialog)).toBe(true);
+    expect(dialog).toHaveAttribute('aria-labelledby');
+    expect(dialog).not.toHaveAttribute('aria-label');
+
+    expect(container).toHaveProperty('inert', true);
+    expect(document.body.style.overflow).toBe('hidden');
+
+    await user.keyboard('{Escape}');
+    expect(container).toHaveProperty('inert', false);
+    expect(document.body.style.overflow).toBe('');
+  });
+
+  it('closes on a scrim click but not on a click inside the dialog', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole('button', { name: 'Standup' }));
+    const dialog = screen.getByRole('dialog', { name: 'Daily standup' });
+
+    await user.click(screen.getByRole('heading', { name: 'Daily standup' }));
+    expect(screen.getByRole('dialog', { name: 'Daily standup' })).toBeInTheDocument();
+
+    await user.click(dialog.parentElement!); // the overlay/scrim itself
+    expect(screen.queryByRole('dialog', { name: 'Daily standup' })).not.toBeInTheDocument();
+  });
+});
