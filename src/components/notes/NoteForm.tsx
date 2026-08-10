@@ -15,7 +15,12 @@ export function NoteForm({ day, onClose, id }: { day: ISODate; onClose: () => vo
   };
 
   return (
-    <form id={id} className={styles.form} onSubmit={submit}>
+    <form
+      id={id}
+      className={styles.form}
+      onSubmit={submit}
+      onKeyDown={(e) => { if (e.key === 'Escape') { e.preventDefault(); onClose(); } }}
+    >
       <label className={styles.field}>Text
         <textarea className={styles.textarea} required autoFocus value={text} onChange={(e) => setText(e.target.value)} />
       </label>

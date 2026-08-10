@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useAppStore } from './store/store';
 import { useDayChangeWatcher } from './hooks/useDayChangeWatcher';
+import { useShortcuts } from './hooks/useShortcuts';
 import { selectViewedFortnight, selectFortnightExpired, selectIsReadOnly } from './store/selectors';
 import { formatDayLabel } from './domain/dates';
 import { FortnightBoard } from './components/board/FortnightBoard';
@@ -19,6 +20,7 @@ export default function App() {
   const regenerateFortnight = useAppStore((s) => s.regenerateFortnight);
   const [standupOpen, setStandupOpen] = useState(false);
   const [confirmRegenerateOpen, setConfirmRegenerateOpen] = useState(false);
+  useShortcuts({ onOpenStandup: () => setStandupOpen(true) });
   return (
     <div className={styles.app}>
       <Announcer />

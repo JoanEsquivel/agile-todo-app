@@ -29,7 +29,12 @@ export function TodoForm({ day, days, onClose, todo, id }: Props) {
   };
 
   return (
-    <form id={id} className={styles.form} onSubmit={submit}>
+    <form
+      id={id}
+      className={styles.form}
+      onSubmit={submit}
+      onKeyDown={(e) => { if (e.key === 'Escape') { e.preventDefault(); onClose(); } }}
+    >
       <label className={styles.field}>Title
         {/* Autofocus is deliberate here, not a default left in place: opening
            this form (add or edit) is always a user-initiated action, and
