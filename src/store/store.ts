@@ -195,7 +195,7 @@ export const useAppStore = create<AppState>()(
       name: 'agile-todo-app.v-state',
       version: SCHEMA_VERSION,
       storage: createJSONStorage(() => appStorage),
-      migrate: (persisted, version) => runMigrations(persisted, version),
+      migrate: runMigrations,
       partialize: (s) => ({
         schemaVersion: s.schemaVersion,
         fortnights: s.fortnights,
