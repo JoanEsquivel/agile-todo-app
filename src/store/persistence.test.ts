@@ -31,4 +31,19 @@ describe('createDebouncedStorage', () => {
     storage.flush();
     expect(localStorage.getItem('k')).toBe('v');
   });
+
+  it('removeItem drops a pending write for that key', () => {
+    const storage = createDebouncedStorage(300);
+    storage.setItem('k', 'v');
+    storage.removeItem('k');
+    vi.advanceTimersByTime(300);
+    expect(localStorage.getItem('k')).toBe(null);
+  });
+
+  it('removeItem removes an already-persisted key', () => {
+    localStorage.setItem('k', 'v');
+    const storage = createDebouncedStorage(300);
+    storage.removeItem('k');
+    expect(localStorage.getItem('k')).toBe(null);
+  });
 });
