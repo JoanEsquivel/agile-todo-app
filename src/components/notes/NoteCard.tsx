@@ -6,7 +6,7 @@ export function NoteCard({ note, readOnly }: { note: Note; readOnly: boolean }) 
   const resolveBlocker = useAppStore((s) => s.resolveBlocker);
   const deleteNote = useAppStore((s) => s.deleteNote);
   return (
-    <li className={styles.card} data-category={note.category} data-resolved={note.resolved ? '' : undefined}>
+    <li className={styles.card} data-resolved={note.resolved ? '' : undefined}>
       <span className={styles.text} data-category={note.category}>{note.text}</span>
       <div className={styles.actions}>
         {note.category === 'blocker' && (

@@ -11,18 +11,18 @@
   box-shadow: var(--shadow-sm);
 }
 
-.card[data-category='blocker'] {
+.card:has([data-category='blocker']) {
   border-left-color: var(--color-blocker);
   background: var(--color-blocker-bg);
 }
 
-.card[data-category='blocker'][data-resolved] {
+.card[data-resolved]:has([data-category='blocker']) {
   border-left-color: var(--color-border-strong);
   background: var(--color-surface);
   opacity: 0.75;
 }
 
-.card[data-category='info'] {
+.card:has([data-category='info']) {
   border-left-color: var(--color-info);
 }
 
