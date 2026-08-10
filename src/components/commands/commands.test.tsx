@@ -91,4 +91,49 @@ describe('command palette', () => {
     expect(screen.queryByRole('dialog', { name: 'Command palette' })).not.toBeInTheDocument();
     expect(screen.getByLabelText('Title')).toBeInTheDocument();
   });
+
+  it('lists "Keyboard shortcuts" as an action that opens the overlay', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.keyboard('{Control>}k{/Control}');
+    const listbox = screen.getByRole('listbox', { name: 'Results' });
+    await user.click(within(listbox).getByText('Keyboard shortcuts'));
+    expect(screen.queryByRole('dialog', { name: 'Command palette' })).not.toBeInTheDocument();
+    expect(screen.getByRole('dialog', { name: 'Keyboard shortcuts' })).toBeInTheDocument();
+  });
+});
+
+describe('shortcuts overlay', () => {
+  beforeEach(() => seedApp());
+
+  it('opens on ? from anywhere', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    (document.activeElement as HTMLElement | null)?.blur();
+    await user.keyboard('?');
+    const dialog = screen.getByRole('dialog', { name: 'Keyboard shortcuts' });
+    expect(dialog).toHaveTextContent('Command palette');
+    expect(dialog).toHaveTextContent('Jump to today');
+    expect(dialog).toHaveTextContent('Standup');
+  });
+
+  it('does not fire while typing in a text field (? is a real character)', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole('button', { name: 'Add todo' }));
+    const title = screen.getByLabelText('Title');
+    await user.type(title, 'wait, what?');
+    expect(title).toHaveValue('wait, what?');
+    expect(screen.queryByRole('dialog', { name: 'Keyboard shortcuts' })).not.toBeInTheDocument();
+  });
+
+  it('closes on Escape, like every other Modal', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    (document.activeElement as HTMLElement | null)?.blur();
+    await user.keyboard('?');
+    expect(screen.getByRole('dialog', { name: 'Keyboard shortcuts' })).toBeInTheDocument();
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog', { name: 'Keyboard shortcuts' })).not.toBeInTheDocument();
+  });
 });

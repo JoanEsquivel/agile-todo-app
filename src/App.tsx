@@ -12,6 +12,7 @@ import { BackupControls } from './components/common/BackupControls';
 import { ConfirmDialog } from './components/common/ConfirmDialog';
 import { Announcer } from './components/common/Announcer';
 import { CommandPalette, type CommandAction } from './components/commands/CommandPalette';
+import { ShortcutsOverlay } from './components/commands/ShortcutsOverlay';
 import styles from './App.module.css';
 
 export default function App() {
@@ -24,7 +25,12 @@ export default function App() {
   const [standupOpen, setStandupOpen] = useState(false);
   const [confirmRegenerateOpen, setConfirmRegenerateOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
-  useShortcuts({ onOpenStandup: () => setStandupOpen(true), onOpenPalette: () => setPaletteOpen(true) });
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  useShortcuts({
+    onOpenStandup: () => setStandupOpen(true),
+    onOpenPalette: () => setPaletteOpen(true),
+    onOpenShortcutsOverlay: () => setShortcutsOpen(true),
+  });
 
   // Excludes the two compose actions while read-only, same as the N/Shift+N
   // shortcuts refusing to fire there -- offering an action that would just
@@ -37,6 +43,7 @@ export default function App() {
     ]),
     { id: 'standup', label: 'Standup', run: () => setStandupOpen(true) },
     { id: 'generate-fortnight', label: 'Generate new fortnight', run: () => setConfirmRegenerateOpen(true) },
+    { id: 'keyboard-shortcuts', label: 'Keyboard shortcuts', run: () => setShortcutsOpen(true) },
   ];
 
   return (
@@ -86,6 +93,7 @@ export default function App() {
         />
       )}
       {paletteOpen && <CommandPalette onClose={() => setPaletteOpen(false)} actions={paletteActions} />}
+      {shortcutsOpen && <ShortcutsOverlay onClose={() => setShortcutsOpen(false)} />}
     </div>
   );
 }
