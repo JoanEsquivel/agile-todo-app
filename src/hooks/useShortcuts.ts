@@ -11,23 +11,33 @@ function isTypingTarget(target: EventTarget | null): boolean {
 }
 
 /**
- * Global keyboard shortcuts, active anywhere in the app: arrows/Home/End
- * move the selected day, T jumps to today, N/Shift+N open the todo/note
- * compose form, S opens Standup.
+ * Global keyboard shortcuts, active anywhere in the app: ⌘K/Ctrl+K opens
+ * the command palette, arrows/Home/End move the selected day, T jumps to
+ * today, N/Shift+N open the todo/note compose form, S opens Standup.
  *
  * Escape is deliberately NOT handled here — each overlay/form owns its own
  * (Modal.tsx; TodoForm/NoteForm), which is what lets it work while focus is
  * inside a text field without this hook's isTypingTarget guard getting in
  * the way.
  *
- * Every shortcut bails while focus is in a text-entry control, and while
- * any [role=dialog] is mounted (a future command palette adds its own
- * always-available ⌘K case ahead of that check, the same way this file's
- * own guard is structured).
+ * Every shortcut other than ⌘K bails while focus is in a text-entry
+ * control, and while any [role=dialog] is mounted — ⌘K itself must stay
+ * reachable even with a dialog already open (that's how you get from the
+ * palette back to the palette, or open it over the shortcuts overlay), so
+ * it's checked before both of those guards, not after.
  */
-export function useShortcuts({ onOpenStandup }: { onOpenStandup: () => void }) {
+export function useShortcuts({ onOpenStandup, onOpenPalette }: {
+  onOpenStandup: () => void;
+  onOpenPalette: () => void;
+}) {
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        onOpenPalette();
+        return;
+      }
+
       if (isTypingTarget(e.target)) return;
       if (document.querySelector('[role="dialog"]')) return;
       // The tape's own onKeyDown already moved the day and called
@@ -95,5 +105,5 @@ export function useShortcuts({ onOpenStandup }: { onOpenStandup: () => void }) {
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [onOpenStandup]);
+  }, [onOpenStandup, onOpenPalette]);
 }

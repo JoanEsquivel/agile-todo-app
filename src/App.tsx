@@ -11,16 +11,34 @@ import { FortnightSwitcher } from './components/history/FortnightSwitcher';
 import { BackupControls } from './components/common/BackupControls';
 import { ConfirmDialog } from './components/common/ConfirmDialog';
 import { Announcer } from './components/common/Announcer';
+import { CommandPalette, type CommandAction } from './components/commands/CommandPalette';
 import styles from './App.module.css';
 
 export default function App() {
   useDayChangeWatcher();
   const state = useAppStore();
   const fn = selectViewedFortnight(state);
+  const readOnly = selectIsReadOnly(state);
   const regenerateFortnight = useAppStore((s) => s.regenerateFortnight);
+  const setComposeIntent = useAppStore((s) => s.setComposeIntent);
   const [standupOpen, setStandupOpen] = useState(false);
   const [confirmRegenerateOpen, setConfirmRegenerateOpen] = useState(false);
-  useShortcuts({ onOpenStandup: () => setStandupOpen(true) });
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  useShortcuts({ onOpenStandup: () => setStandupOpen(true), onOpenPalette: () => setPaletteOpen(true) });
+
+  // Excludes the two compose actions while read-only, same as the N/Shift+N
+  // shortcuts refusing to fire there -- offering an action that would just
+  // silently no-op (see setComposeIntent's own INV-9 guard) is a dead end,
+  // not a choice.
+  const paletteActions: CommandAction[] = [
+    ...(readOnly ? [] : [
+      { id: 'add-todo', label: 'Add todo', run: () => setComposeIntent('todo') },
+      { id: 'add-note', label: 'Add note', run: () => setComposeIntent('note') },
+    ]),
+    { id: 'standup', label: 'Standup', run: () => setStandupOpen(true) },
+    { id: 'generate-fortnight', label: 'Generate new fortnight', run: () => setConfirmRegenerateOpen(true) },
+  ];
+
   return (
     <div className={styles.app}>
       <Announcer />
@@ -67,6 +85,7 @@ export default function App() {
           onCancel={() => setConfirmRegenerateOpen(false)}
         />
       )}
+      {paletteOpen && <CommandPalette onClose={() => setPaletteOpen(false)} actions={paletteActions} />}
     </div>
   );
 }
