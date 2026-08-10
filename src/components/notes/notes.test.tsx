@@ -34,6 +34,22 @@ describe('notes on the board', () => {
     expect(screen.queryByRole('button', { name: /^Resolve blocker:/ })).not.toBeInTheDocument();
   });
 
+  it('exposes disclosure state on Add note and manages focus in and back out', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    const addButton = screen.getByRole('button', { name: 'Add note' });
+    expect(addButton).toHaveAttribute('aria-expanded', 'false');
+
+    await user.click(addButton);
+    expect(addButton).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByLabelText('Text')).toHaveFocus();
+
+    await user.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(addButton).toHaveAttribute('aria-expanded', 'false');
+    expect(addButton).toHaveFocus();
+    expect(screen.queryByLabelText('Text')).not.toBeInTheDocument();
+  });
+
   it('gives each blocker its own unambiguous Resolve accessible name', async () => {
     const user = userEvent.setup();
     useAppStore.getState().addNote({ day: '2026-08-18', category: 'blocker', text: 'Waiting on design review' });

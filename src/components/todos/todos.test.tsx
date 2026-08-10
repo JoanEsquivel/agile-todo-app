@@ -69,6 +69,22 @@ describe('todos on the board', () => {
     expect(screen.queryByRole('button', { name: 'Add todo' })).not.toBeInTheDocument();
   });
 
+  it('exposes disclosure state on Add todo and manages focus in and back out', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    const addButton = screen.getByRole('button', { name: 'Add todo' });
+    expect(addButton).toHaveAttribute('aria-expanded', 'false');
+
+    await user.click(addButton);
+    expect(addButton).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByLabelText('Title')).toHaveFocus();
+
+    await user.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(addButton).toHaveAttribute('aria-expanded', 'false');
+    expect(addButton).toHaveFocus();
+    expect(screen.queryByLabelText('Title')).not.toBeInTheDocument();
+  });
+
   it('gives each todo its own unambiguous Edit/Delete accessible name', async () => {
     const user = userEvent.setup();
     useAppStore.getState().addTodo({ title: 'Ship the deck', priority: 'high', scheduledDay: '2026-08-18' });
