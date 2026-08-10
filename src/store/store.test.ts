@@ -9,7 +9,7 @@ function reset() {
   useAppStore.setState({
     schemaVersion: 1, fortnights: [], activeFortnightId: null,
     todos: {}, notes: {}, lastRolloverDay: null,
-    viewedFortnightId: null, selectedDay: null,
+    viewedFortnightId: null, selectedDay: null, composeIntent: null,
   });
 }
 
@@ -94,5 +94,53 @@ describe('store', () => {
 
     useAppStore.getState().deleteNote(note.id);
     expect(useAppStore.getState().notes).toEqual({});
+  });
+
+  describe('setComposeIntent', () => {
+    it('opens a compose form while viewing the active fortnight', () => {
+      useAppStore.getState().initApp();
+      useAppStore.getState().setComposeIntent('todo');
+      expect(useAppStore.getState().composeIntent).toBe('todo');
+    });
+
+    it('refuses to open a compose form while viewing a read-only (past) fortnight', () => {
+      // The reducer itself refuses, not just the UI that calls it -- a
+      // keyboard shortcut or command-palette action could otherwise open a
+      // form through a door the read-only-gated Add button never exposes,
+      // reopening the INV-9 orphan-todo bug through a new path.
+      useAppStore.getState().initApp();
+      const activeId = useAppStore.getState().activeFortnightId!;
+      useAppStore.getState().regenerateFortnight();
+      useAppStore.getState().viewFortnight(activeId); // now viewing the old, read-only fortnight
+
+      useAppStore.getState().setComposeIntent('todo');
+      expect(useAppStore.getState().composeIntent).toBeNull();
+
+      useAppStore.getState().setComposeIntent('note');
+      expect(useAppStore.getState().composeIntent).toBeNull();
+    });
+
+    it('always allows closing (null), even while read-only', () => {
+      useAppStore.getState().initApp();
+      const activeId = useAppStore.getState().activeFortnightId!;
+      useAppStore.getState().setComposeIntent('todo'); // opened while still active/writable
+      useAppStore.getState().regenerateFortnight();
+      useAppStore.getState().viewFortnight(activeId);
+
+      // viewFortnight already clears it (asserted below), but the action
+      // itself must never refuse a close regardless of read-only state.
+      useAppStore.getState().setComposeIntent(null);
+      expect(useAppStore.getState().composeIntent).toBeNull();
+    });
+
+    it('viewFortnight clears a compose form left open by the previously viewed fortnight', () => {
+      useAppStore.getState().initApp();
+      useAppStore.getState().setComposeIntent('note');
+      expect(useAppStore.getState().composeIntent).toBe('note');
+
+      const activeId = useAppStore.getState().activeFortnightId!;
+      useAppStore.getState().viewFortnight(activeId); // switching view, even to the same fortnight
+      expect(useAppStore.getState().composeIntent).toBeNull();
+    });
   });
 });

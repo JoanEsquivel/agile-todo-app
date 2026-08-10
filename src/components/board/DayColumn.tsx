@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useId, useRef } from 'react';
 import { useAppStore } from '../../store/store';
 import { selectIsReadOnly, selectNotesForDay, selectTodosForDay, selectViewedFortnight } from '../../store/selectors';
 import { formatDayLabel } from '../../domain/dates';
@@ -11,22 +11,23 @@ import styles from './DayColumn.module.css';
 
 export function DayColumn() {
   const state = useAppStore();
+  const setComposeIntent = useAppStore((s) => s.setComposeIntent);
   const fn = selectViewedFortnight(state);
-  const [adding, setAdding] = useState(false);
-  const [addingNote, setAddingNote] = useState(false);
+  const adding = state.composeIntent === 'todo';
+  const addingNote = state.composeIntent === 'note';
   const addTodoButtonRef = useRef<HTMLButtonElement>(null);
   const addNoteButtonRef = useRef<HTMLButtonElement>(null);
   const todoFormId = useId();
   const noteFormId = useId();
 
-  // Reset any open "add" form whenever the viewed fortnight changes (e.g. via
-  // FortnightSwitcher, which is always enabled). This guarantees a form left
-  // open while viewing the active fortnight cannot survive a switch to a
-  // read-only past fortnight.
+  // Belt-and-braces alongside viewFortnight's own explicit clear: an
+  // automatic fortnight switch (rollover via checkDayTick, or
+  // regenerateFortnight) changes `fn?.id` without going through
+  // viewFortnight at all, and a form left open must not survive that either
+  // — see INV-9 and the stale-open-form regression this guards against.
   useEffect(() => {
-    setAdding(false);
-    setAddingNote(false);
-  }, [fn?.id]);
+    setComposeIntent(null);
+  }, [fn?.id, setComposeIntent]);
 
   if (!fn) return null;
   const day = state.selectedDay ?? fn.days[0];
@@ -35,11 +36,11 @@ export function DayColumn() {
   const notes = selectNotesForDay(state, fn.id, day);
 
   const closeTodoForm = () => {
-    setAdding(false);
+    setComposeIntent(null);
     addTodoButtonRef.current?.focus();
   };
   const closeNoteForm = () => {
-    setAddingNote(false);
+    setComposeIntent(null);
     addNoteButtonRef.current?.focus();
   };
 
@@ -57,7 +58,7 @@ export function DayColumn() {
               className={styles.addButton}
               aria-expanded={adding}
               aria-controls={todoFormId}
-              onClick={() => setAdding((v) => !v)}
+              onClick={() => setComposeIntent(adding ? null : 'todo')}
             >
               Add todo
             </button>
@@ -77,7 +78,7 @@ export function DayColumn() {
               className={styles.addButton}
               aria-expanded={addingNote}
               aria-controls={noteFormId}
-              onClick={() => setAddingNote((v) => !v)}
+              onClick={() => setComposeIntent(addingNote ? null : 'note')}
             >
               Add note
             </button>

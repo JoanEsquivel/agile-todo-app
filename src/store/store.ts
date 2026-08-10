@@ -10,6 +10,9 @@ import { nowIso, todayLocal } from './clock';
 import { createDebouncedStorage } from './persistence';
 import { runMigrations, SCHEMA_VERSION } from './migrations';
 
+/** What DayColumn's compose form is currently showing for the selected day, if any. */
+export type ComposeIntent = 'todo' | 'note' | null;
+
 export interface AppState extends PersistedState {
   viewedFortnightId: string | null;
   selectedDay: ISODate | null;
@@ -19,6 +22,10 @@ export interface AppState extends PersistedState {
   /** Latest message for the polite live-region announcer. Ephemeral, like
    *  the fields above — never persisted, never added to `partialize`. */
   announcement: string | null;
+  /** Ephemeral like the fields above. Guarded by `setComposeIntent`, not
+   *  written directly — see INV-9: a compose form must never be openable
+   *  while viewing a read-only fortnight, including via this field. */
+  composeIntent: ComposeIntent;
 
   initApp: () => void;
   checkDayTick: () => void;          // implemented in Task 12
@@ -39,6 +46,7 @@ export interface AppState extends PersistedState {
   viewFortnight: (id: string) => void;
   importState: (state: PersistedState) => void;
   announce: (message: string) => void;
+  setComposeIntent: (intent: ComposeIntent) => void;
 }
 
 function buildFortnight(anchor: ISODate): Fortnight {
@@ -89,6 +97,7 @@ export const useAppStore = create<AppState>()(
         selectedDay: null,
         rehydrationError: null,
         announcement: null,
+        composeIntent: null,
 
         initApp: () => {
           // A failed rehydration means whatever is in localStorage could not be
@@ -235,6 +244,10 @@ export const useAppStore = create<AppState>()(
               viewedFortnightId: id,
               selectedDay:
                 id === s.activeFortnightId ? effectiveBoardDay(fn, today) ?? fn.days[0] : fn.days[0],
+              // A compose form left open by whichever fortnight was viewed
+              // before this switch must not survive into the new one — see
+              // INV-9 and the stale-open-form regression this guards against.
+              composeIntent: null,
             };
           }),
 
@@ -264,6 +277,15 @@ export const useAppStore = create<AppState>()(
         },
 
         announce: (message) => set({ announcement: message }),
+
+        // Refuses in the reducer, not just in the UI that calls it: opening a
+        // compose form (intent !== null) while viewing a read-only fortnight
+        // is exactly the door the INV-9 orphan-todo bug shipped through once
+        // (a form's own !readOnly gate is trivially bypassable by anything
+        // that calls this action directly — a keyboard shortcut, a command
+        // palette action). Closing (intent === null) is always allowed.
+        setComposeIntent: (intent) =>
+          set((s) => (intent !== null && s.viewedFortnightId !== s.activeFortnightId ? {} : { composeIntent: intent })),
       };
     },
     {

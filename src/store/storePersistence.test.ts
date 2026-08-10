@@ -12,6 +12,7 @@ describe('store persistence', () => {
       schemaVersion: 1, fortnights: [], activeFortnightId: null,
       todos: {}, notes: {}, lastRolloverDay: null,
       viewedFortnightId: null, selectedDay: null, rehydrationError: null, announcement: null,
+      composeIntent: null,
     });
   });
 
@@ -31,6 +32,15 @@ describe('store persistence', () => {
     // in memory, so this only proves something if it's actually excluded.
     expect(useAppStore.getState().announcement).not.toBeNull();
     expect(persisted.state.announcement).toBeUndefined();
+  });
+
+  it('composeIntent is ephemeral -- never persisted (INV-6)', () => {
+    useAppStore.getState().initApp();
+    useAppStore.getState().setComposeIntent('todo');
+    expect(useAppStore.getState().composeIntent).toBe('todo'); // set in memory...
+    appStorage.flush();
+    const persisted = JSON.parse(localStorage.getItem('agile-todo-app.v-state')!);
+    expect(persisted.state.composeIntent).toBeUndefined(); // ...but excluded from the persisted blob.
   });
 
   it('importState replaces persisted fields and re-derives the view', () => {
