@@ -29,6 +29,37 @@ export function selectNotesForDay(s: AppState, fortnightId: string, day: ISODate
     .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
 }
 
+export interface WorkloadSegment {
+  id: string;
+  priority: Todo['priority'];
+  done: boolean;
+}
+
+/**
+ * One pass over all todos, grouped by day, for the fortnight tape — which
+ * needs every day's segments at once to render the whole 10-day strip.
+ * Calling `selectTodosForDay` per day (as the old chip strip did) means 10
+ * filter+sort passes per render; this does the equivalent work once.
+ *
+ * A day with no todos is simply absent from the result rather than mapped
+ * to `[]` — callers read it as `workload[day] ?? []`.
+ */
+export function selectDayWorkload(s: AppState, fortnightId: string): Record<ISODate, WorkloadSegment[]> {
+  const byDay: Record<ISODate, WorkloadSegment[]> = {};
+  for (const t of Object.values(s.todos)) {
+    if (t.fortnightId !== fortnightId) continue;
+    (byDay[t.scheduledDay] ??= []).push({ id: t.id, priority: t.priority, done: t.done });
+  }
+  for (const segments of Object.values(byDay)) {
+    segments.sort((a, b) =>
+      Number(a.done) - Number(b.done) ||
+      PRIORITY_RANK[a.priority] - PRIORITY_RANK[b.priority] ||
+      a.id.localeCompare(b.id),
+    );
+  }
+  return byDay;
+}
+
 export function selectFortnightExpired(s: AppState): boolean {
   const active = s.fortnights.find((f) => f.id === s.activeFortnightId);
   return active !== undefined && effectiveBoardDay(active, todayLocal()) === null;
