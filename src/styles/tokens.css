@@ -84,16 +84,6 @@
   --color-success: #1e7a4b;
   --color-success-bg: #e6f4ec;
 
-  /* ---- Transitional aliases (REMOVE in the component-retheme step) ----
-   * The component modules still speak in "accent". They are rethemed in a
-   * later commit; until then these keep every module rendering against the
-   * new palette without touching 14 files in this one. `var()` inside a
-   * custom property resolves lazily, so these follow dark mode for free. */
-  --color-accent: var(--color-ink);
-  --color-accent-strong: var(--color-ink-hover);
-  --color-accent-soft: var(--color-ink-soft);
-  --color-on-accent: var(--color-on-ink);
-
   /* ---- Typography ---- */
   /* Self-hosted display/data faces, system stack retained as the fallback
    * list — see the @font-face block in global.css. If the font files are

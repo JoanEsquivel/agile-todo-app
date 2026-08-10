@@ -38,13 +38,13 @@
 }
 
 .saveButton {
-  background: var(--color-accent);
-  border-color: var(--color-accent);
-  color: var(--color-on-accent);
+  background: var(--color-ink);
+  border-color: var(--color-ink);
+  color: var(--color-on-ink);
   font-weight: var(--font-weight-medium);
 }
 
 .saveButton:hover:not(:disabled) {
-  background: var(--color-accent-strong);
-  border-color: var(--color-accent-strong);
+  background: var(--color-ink-hover);
+  border-color: var(--color-ink-hover);
 }

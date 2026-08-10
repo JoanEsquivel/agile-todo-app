@@ -24,6 +24,7 @@
 
 .card:has([data-category='info']) {
   border-left-color: var(--color-info);
+  background: var(--color-info-bg);
 }
 
 .text {

@@ -27,13 +27,17 @@
   font-size: var(--text-xs);
   font-weight: var(--font-weight-semibold);
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--tracking-label);
   color: var(--color-text-muted);
 }
 
+/* No color override: a secondary toggle doesn't need to stand out the way
+   a primary/selected element does, and there's no accent hue for it to
+   reach for now -- default button text (already ink-equivalent) plus
+   aria-expanded is enough differentiation. */
 .addButton {
   font-size: var(--text-sm);
-  color: var(--color-accent);
+  font-weight: var(--font-weight-medium);
   border-color: var(--color-border);
   padding: var(--space-1) var(--space-2);
 }

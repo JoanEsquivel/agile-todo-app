@@ -45,9 +45,10 @@
   gap: var(--space-1);
 }
 
+/* letter-spacing comes from the global h1 rule (--tracking-tight) --
+   nothing to override here. */
 .heading {
   font-size: var(--text-xl);
-  letter-spacing: -0.02em;
 }
 
 .range {
@@ -65,15 +66,15 @@
 }
 
 .primaryAction {
-  background: var(--color-accent);
-  border-color: var(--color-accent);
-  color: var(--color-on-accent);
+  background: var(--color-ink);
+  border-color: var(--color-ink);
+  color: var(--color-on-ink);
   font-weight: var(--font-weight-medium);
 }
 
 .primaryAction:hover:not(:disabled) {
-  background: var(--color-accent-strong);
-  border-color: var(--color-accent-strong);
+  background: var(--color-ink-hover);
+  border-color: var(--color-ink-hover);
 }
 
 .banner {

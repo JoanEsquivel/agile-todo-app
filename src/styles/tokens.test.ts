@@ -140,11 +140,4 @@ describe('design tokens', () => {
       .map((n) => resolve(vars, n).toLowerCase());
     expect(others).not.toContain(focus);
   });
-
-  it('resolves every transitional accent alias', () => {
-    for (const name of ['--color-accent', '--color-accent-strong', '--color-accent-soft', '--color-on-accent']) {
-      expect(resolve(light, name)).toMatch(/^#[0-9a-f]{6}$/i);
-      expect(resolve(dark, name)).toMatch(/^#[0-9a-f]{6}$/i);
-    }
-  });
 });
