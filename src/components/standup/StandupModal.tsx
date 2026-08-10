@@ -7,12 +7,17 @@ import styles from './StandupModal.module.css';
 
 export function StandupModal({ onClose }: { onClose: () => void }) {
   const { todos, notes, activeFortnightId } = useAppStore();
+  const announce = useAppStore((s) => s.announce);
   const [copied, setCopied] = useState(false);
   const data = buildStandup(todos, notes, activeFortnightId!, todayLocal());
 
   const copy = async () => {
     await navigator.clipboard.writeText(formatStandup(data));
     setCopied(true);
+    // Distinct from the visible "Copied!" button label on purpose — a status
+    // announcement with the same text as a button's accessible name risks
+    // colliding with a role-scoped query for that button.
+    announce('Standup copied to clipboard');
     setTimeout(() => setCopied(false), 2000);
   };
 

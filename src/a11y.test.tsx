@@ -89,3 +89,53 @@ describe('Modal hardening', () => {
     expect(screen.queryByRole('dialog', { name: 'Daily standup' })).not.toBeInTheDocument();
   });
 });
+
+describe('Announcer', () => {
+  beforeEach(() => seedApp());
+
+  it('announces adding and deleting a todo', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    const live = screen.getByRole('status', { name: 'Announcements' });
+
+    await user.click(screen.getByRole('button', { name: 'Add todo' }));
+    await user.type(screen.getByLabelText('Title'), 'Ship it');
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+    expect(live).toHaveTextContent('Added todo: Ship it');
+
+    await user.click(screen.getByRole('button', { name: 'Delete todo: Ship it' }));
+    expect(live).toHaveTextContent('Deleted todo: Ship it');
+  });
+
+  it('announces the selected day when navigating the day strip', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    const live = screen.getByRole('status', { name: 'Announcements' });
+    screen.getByRole('navigation', { name: 'Fortnight days' }).focus();
+    await user.keyboard('{ArrowRight}');
+    expect(live).toHaveTextContent('Wed, Aug 19');
+  });
+
+  it('announces a clipboard copy with text distinct from the visible button label', async () => {
+    const user = userEvent.setup();
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
+    render(<App />);
+    const live = screen.getByRole('status', { name: 'Announcements' });
+
+    await user.click(screen.getByRole('button', { name: 'Standup' }));
+    await user.click(screen.getByRole('button', { name: 'Copy to clipboard' }));
+    expect(live).toHaveTextContent('Standup copied to clipboard');
+  });
+
+  it('stays outside the inert lock while a modal is open', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole('button', { name: 'Standup' }));
+    const live = screen.getByRole('status', { name: 'Announcements' });
+    // Modal's lock skips this element entirely (see Modal.tsx's
+    // data-live-region filter) -- its `inert` is never touched at all,
+    // not toggled to false, which is exactly what proves it was excluded.
+    expect((live as HTMLElement & { inert: boolean }).inert).not.toBe(true);
+  });
+});

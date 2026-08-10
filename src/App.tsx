@@ -9,6 +9,7 @@ import { StandupModal } from './components/standup/StandupModal';
 import { FortnightSwitcher } from './components/history/FortnightSwitcher';
 import { BackupControls } from './components/common/BackupControls';
 import { ConfirmDialog } from './components/common/ConfirmDialog';
+import { Announcer } from './components/common/Announcer';
 import styles from './App.module.css';
 
 export default function App() {
@@ -20,6 +21,7 @@ export default function App() {
   const [confirmRegenerateOpen, setConfirmRegenerateOpen] = useState(false);
   return (
     <div className={styles.app}>
+      <Announcer />
       <a className={styles.skipLink} href="#main">Skip to content</a>
       <header className={styles.header}>
         <div className={styles.headerTitle}>

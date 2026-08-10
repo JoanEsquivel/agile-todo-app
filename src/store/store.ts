@@ -5,6 +5,7 @@ import type {
 } from '../domain/types';
 import { generateFortnightDays, effectiveBoardDay, carryOverTodos } from '../domain/fortnight';
 import { applyRollover } from '../domain/rollover';
+import { formatDayLabel } from '../domain/dates';
 import { nowIso, todayLocal } from './clock';
 import { createDebouncedStorage } from './persistence';
 import { runMigrations, SCHEMA_VERSION } from './migrations';
@@ -15,6 +16,9 @@ export interface AppState extends PersistedState {
   /** Set when zustand's persist rehydration failed (corrupt JSON, unsupported
    *  schema, etc). Never persisted itself — purely an in-memory UI signal. */
   rehydrationError: string | null;
+  /** Latest message for the polite live-region announcer. Ephemeral, like
+   *  the fields above — never persisted, never added to `partialize`. */
+  announcement: string | null;
 
   initApp: () => void;
   checkDayTick: () => void;          // implemented in Task 12
@@ -34,6 +38,7 @@ export interface AppState extends PersistedState {
   selectDay: (day: ISODate) => void;
   viewFortnight: (id: string) => void;
   importState: (state: PersistedState) => void;
+  announce: (message: string) => void;
 }
 
 function buildFortnight(anchor: ISODate): Fortnight {
@@ -83,6 +88,7 @@ export const useAppStore = create<AppState>()(
         viewedFortnightId: null,
         selectedDay: null,
         rehydrationError: null,
+        announcement: null,
 
         initApp: () => {
           // A failed rehydration means whatever is in localStorage could not be
@@ -169,7 +175,7 @@ export const useAppStore = create<AppState>()(
             rolledOver: false,
             reminderAt: input.reminderAt,
           };
-          set((s) => ({ todos: { ...s.todos, [id]: todo } }));
+          set((s) => ({ todos: { ...s.todos, [id]: todo }, announcement: `Added todo: ${todo.title}` }));
         },
 
         updateTodo: (id, patch) =>
@@ -187,8 +193,8 @@ export const useAppStore = create<AppState>()(
 
         deleteTodo: (id) =>
           set((s) => {
-            const { [id]: _removed, ...rest } = s.todos;
-            return { todos: rest };
+            const { [id]: removed, ...rest } = s.todos;
+            return { todos: rest, announcement: removed ? `Deleted todo: ${removed.title}` : s.announcement };
           }),
 
         addNote: (input) => {
@@ -202,7 +208,7 @@ export const useAppStore = create<AppState>()(
             resolved: false,
             createdAt: nowIso(),
           };
-          set((s) => ({ notes: { ...s.notes, [id]: note } }));
+          set((s) => ({ notes: { ...s.notes, [id]: note }, announcement: `Added note` }));
         },
 
         updateNote: (id, patch) =>
@@ -213,11 +219,11 @@ export const useAppStore = create<AppState>()(
 
         deleteNote: (id) =>
           set((s) => {
-            const { [id]: _removed, ...rest } = s.notes;
-            return { notes: rest };
+            const { [id]: removed, ...rest } = s.notes;
+            return { notes: rest, announcement: removed ? `Deleted note` : s.announcement };
           }),
 
-        selectDay: (day) => set({ selectedDay: day }),
+        selectDay: (day) => set({ selectedDay: day, announcement: formatDayLabel(day) }),
         viewFortnight: (id) =>
           set((s) => {
             const fn = s.fortnights.find((f) => f.id === id);
@@ -256,6 +262,8 @@ export const useAppStore = create<AppState>()(
           // safe even if a tick already happened this session.
           get().checkDayTick();
         },
+
+        announce: (message) => set({ announcement: message }),
       };
     },
     {

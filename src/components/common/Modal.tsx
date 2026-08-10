@@ -20,8 +20,12 @@ function lockAppInteraction(overlayEl: HTMLElement) {
   // container in tests) -- inert everything that isn't this modal, so
   // Tab/AT can't reach the app underneath. Snapshotting the sibling list
   // here means a second modal opening later doesn't re-inert the first
-  // modal's own overlay.
-  inertedSiblings = Array.from(document.body.children).filter((el) => el !== overlayEl) as HTMLElement[];
+  // modal's own overlay. The live-region announcer is excluded on purpose:
+  // `inert` cascades to an entire subtree with no way to opt back out, so
+  // inerting it would silence every announcement for as long as a modal
+  // stays open.
+  inertedSiblings = Array.from(document.body.children)
+    .filter((el) => el !== overlayEl && !el.hasAttribute('data-live-region')) as HTMLElement[];
   for (const el of inertedSiblings) el.inert = true;
   document.body.style.overflow = 'hidden';
 }
