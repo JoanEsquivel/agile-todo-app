@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAppStore } from './store/store';
+import { useDayChangeWatcher } from './hooks/useDayChangeWatcher';
 import { selectViewedFortnight, selectFortnightExpired, selectIsReadOnly } from './store/selectors';
 import { formatDayLabel } from './domain/dates';
 import { FortnightBoard } from './components/board/FortnightBoard';
@@ -10,6 +11,7 @@ import { BackupControls } from './components/common/BackupControls';
 import styles from './App.module.css';
 
 export default function App() {
+  useDayChangeWatcher();
   const state = useAppStore();
   const fn = selectViewedFortnight(state);
   const regenerateFortnight = useAppStore((s) => s.regenerateFortnight);
