@@ -27,4 +27,13 @@ describe('backup export/import', () => {
     const newer = JSON.stringify({ ...good, schemaVersion: SCHEMA_VERSION + 1 });
     expect(() => parseBackup(newer)).toThrow(/newer|supports up to/i);
   });
+
+  it('rejects a file that is not a backup', () => {
+    expect(() => parseBackup('{"hello":"world"}')).toThrow(/not an Agile Todo backup/i);
+  });
+
+  it('rejects a malformed backup that survives the version sniff', () => {
+    const malformed = JSON.stringify({ schemaVersion: SCHEMA_VERSION, todos: 'nope' });
+    expect(() => parseBackup(malformed)).toThrow(/malformed/i);
+  });
 });
