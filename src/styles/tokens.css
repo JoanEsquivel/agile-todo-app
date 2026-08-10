@@ -1,57 +1,102 @@
 /*
- * Design tokens — Agile Todo App
+ * Design tokens — Agile Todo App ("studio console")
  *
- * Palette concept: a paper-and-ink planner. A warm, slightly off-white
- * "paper" surface with an ink-blue accent (calm, legible, distinct from
- * the semantic priority/blocker/info hues so nothing gets misread as a
- * status color). Priority runs terracotta (high) -> ochre (medium) ->
- * sage (low), echoing a flagging system you'd use on physical index
- * cards. Dark mode inverts to a warm charcoal "night desk" surface with
- * lightened accents for contrast.
+ * Palette concept: a precision instrument, not a stationery metaphor. The
+ * interface chrome is deliberately ACHROMATIC — a cool graphite ramp with no
+ * brand color at all. Primary and selected states are an *ink fill*
+ * (near-black on light, near-white on dark).
+ *
+ * Saturation is rationed to exactly two roles, and this is the whole idea:
+ *
+ *   1. Semantic content — priority, blocker, overdue, rollover, success.
+ *      The only saturated color in the content area *means* something.
+ *   2. The focus ring — one violet, used for NOTHING else in the entire app,
+ *      so a focus indicator can never be misread as a status color.
+ *
+ * Most dashboards run a brand accent in direct competition with their status
+ * colors. Refusing one is what keeps the semantic palette legible here.
+ *
+ * Light is the primary mode (a daytime tool, used beside an IDE). Dark is
+ * `prefers-color-scheme` only — no toggle, no JS, no theme state (INV-12).
+ *
+ * CONTRAST IS ENFORCED, NOT ASSERTED. Every pair below is verified by
+ * `tokens.test.ts`, which parses this file and re-derives WCAG 2.1 ratios.
+ * Body text >= 4.5:1, control borders and tape segments >= 3:1. Edit a color
+ * here and `npm run verify` will tell you if you broke it.
+ *
+ * Two border tokens with DISTINCT meanings (they used to be interchangeable):
+ *   --color-border         hairline decoration: card edges, dividers, rules.
+ *                          Carries no information, so no contrast floor.
+ *   --color-border-strong  the boundary of an interactive control. This is
+ *                          what identifies the control, so WCAG 1.4.11
+ *                          applies: >= 3:1. The old value sat at 1.5:1.
  */
 
 :root {
-  /* ---- Color: surfaces & text ---- */
-  --color-bg: #f6f4ef;
-  --color-surface: #ffffff;
-  --color-surface-sunken: #edeae1;
-  --color-surface-hover: #f1efe8;
-  --color-border: #ddd7c9;
-  --color-border-strong: #c4bcaa;
-  --color-text: #211f1a;
-  --color-text-muted: #6c675b;
-  --color-text-faint: #97907f;
-  --color-on-accent: #ffffff;
+  /* Tells the UA to theme native controls (select, scrollbars, the
+   * datetime-local picker) to match. Without this they stay light in dark
+   * mode regardless of what we paint around them. */
+  color-scheme: light dark;
 
-  /* ---- Color: accent (interactive / brand) ---- */
-  --color-accent: #35547e;
-  --color-accent-strong: #24405f;
-  --color-accent-soft: #e2e9f2;
-  --color-focus-ring: #35547e;
+  /* ---- Color: surfaces & text ---- */
+  --color-bg: #fafafb;
+  --color-surface: #ffffff;
+  --color-surface-sunken: #f1f2f4;
+  --color-surface-hover: #f4f5f7;
+  --color-border: #e4e6ea;
+  --color-border-strong: #868d9b;
+  --color-text: #14161a;
+  --color-text-muted: #5c626d;
+  --color-text-faint: #666d79;
+
+  /* ---- Color: ink (primary / selected — this replaces "accent") ---- */
+  --color-ink: #14161a;
+  --color-ink-hover: #2e333b;
+  --color-ink-soft: #eaecef;
+  --color-on-ink: #ffffff;
+
+  /* ---- Color: focus ---- */
+  /* Reserved. If this violet appears anywhere that isn't a focus
+   * indicator, that's a bug — see the header comment. */
+  --color-focus-ring: #5b3df5;
+  --focus-ring-width: 2px;
+  --focus-ring-offset: 2px;
 
   /* ---- Color: semantic — priority ---- */
-  --color-priority-high: #b3402a;
-  --color-priority-high-bg: #f6e4de;
-  --color-priority-medium: #9c6f1f;
-  --color-priority-medium-bg: #f2e7d1;
-  --color-priority-low: #6c7561;
-  --color-priority-low-bg: #e7e9e0;
+  --color-priority-high: #c0341c;
+  --color-priority-high-bg: #fceae6;
+  --color-priority-medium: #8a5d08;
+  --color-priority-medium-bg: #faf0dc;
+  --color-priority-low: #5c6672;
+  --color-priority-low-bg: #eef0f3;
 
   /* ---- Color: semantic — notes ---- */
-  --color-blocker: #a52f22;
-  --color-blocker-bg: #f5e0da;
-  --color-info: #2c568f;
-  --color-info-bg: #e0e8f3;
+  --color-blocker: #b3261e;
+  --color-blocker-bg: #fce9e7;
+  --color-info: #1f5fa8;
+  --color-info-bg: #e8f0fa;
 
   /* ---- Color: semantic — status ---- */
-  --color-attention: #c62828;
-  --color-attention-bg: #fbe2df;
-  --color-rollover: #8a6520;
-  --color-rollover-bg: #f2e6cc;
-  --color-success: #3c6e3a;
-  --color-success-bg: #e3ede0;
+  --color-attention: #c4271c;
+  --color-attention-bg: #fdeae7;
+  --color-rollover: #8a5a00;
+  --color-rollover-bg: #faf0da;
+  --color-success: #1e7a4b;
+  --color-success-bg: #e6f4ec;
+
+  /* ---- Transitional aliases (REMOVE in the component-retheme step) ----
+   * The component modules still speak in "accent". They are rethemed in a
+   * later commit; until then these keep every module rendering against the
+   * new palette without touching 14 files in this one. `var()` inside a
+   * custom property resolves lazily, so these follow dark mode for free. */
+  --color-accent: var(--color-ink);
+  --color-accent-strong: var(--color-ink-hover);
+  --color-accent-soft: var(--color-ink-soft);
+  --color-on-accent: var(--color-on-ink);
 
   /* ---- Typography ---- */
+  /* Face names are prepended in the self-hosted-fonts step; the system
+   * stack stays as the fallback list. */
   --font-sans:
     -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial,
     sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
@@ -59,20 +104,25 @@
     ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas,
     'Liberation Mono', monospace;
 
-  --text-xs: 0.75rem;
-  --text-sm: 0.8125rem;
-  --text-base: 0.9375rem;
-  --text-md: 1.0625rem;
-  --text-lg: 1.25rem;
-  --text-xl: 1.625rem;
+  /* Tightened one step from the previous scale — console register. */
+  --text-xs: 0.6875rem;
+  --text-sm: 0.75rem;
+  --text-base: 0.875rem;
+  --text-md: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.5rem;
 
   --font-weight-normal: 400;
   --font-weight-medium: 500;
   --font-weight-semibold: 600;
-  --font-weight-bold: 700;
 
-  --line-height-tight: 1.2;
+  --line-height-tight: 1.15;
   --line-height-normal: 1.5;
+
+  /* Display tracking. Grotesks at large sizes need negative tracking to
+   * stop looking loose; small caps-y labels need positive. */
+  --tracking-tight: -0.02em;
+  --tracking-label: 0.08em;
 
   /* ---- Spacing scale (4px base) ---- */
   --space-1: 0.25rem;
@@ -84,64 +134,67 @@
   --space-8: 3rem;
 
   /* ---- Radius ---- */
-  --radius-sm: 4px;
-  --radius-md: 8px;
-  --radius-lg: 14px;
+  /* Tight. A console is machined, not pillowy. */
+  --radius-sm: 3px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
   --radius-pill: 999px;
 
   /* ---- Shadow ---- */
-  --shadow-sm: 0 1px 2px rgba(33, 31, 26, 0.07);
-  --shadow-md: 0 4px 14px rgba(33, 31, 26, 0.1);
-  --shadow-lg: 0 16px 40px rgba(33, 31, 26, 0.18);
+  /* Used sparingly: this design separates with hairlines, not elevation.
+   * `lg` exists for overlays, which genuinely float. */
+  --shadow-sm: 0 1px 2px rgba(20, 22, 26, 0.06);
+  --shadow-lg: 0 16px 48px rgba(20, 22, 26, 0.18);
 
   /* ---- Motion ---- */
-  --transition-fast: 120ms ease;
-  --transition-base: 200ms ease;
+  --transition-fast: 100ms ease;
+  --transition-base: 160ms ease;
 
   /* ---- Layout ---- */
   --measure-column: 640px;
-  --width-sidebar: 320px;
+  --width-sidebar: 300px;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --color-bg: #1c1a16;
-    --color-surface: #262420;
-    --color-surface-sunken: #17150f;
-    --color-surface-hover: #2c2a25;
-    --color-border: #3c382f;
-    --color-border-strong: #514c3f;
-    --color-text: #ede8dd;
-    --color-text-muted: #aaa393;
-    --color-text-faint: #7f7969;
-    --color-on-accent: #ffffff;
+    --color-bg: #0c0d10;
+    --color-surface: #16181c;
+    --color-surface-sunken: #101216;
+    --color-surface-hover: #1d2026;
+    --color-border: #262a31;
+    --color-border-strong: #6b717c;
+    --color-text: #e8eaee;
+    --color-text-muted: #9ba1ad;
+    --color-text-faint: #838a96;
 
-    --color-accent: #8fadd6;
-    --color-accent-strong: #b0c8e6;
-    --color-accent-soft: #2a3a4e;
-    --color-focus-ring: #8fadd6;
+    /* Ink inverts: the "filled" state is now light-on-dark. */
+    --color-ink: #e8eaee;
+    --color-ink-hover: #c9ced8;
+    --color-ink-soft: #22262d;
+    --color-on-ink: #0c0d10;
 
-    --color-priority-high: #e2836a;
-    --color-priority-high-bg: #4a2c22;
-    --color-priority-medium: #d5ab5c;
-    --color-priority-medium-bg: #453c22;
-    --color-priority-low: #a4ac97;
-    --color-priority-low-bg: #33362b;
+    --color-focus-ring: #a08cff;
 
-    --color-blocker: #e2705f;
-    --color-blocker-bg: #442620;
-    --color-info: #7ea6d8;
-    --color-info-bg: #23364c;
+    --color-priority-high: #f08a6e;
+    --color-priority-high-bg: #3a1a12;
+    --color-priority-medium: #e0ac5a;
+    --color-priority-medium-bg: #33260d;
+    --color-priority-low: #9aa3b0;
+    --color-priority-low-bg: #22262c;
 
-    --color-attention: #ef5350;
-    --color-attention-bg: #47231f;
-    --color-rollover: #d9b063;
-    --color-rollover-bg: #40350f;
-    --color-success: #81c784;
-    --color-success-bg: #24361f;
+    --color-blocker: #f0857a;
+    --color-blocker-bg: #371815;
+    --color-info: #7fb0ea;
+    --color-info-bg: #14243a;
 
-    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
-    --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.4);
-    --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.55);
+    --color-attention: #f58a7e;
+    --color-attention-bg: #3a1a16;
+    --color-rollover: #dfb05e;
+    --color-rollover-bg: #302408;
+    --color-success: #6ecb97;
+    --color-success-bg: #10281c;
+
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.6);
   }
 }

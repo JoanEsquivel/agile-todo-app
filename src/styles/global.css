@@ -28,7 +28,7 @@ h4 {
   margin: 0;
   font-weight: var(--font-weight-semibold);
   line-height: var(--line-height-tight);
-  letter-spacing: -0.01em;
+  letter-spacing: var(--tracking-tight);
 }
 
 p {
@@ -76,9 +76,22 @@ select {
   padding: var(--space-2);
 }
 
+/* The one saturated color in the chrome, and it only ever means "focus".
+ * The white companion ring underneath keeps the violet legible where the
+ * outline sits directly on a dark or ink-filled surface — an outline alone
+ * disappears against sufficiently similar backgrounds. */
 :focus-visible {
-  outline: 2px solid var(--color-focus-ring);
-  outline-offset: 2px;
+  outline: var(--focus-ring-width) solid var(--color-focus-ring);
+  outline-offset: var(--focus-ring-offset);
+  box-shadow: 0 0 0 var(--focus-ring-offset) var(--color-surface);
+}
+
+/* Dates, counts and anything columnar must not reflow as digits change. */
+code,
+kbd,
+samp {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
 }
 
 s {
