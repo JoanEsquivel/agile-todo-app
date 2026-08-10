@@ -12,7 +12,11 @@ export function NoteCard({ note, readOnly }: { note: Note; readOnly: boolean }) 
         {note.category === 'blocker' && (
           note.resolved
             ? <span className={styles.resolvedBadge}>Resolved</span>
-            : !readOnly && <button className={styles.actionButton} onClick={() => resolveBlocker(note.id)}>Resolve</button>
+            : !readOnly && (
+              <button className={styles.actionButton} onClick={() => resolveBlocker(note.id)} aria-label={`Resolve blocker: ${note.text}`}>
+                Resolve
+              </button>
+            )
         )}
         {!readOnly && (
           <button className={styles.actionButton} onClick={() => deleteNote(note.id)} aria-label={`Delete note: ${note.text}`}>Delete</button>

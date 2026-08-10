@@ -35,8 +35,8 @@ export function TodoItem({ todo, readOnly }: { todo: Todo; readOnly: boolean }) 
       </div>
       {!readOnly && (
         <div className={styles.actions}>
-          <button className={styles.actionButton} onClick={() => setEditing(true)}>Edit</button>
-          <button className={styles.actionButton} onClick={() => deleteTodo(todo.id)}>Delete</button>
+          <button className={styles.actionButton} onClick={() => setEditing(true)} aria-label={`Edit todo: ${todo.title}`}>Edit</button>
+          <button className={styles.actionButton} onClick={() => deleteTodo(todo.id)} aria-label={`Delete todo: ${todo.title}`}>Delete</button>
         </div>
       )}
     </li>
