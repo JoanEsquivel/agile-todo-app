@@ -95,14 +95,15 @@
   --color-on-accent: var(--color-on-ink);
 
   /* ---- Typography ---- */
-  /* Face names are prepended in the self-hosted-fonts step; the system
-   * stack stays as the fallback list. */
+  /* Self-hosted display/data faces, system stack retained as the fallback
+   * list — see the @font-face block in global.css. If the font files are
+   * ever unavailable, these degrade to the system stack rather than break. */
   --font-sans:
-    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial,
-    sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
+    'Archivo', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
   --font-mono:
-    ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas,
-    'Liberation Mono', monospace;
+    'IBM Plex Mono', ui-monospace, 'SF Mono', SFMono-Regular, Menlo,
+    Consolas, 'Liberation Mono', monospace;
 
   /* Tightened one step from the previous scale — console register. */
   --text-xs: 0.6875rem;
