@@ -78,6 +78,7 @@ Copy it in, don't `import` it from the repo path — Node's ESM resolution for a
 7. Export a backup, clear storage, reload, import the backup → confirms the full round trip
 8. Generate a new fortnight (accepting the confirm dialog) → confirms the switcher lists both fortnights
 9. Resize to a 360px mobile viewport, then switch to dark mode (`emulateMedia({ colorScheme: 'dark' })`)
+10. Keyboard layer — `?` opens the shortcuts overlay, `Cmd`/`Ctrl+K` opens the command palette and finds "Standup" by filtering
 
 Screenshots land in `<driver-dir>/shots/`. The first-run and dark-mode screenshots are good candidates for `docs/screenshot.png` — copy whichever one you like best into the repo:
 

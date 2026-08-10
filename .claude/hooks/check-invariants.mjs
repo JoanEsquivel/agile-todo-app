@@ -128,7 +128,10 @@ function main() {
   }
   if (rel === 'src/store/store.ts' && /partialize/.test(src)) {
     hint.push('Reminder: partialize is an explicit allowlist of the 6 PersistedState fields. ' +
-      'Ephemeral state (viewedFortnightId, selectedDay, rehydrationError) must stay out of it.');
+      'Ephemeral state (viewedFortnightId, selectedDay, rehydrationError, announcement, composeIntent) ' +
+      'must stay out of it. Adding a NEW ephemeral field needs no ritual at all: put it on AppState only, ' +
+      "don't bump SCHEMA_VERSION, and add one storePersistence.test.ts assertion that it's absent from " +
+      'the persisted blob.');
   }
 
   if (bad.length) {

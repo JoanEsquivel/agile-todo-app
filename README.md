@@ -4,9 +4,9 @@ A browser-only todo board built around a two-week sprint. No backend, no account
 
 **[Live demo →](https://joanesquivel.github.io/agile-todo-app/)**
 
-89 tests · TypeScript strict · zero backend
+205 tests · TypeScript strict · zero backend
 
-![Screenshot of the Agile Todo App showing a fortnight board with a high-priority overdue todo, a blocker note, an info note, and the reminders panel](docs/screenshot.png)
+![Screenshot of the Agile Todo App showing the fortnight tape (each day as a stacked column of priority-colored segments), a high-priority overdue todo, a blocker note, an info note, and the reminders panel](docs/screenshot.png)
 
 ## What it does
 
@@ -16,6 +16,23 @@ A browser-only todo board built around a two-week sprint. No backend, no account
 - **Visual reminders** — an Overdue/Upcoming panel, no browser notification permissions needed
 - **Per-day notes** — flag a `blocker` (resolvable) or leave an `info` note
 - **Read-only fortnight history** — generate a new fortnight any time; old ones stay browsable, never editable
+- **Keyboard-first** — a command palette and a full set of shortcuts; see below
+
+## Keyboard shortcuts
+
+| Key | Does |
+|---|---|
+| `⌘K` / `Ctrl+K` | Open the command palette — jump to a day, jump to a todo by title, or run an action |
+| `?` | Show the shortcuts overlay |
+| `←` / `→` | Previous / next day |
+| `Home` / `End` | First / last day of the fortnight |
+| `T` | Jump to today |
+| `N` | New todo |
+| `Shift+N` | New note |
+| `S` | Standup |
+| `Esc` | Close the open form or dialog |
+
+Every shortcut but `⌘K` stays out of the way while you're typing in a field. `N`/`Shift+N` (and the palette's Add actions) refuse to open a form while you're viewing read-only fortnight history; day navigation always works, since it isn't a mutation.
 
 ## Why it's built this way
 
@@ -54,7 +71,7 @@ src/
   domain/      pure functions — date math, fortnight generation, rollover, standup, reminders
   store/       Zustand store — persistence, migrations, backup export/import
   hooks/       React adapters over the store
-  components/  UI, organized by feature (board, todos, notes, reminders, standup, history)
+  components/  UI, organized by feature (board, todos, notes, reminders, standup, history, commands)
   styles/      design tokens + global element defaults
 ```
 
@@ -64,7 +81,7 @@ Full architecture rationale, data model, and edge-case decisions: [`docs/superpo
 
 ## Testing
 
-Vitest + React Testing Library, 89 tests across 23 files, all colocated with the code they test. Coverage spans pure domain logic, store transitions, persistence/migration behavior, component interaction, and accessibility.
+Vitest + React Testing Library, 205 tests across 27 files, all colocated with the code they test. Coverage spans pure domain logic, store transitions, persistence/migration behavior, component interaction, and accessibility.
 
 ```sh
 npm test                              # everything
