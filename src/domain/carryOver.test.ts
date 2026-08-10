@@ -40,4 +40,10 @@ describe('carryOverTodos (regenerating on 2026-08-19)', () => {
     expect(res.a.createdAt).toBe('2026-08-10T09:00:00.000Z');
     expect(res.a.reminderAt).toBe('2026-08-11T09:00');
   });
+
+  it('moves overlap-day-before-effective-day to effective day with rolledOver', () => {
+    const todos = { a: makeTodo({ id: 'a', scheduledDay: '2026-08-17' }) };
+    const res = carryOverTodos(todos, 'f1', f2, '2026-08-19');
+    expect(res.a).toMatchObject({ fortnightId: 'f2', scheduledDay: '2026-08-19', rolledOver: true });
+  });
 });
