@@ -6,6 +6,7 @@ import { FortnightBoard } from './components/board/FortnightBoard';
 import { RemindersPanel } from './components/reminders/RemindersPanel';
 import { StandupModal } from './components/standup/StandupModal';
 import { FortnightSwitcher } from './components/history/FortnightSwitcher';
+import { BackupControls } from './components/common/BackupControls';
 import styles from './App.module.css';
 
 export default function App() {
@@ -25,6 +26,7 @@ export default function App() {
           }
         }}>Generate new fortnight</button>
         <FortnightSwitcher />
+        <BackupControls />
       </header>
       {selectFortnightExpired(state) && (
         <p role="alert">This fortnight has ended. Generate a new one to continue.</p>
