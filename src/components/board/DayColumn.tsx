@@ -22,20 +22,30 @@ export function DayColumn() {
 
   return (
     <div className={styles.column}>
-      <h2>{formatDayLabel(day)}</h2>
-      <section aria-label="Todos">
-        {!readOnly && !adding && <button onClick={() => setAdding(true)}>Add todo</button>}
+      <h2 className={styles.heading}>{formatDayLabel(day)}</h2>
+      <section className={styles.section} aria-label="Todos">
+        <div className={styles.sectionHead}>
+          <h3 className={styles.sectionLabel}>Todos</h3>
+          {!readOnly && !adding && (
+            <button className={styles.addButton} onClick={() => setAdding(true)}>Add todo</button>
+          )}
+        </div>
         {adding && <TodoForm day={day} days={fn.days} onClose={() => setAdding(false)} />}
         {todos.length === 0
           ? <EmptyState message="No todos for this day" />
-          : <ul>{todos.map((t) => <TodoItem key={t.id} todo={t} readOnly={readOnly} />)}</ul>}
+          : <ul className={styles.list}>{todos.map((t) => <TodoItem key={t.id} todo={t} readOnly={readOnly} />)}</ul>}
       </section>
-      <section aria-label="Notes">
-        {!readOnly && !addingNote && <button onClick={() => setAddingNote(true)}>Add note</button>}
+      <section className={styles.section} aria-label="Notes">
+        <div className={styles.sectionHead}>
+          <h3 className={styles.sectionLabel}>Notes</h3>
+          {!readOnly && !addingNote && (
+            <button className={styles.addButton} onClick={() => setAddingNote(true)}>Add note</button>
+          )}
+        </div>
         {addingNote && <NoteForm day={day} onClose={() => setAddingNote(false)} />}
         {notes.length === 0
           ? <EmptyState message="No notes for this day" />
-          : <ul>{notes.map((n) => <NoteCard key={n.id} note={n} readOnly={readOnly} />)}</ul>}
+          : <ul className={styles.list}>{notes.map((n) => <NoteCard key={n.id} note={n} readOnly={readOnly} />)}</ul>}
       </section>
     </div>
   );

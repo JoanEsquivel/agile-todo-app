@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { appStorage, useAppStore } from '../../store/store';
 import { parseBackup, serializeState } from '../../store/exportImport';
 import { todayLocal } from '../../store/clock';
+import styles from './BackupControls.module.css';
 
 export function BackupControls() {
   const [error, setError] = useState<string | null>(null);
@@ -36,12 +37,12 @@ export function BackupControls() {
   };
 
   return (
-    <div>
-      <button onClick={exportBackup}>Export backup</button>
-      <label>Import backup
-        <input type="file" accept="application/json" onChange={importBackup} />
+    <div className={styles.controls}>
+      <button className={styles.button} onClick={exportBackup}>Export backup</button>
+      <label className={styles.importLabel}>Import backup
+        <input className={styles.fileInput} type="file" accept="application/json" onChange={importBackup} />
       </label>
-      {error && <p role="alert">{error}</p>}
+      {error && <p className={styles.error} role="alert">{error}</p>}
     </div>
   );
 }

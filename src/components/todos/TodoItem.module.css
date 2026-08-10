@@ -1,0 +1,111 @@
+.item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-left: 3px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+
+.item:has([data-priority='high']) {
+  border-left-color: var(--color-priority-high);
+}
+
+.item:has([data-priority='medium']) {
+  border-left-color: var(--color-priority-medium);
+}
+
+.item:has([data-priority='low']) {
+  border-left-color: var(--color-priority-low);
+}
+
+.item[data-done] {
+  background: var(--color-surface-sunken);
+  border-left-color: var(--color-border);
+}
+
+.row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+
+.checkbox {
+  margin-top: 0.2rem;
+  width: 1rem;
+  height: 1rem;
+  accent-color: var(--color-accent);
+  flex: 0 0 auto;
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.titleRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.title {
+  font-weight: var(--font-weight-medium);
+  overflow-wrap: anywhere;
+}
+
+.item[data-done] .title {
+  color: var(--color-text-faint);
+  text-decoration: line-through;
+}
+
+.description {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  overflow-wrap: anywhere;
+}
+
+.overdueBadge {
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-attention);
+  background: var(--color-attention-bg);
+  padding: 0.125rem var(--space-2);
+  border-radius: var(--radius-pill);
+}
+
+.rolloverBadge {
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-rollover);
+  background: var(--color-rollover-bg);
+  padding: 0.125rem var(--space-2);
+  border-radius: var(--radius-pill);
+}
+
+.actions {
+  display: flex;
+  gap: var(--space-2);
+  padding-left: calc(1rem + var(--space-2));
+}
+
+.actionButton {
+  font-size: var(--text-sm);
+  padding: var(--space-1) var(--space-2);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .item {
+    transition: background var(--transition-base), border-color var(--transition-base);
+  }
+
+  .title {
+    transition: color var(--transition-base);
+  }
+}

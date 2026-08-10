@@ -1,0 +1,147 @@
+/*
+ * Design tokens — Agile Todo App
+ *
+ * Palette concept: a paper-and-ink planner. A warm, slightly off-white
+ * "paper" surface with an ink-blue accent (calm, legible, distinct from
+ * the semantic priority/blocker/info hues so nothing gets misread as a
+ * status color). Priority runs terracotta (high) -> ochre (medium) ->
+ * sage (low), echoing a flagging system you'd use on physical index
+ * cards. Dark mode inverts to a warm charcoal "night desk" surface with
+ * lightened accents for contrast.
+ */
+
+:root {
+  /* ---- Color: surfaces & text ---- */
+  --color-bg: #f6f4ef;
+  --color-surface: #ffffff;
+  --color-surface-sunken: #edeae1;
+  --color-surface-hover: #f1efe8;
+  --color-border: #ddd7c9;
+  --color-border-strong: #c4bcaa;
+  --color-text: #211f1a;
+  --color-text-muted: #6c675b;
+  --color-text-faint: #97907f;
+  --color-on-accent: #ffffff;
+
+  /* ---- Color: accent (interactive / brand) ---- */
+  --color-accent: #35547e;
+  --color-accent-strong: #24405f;
+  --color-accent-soft: #e2e9f2;
+  --color-focus-ring: #35547e;
+
+  /* ---- Color: semantic — priority ---- */
+  --color-priority-high: #b3402a;
+  --color-priority-high-bg: #f6e4de;
+  --color-priority-medium: #9c6f1f;
+  --color-priority-medium-bg: #f2e7d1;
+  --color-priority-low: #6c7561;
+  --color-priority-low-bg: #e7e9e0;
+
+  /* ---- Color: semantic — notes ---- */
+  --color-blocker: #a52f22;
+  --color-blocker-bg: #f5e0da;
+  --color-info: #2c568f;
+  --color-info-bg: #e0e8f3;
+
+  /* ---- Color: semantic — status ---- */
+  --color-attention: #c62828;
+  --color-attention-bg: #fbe2df;
+  --color-rollover: #8a6520;
+  --color-rollover-bg: #f2e6cc;
+  --color-success: #3c6e3a;
+  --color-success-bg: #e3ede0;
+
+  /* ---- Typography ---- */
+  --font-sans:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial,
+    sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
+  --font-mono:
+    ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas,
+    'Liberation Mono', monospace;
+
+  --text-xs: 0.75rem;
+  --text-sm: 0.8125rem;
+  --text-base: 0.9375rem;
+  --text-md: 1.0625rem;
+  --text-lg: 1.25rem;
+  --text-xl: 1.625rem;
+
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  --line-height-tight: 1.2;
+  --line-height-normal: 1.5;
+
+  /* ---- Spacing scale (4px base) ---- */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-8: 3rem;
+
+  /* ---- Radius ---- */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 14px;
+  --radius-pill: 999px;
+
+  /* ---- Shadow ---- */
+  --shadow-sm: 0 1px 2px rgba(33, 31, 26, 0.07);
+  --shadow-md: 0 4px 14px rgba(33, 31, 26, 0.1);
+  --shadow-lg: 0 16px 40px rgba(33, 31, 26, 0.18);
+
+  /* ---- Motion ---- */
+  --transition-fast: 120ms ease;
+  --transition-base: 200ms ease;
+
+  /* ---- Layout ---- */
+  --measure-column: 640px;
+  --width-sidebar: 320px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: #1c1a16;
+    --color-surface: #262420;
+    --color-surface-sunken: #17150f;
+    --color-surface-hover: #2c2a25;
+    --color-border: #3c382f;
+    --color-border-strong: #514c3f;
+    --color-text: #ede8dd;
+    --color-text-muted: #aaa393;
+    --color-text-faint: #7f7969;
+    --color-on-accent: #ffffff;
+
+    --color-accent: #8fadd6;
+    --color-accent-strong: #b0c8e6;
+    --color-accent-soft: #2a3a4e;
+    --color-focus-ring: #8fadd6;
+
+    --color-priority-high: #e2836a;
+    --color-priority-high-bg: #4a2c22;
+    --color-priority-medium: #d5ab5c;
+    --color-priority-medium-bg: #453c22;
+    --color-priority-low: #a4ac97;
+    --color-priority-low-bg: #33362b;
+
+    --color-blocker: #e2705f;
+    --color-blocker-bg: #442620;
+    --color-info: #7ea6d8;
+    --color-info-bg: #23364c;
+
+    --color-attention: #ef5350;
+    --color-attention-bg: #47231f;
+    --color-rollover: #d9b063;
+    --color-rollover-bg: #40350f;
+    --color-success: #81c784;
+    --color-success-bg: #24361f;
+
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
+    --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.55);
+  }
+}

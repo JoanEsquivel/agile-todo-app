@@ -1,5 +1,6 @@
 import { useAppStore } from '../../store/store';
 import { formatDayLabel } from '../../domain/dates';
+import styles from './FortnightSwitcher.module.css';
 
 export function FortnightSwitcher() {
   const fortnights = useAppStore((s) => s.fortnights);
@@ -9,7 +10,7 @@ export function FortnightSwitcher() {
   if (fortnights.length < 2) return null;
 
   return (
-    <select aria-label="Fortnight" value={viewedId ?? ''}
+    <select className={styles.select} aria-label="Fortnight" value={viewedId ?? ''}
       onChange={(e) => viewFortnight(e.target.value)}>
       {[...fortnights].reverse().map((f) => (
         <option key={f.id} value={f.id}>

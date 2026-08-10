@@ -17,20 +17,22 @@ export function DayStrip() {
 
   return (
     <nav className={styles.strip} aria-label="Fortnight days">
-      <button aria-label="Previous day" disabled={idx <= 0}
+      <button className={styles.navButton} aria-label="Previous day" disabled={idx <= 0}
         onClick={() => state.selectDay(fn.days[idx - 1])}>‹</button>
       {fn.days.map((day) => {
         const count = selectTodosForDay(state, fn.id, day).length;
         return (
           <button key={day}
+            className={styles.chip}
             data-today={day === today ? '' : undefined}
             aria-current={day === selected ? 'date' : undefined}
             onClick={() => state.selectDay(day)}>
-            {formatDayLabel(day)}{count > 0 ? ` (${count})` : ''}
+            <span className={styles.chipDate}>{formatDayLabel(day)}</span>
+            {count > 0 && <span className={styles.chipCount}>{` (${count})`}</span>}
           </button>
         );
       })}
-      <button aria-label="Next day" disabled={idx >= fn.days.length - 1}
+      <button className={styles.navButton} aria-label="Next day" disabled={idx >= fn.days.length - 1}
         onClick={() => state.selectDay(fn.days[idx + 1])}>›</button>
     </nav>
   );

@@ -3,6 +3,7 @@ import { useAppStore } from '../../store/store';
 import { buildStandup, formatStandup } from '../../domain/standup';
 import { todayLocal } from '../../store/clock';
 import { Modal } from '../common/Modal';
+import styles from './StandupModal.module.css';
 
 export function StandupModal({ onClose }: { onClose: () => void }) {
   const { todos, notes, activeFortnightId } = useAppStore();
@@ -16,29 +17,31 @@ export function StandupModal({ onClose }: { onClose: () => void }) {
   };
 
   const section = (title: string, lines: string[]) => (
-    <section>
-      <h3>{title}</h3>
-      <ul>{lines.length ? lines.map((l, i) => <li key={i}>{l}</li>) : <li>None</li>}</ul>
+    <section className={styles.section}>
+      <h3 className={styles.sectionLabel}>{title}</h3>
+      <ul className={styles.list}>
+        {lines.length ? lines.map((l, i) => <li key={i} className={styles.item}>{l}</li>) : <li className={styles.empty}>None</li>}
+      </ul>
     </section>
   );
 
   return (
     <Modal title="Daily standup" onClose={onClose}>
       {section('Yesterday', data.yesterday.map((t) => t.title))}
-      <section>
-        <h3>Today</h3>
-        <ul>
+      <section className={styles.section}>
+        <h3 className={styles.sectionLabel}>Today</h3>
+        <ul className={styles.list}>
           {data.today.length ? (
             data.today.map((t) => (
-              <li key={t.id}>{t.done ? <s>{t.title}</s> : t.title}</li>
+              <li key={t.id} className={styles.item}>{t.done ? <s>{t.title}</s> : t.title}</li>
             ))
           ) : (
-            <li>None</li>
+            <li className={styles.empty}>None</li>
           )}
         </ul>
       </section>
       {section('Blockers', data.blockers.map((n) => n.text))}
-      <button onClick={copy}>{copied ? 'Copied!' : 'Copy to clipboard'}</button>
+      <button className={styles.copyButton} onClick={copy}>{copied ? 'Copied!' : 'Copy to clipboard'}</button>
     </Modal>
   );
 }

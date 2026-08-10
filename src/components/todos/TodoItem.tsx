@@ -5,6 +5,7 @@ import { selectViewedFortnight } from '../../store/selectors';
 import { PriorityBadge } from '../common/PriorityBadge';
 import { TodoForm } from './TodoForm';
 import { useNow } from '../../hooks/useNow';
+import styles from './TodoItem.module.css';
 
 export function TodoItem({ todo, readOnly }: { todo: Todo; readOnly: boolean }) {
   const [editing, setEditing] = useState(false);
@@ -18,19 +19,25 @@ export function TodoItem({ todo, readOnly }: { todo: Todo; readOnly: boolean }) 
     return <TodoForm day={todo.scheduledDay} days={fn.days} todo={todo} onClose={() => setEditing(false)} />;
   }
   return (
-    <li data-done={todo.done ? '' : undefined}>
-      <input type="checkbox" aria-label={todo.title} checked={todo.done}
-        disabled={readOnly} onChange={() => toggleDone(todo.id)} />
-      <span>{todo.title}</span>
-      <PriorityBadge priority={todo.priority} />
-      {overdue && <span data-overdue="">Overdue</span>}
-      {todo.rolledOver && <span>Rolled over</span>}
-      {todo.description && <p>{todo.description}</p>}
+    <li className={styles.item} data-done={todo.done ? '' : undefined}>
+      <div className={styles.row}>
+        <input className={styles.checkbox} type="checkbox" aria-label={todo.title} checked={todo.done}
+          disabled={readOnly} onChange={() => toggleDone(todo.id)} />
+        <div className={styles.body}>
+          <div className={styles.titleRow}>
+            <span className={styles.title}>{todo.title}</span>
+            <PriorityBadge priority={todo.priority} />
+            {overdue && <span className={styles.overdueBadge} data-overdue="">Overdue</span>}
+            {todo.rolledOver && <span className={styles.rolloverBadge}>Rolled over</span>}
+          </div>
+          {todo.description && <p className={styles.description}>{todo.description}</p>}
+        </div>
+      </div>
       {!readOnly && (
-        <>
-          <button onClick={() => setEditing(true)}>Edit</button>
-          <button onClick={() => deleteTodo(todo.id)}>Delete</button>
-        </>
+        <div className={styles.actions}>
+          <button className={styles.actionButton} onClick={() => setEditing(true)}>Edit</button>
+          <button className={styles.actionButton} onClick={() => deleteTodo(todo.id)}>Delete</button>
+        </div>
       )}
     </li>
   );

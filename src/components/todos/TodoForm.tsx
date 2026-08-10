@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { ISODate, Priority, Todo } from '../../domain/types';
 import { formatDayLabel } from '../../domain/dates';
 import { useAppStore } from '../../store/store';
+import styles from './TodoForm.module.css';
 
 interface Props { day: ISODate; days: ISODate[]; onClose: () => void; todo?: Todo }
 
@@ -28,26 +29,34 @@ export function TodoForm({ day, days, onClose, todo }: Props) {
   };
 
   return (
-    <form onSubmit={submit}>
-      <label>Title<input required value={title} onChange={(e) => setTitle(e.target.value)} /></label>
-      <label>Description<textarea value={description} onChange={(e) => setDescription(e.target.value)} /></label>
-      <label>Priority
-        <select value={priority} onChange={(e) => setPriority(e.target.value as Priority)}>
-          <option value="high">High</option>
-          <option value="medium">Medium</option>
-          <option value="low">Low</option>
-        </select>
+    <form className={styles.form} onSubmit={submit}>
+      <label className={styles.field}>Title
+        <input className={styles.input} required value={title} onChange={(e) => setTitle(e.target.value)} />
       </label>
-      <label>Day
-        <select value={scheduledDay} onChange={(e) => setScheduledDay(e.target.value)}>
-          {days.map((d) => <option key={d} value={d}>{formatDayLabel(d)}</option>)}
-        </select>
+      <label className={styles.field}>Description
+        <textarea className={styles.textarea} value={description} onChange={(e) => setDescription(e.target.value)} />
       </label>
-      <label>Reminder
-        <input type="datetime-local" value={reminderAt} onChange={(e) => setReminderAt(e.target.value)} />
+      <div className={styles.fieldRow}>
+        <label className={styles.field}>Priority
+          <select className={styles.input} value={priority} onChange={(e) => setPriority(e.target.value as Priority)}>
+            <option value="high">High</option>
+            <option value="medium">Medium</option>
+            <option value="low">Low</option>
+          </select>
+        </label>
+        <label className={styles.field}>Day
+          <select className={styles.input} value={scheduledDay} onChange={(e) => setScheduledDay(e.target.value)}>
+            {days.map((d) => <option key={d} value={d}>{formatDayLabel(d)}</option>)}
+          </select>
+        </label>
+      </div>
+      <label className={styles.field}>Reminder
+        <input className={styles.input} type="datetime-local" value={reminderAt} onChange={(e) => setReminderAt(e.target.value)} />
       </label>
-      <button type="submit">Save</button>
-      <button type="button" onClick={onClose}>Cancel</button>
+      <div className={styles.actions}>
+        <button className={styles.saveButton} type="submit">Save</button>
+        <button type="button" onClick={onClose}>Cancel</button>
+      </div>
     </form>
   );
 }

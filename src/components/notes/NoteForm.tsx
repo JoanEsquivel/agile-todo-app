@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { ISODate, NoteCategory } from '../../domain/types';
 import { useAppStore } from '../../store/store';
+import styles from './NoteForm.module.css';
 
 export function NoteForm({ day, onClose }: { day: ISODate; onClose: () => void }) {
   const addNote = useAppStore((s) => s.addNote);
@@ -14,16 +15,20 @@ export function NoteForm({ day, onClose }: { day: ISODate; onClose: () => void }
   };
 
   return (
-    <form onSubmit={submit}>
-      <label>Text<textarea required value={text} onChange={(e) => setText(e.target.value)} /></label>
-      <label>Category
-        <select value={category} onChange={(e) => setCategory(e.target.value as NoteCategory)}>
+    <form className={styles.form} onSubmit={submit}>
+      <label className={styles.field}>Text
+        <textarea className={styles.textarea} required value={text} onChange={(e) => setText(e.target.value)} />
+      </label>
+      <label className={styles.field}>Category
+        <select className={styles.input} value={category} onChange={(e) => setCategory(e.target.value as NoteCategory)}>
           <option value="info">Info</option>
           <option value="blocker">Blocker</option>
         </select>
       </label>
-      <button type="submit">Save note</button>
-      <button type="button" onClick={onClose}>Cancel</button>
+      <div className={styles.actions}>
+        <button className={styles.saveButton} type="submit">Save note</button>
+        <button type="button" onClick={onClose}>Cancel</button>
+      </div>
     </form>
   );
 }
