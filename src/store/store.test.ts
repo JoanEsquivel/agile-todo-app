@@ -51,6 +51,37 @@ describe('store', () => {
     expect(useAppStore.getState().todos).toEqual({});
   });
 
+  it('initApp recovers instead of crashing when activeFortnightId does not match any fortnight (lastRolloverDay already today)', () => {
+    // Defense-in-depth for Critical 2: even with export validation hardened,
+    // a dangling activeFortnightId must not crash initApp via a non-null
+    // assertion. lastRolloverDay === today makes checkDayTick short-circuit,
+    // so initApp's own fallback must catch this case.
+    useAppStore.setState({
+      schemaVersion: 1, fortnights: [], activeFortnightId: 'dangling-id',
+      todos: {}, notes: {}, lastRolloverDay: '2026-08-18',
+      viewedFortnightId: null, selectedDay: null,
+    });
+    expect(() => useAppStore.getState().initApp()).not.toThrow();
+    const s = useAppStore.getState();
+    expect(s.fortnights).toHaveLength(1);
+    expect(s.activeFortnightId).toBe(s.fortnights[0].id);
+    expect(s.viewedFortnightId).toBe(s.activeFortnightId);
+    expect(s.selectedDay).not.toBeNull();
+  });
+
+  it('checkDayTick recovers instead of crashing when activeFortnightId does not match any fortnight', () => {
+    useAppStore.setState({
+      schemaVersion: 1, fortnights: [], activeFortnightId: 'dangling-id',
+      todos: {}, notes: {}, lastRolloverDay: '2026-08-01',
+      viewedFortnightId: 'dangling-id', selectedDay: null,
+    });
+    expect(() => useAppStore.getState().checkDayTick()).not.toThrow();
+    const s = useAppStore.getState();
+    expect(s.fortnights).toHaveLength(1);
+    expect(s.activeFortnightId).toBe(s.fortnights[0].id);
+    expect(s.lastRolloverDay).toBe('2026-08-18');
+  });
+
   it('note CRUD and resolveBlocker', () => {
     const store = useAppStore.getState();
     store.initApp();

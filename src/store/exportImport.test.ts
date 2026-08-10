@@ -19,6 +19,27 @@ describe('backup export/import', () => {
     expect(validatePersistedState({ ...good, todos: 'nope' })).toBe(false);
   });
 
+  it('rejects a dangling activeFortnightId that does not match any fortnight', () => {
+    // A backup like this would previously pass validation, get written straight
+    // into the store, and brick the *next* app load: initApp -> checkDayTick
+    // does a non-null-asserted fortnights.find(...) that resolves to undefined.
+    const dangling: PersistedState = { ...good, activeFortnightId: 'does-not-exist' };
+    expect(validatePersistedState(dangling)).toBe(false);
+  });
+
+  it('accepts activeFortnightId when it matches a real fortnight', () => {
+    const fortnight = {
+      id: 'fn-1', startDay: '2026-08-17', days: ['2026-08-17'], createdAt: '2026-08-17T00:00:00.000Z',
+    };
+    const valid: PersistedState = { ...good, fortnights: [fortnight], activeFortnightId: 'fn-1' };
+    expect(validatePersistedState(valid)).toBe(true);
+  });
+
+  it('parseBackup rejects a backup file with a dangling activeFortnightId', () => {
+    const dangling = JSON.stringify({ ...good, activeFortnightId: 'does-not-exist' });
+    expect(() => parseBackup(dangling)).toThrow(/malformed/i);
+  });
+
   it('rejects invalid JSON with a readable error', () => {
     expect(() => parseBackup('not json')).toThrow(/valid JSON/i);
   });

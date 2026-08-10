@@ -38,6 +38,12 @@ export default function App() {
           <BackupControls />
         </div>
       </header>
+      {state.rehydrationError && (
+        <p className={styles.banner} role="alert">
+          Stored data could not be loaded (it may be from a newer version of the app) and has not
+          been modified. Try reloading, or import a backup below.
+        </p>
+      )}
       {selectFortnightExpired(state) && (
         <p className={styles.banner} role="alert">This fortnight has ended. Generate a new one to continue.</p>
       )}

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAppStore } from '../../store/store';
 import { selectIsReadOnly, selectNotesForDay, selectTodosForDay, selectViewedFortnight } from '../../store/selectors';
 import { formatDayLabel } from '../../domain/dates';
@@ -14,6 +14,16 @@ export function DayColumn() {
   const fn = selectViewedFortnight(state);
   const [adding, setAdding] = useState(false);
   const [addingNote, setAddingNote] = useState(false);
+
+  // Reset any open "add" form whenever the viewed fortnight changes (e.g. via
+  // FortnightSwitcher, which is always enabled). This guarantees a form left
+  // open while viewing the active fortnight cannot survive a switch to a
+  // read-only past fortnight.
+  useEffect(() => {
+    setAdding(false);
+    setAddingNote(false);
+  }, [fn?.id]);
+
   if (!fn) return null;
   const day = state.selectedDay ?? fn.days[0];
   const readOnly = selectIsReadOnly(state);
@@ -30,7 +40,7 @@ export function DayColumn() {
             <button className={styles.addButton} onClick={() => setAdding(true)}>Add todo</button>
           )}
         </div>
-        {adding && <TodoForm day={day} days={fn.days} onClose={() => setAdding(false)} />}
+        {!readOnly && adding && <TodoForm day={day} days={fn.days} onClose={() => setAdding(false)} />}
         {todos.length === 0
           ? <EmptyState message="No todos for this day" />
           : <ul className={styles.list}>{todos.map((t) => <TodoItem key={t.id} todo={t} readOnly={readOnly} />)}</ul>}
@@ -42,7 +52,7 @@ export function DayColumn() {
             <button className={styles.addButton} onClick={() => setAddingNote(true)}>Add note</button>
           )}
         </div>
-        {addingNote && <NoteForm day={day} onClose={() => setAddingNote(false)} />}
+        {!readOnly && addingNote && <NoteForm day={day} onClose={() => setAddingNote(false)} />}
         {notes.length === 0
           ? <EmptyState message="No notes for this day" />
           : <ul className={styles.list}>{notes.map((n) => <NoteCard key={n.id} note={n} readOnly={readOnly} />)}</ul>}

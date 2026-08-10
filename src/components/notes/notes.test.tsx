@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from '../../App';
 import { seedApp } from '../../test/seed';
@@ -32,6 +32,31 @@ describe('notes on the board', () => {
     render(<App />);
     expect(screen.getByText('FYI: release Friday')).toHaveAttribute('data-category', 'info');
     expect(screen.queryByRole('button', { name: 'Resolve' })).not.toBeInTheDocument();
+  });
+
+  it('closes a stale open Add note form when the viewed fortnight switches to read-only (regression)', async () => {
+    // Repro: open "Add note" while viewing the active fortnight, then switch
+    // the view to a past (read-only) fortnight without ever closing the form.
+    // Previously the form kept rendering (only the *button* was gated on
+    // !readOnly), so Save could still fire and produce a note with
+    // fortnightId from the active fortnight's action but `day`/view context
+    // from the read-only fortnight — permanently invisible on any board.
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole('button', { name: 'Add note' }));
+    expect(screen.getByLabelText('Text')).toBeInTheDocument();
+
+    const oldFortnightId = useAppStore.getState().activeFortnightId!;
+    act(() => {
+      useAppStore.getState().regenerateFortnight();
+      useAppStore.getState().viewFortnight(oldFortnightId);
+    });
+
+    expect(screen.getByText('Viewing a past fortnight (read-only).')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Text')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Save note' })).not.toBeInTheDocument();
+    // No note was ever created via the stale form.
+    expect(Object.keys(useAppStore.getState().notes)).toHaveLength(0);
   });
 
   it('hides mutation controls when viewing a read-only (past) fortnight', () => {

@@ -4,14 +4,28 @@ import { runMigrations } from './migrations';
 export function validatePersistedState(value: unknown): value is PersistedState {
   if (typeof value !== 'object' || value === null) return false;
   const v = value as Record<string, unknown>;
-  return (
-    typeof v.schemaVersion === 'number' &&
-    Array.isArray(v.fortnights) &&
-    (v.activeFortnightId === null || typeof v.activeFortnightId === 'string') &&
-    typeof v.todos === 'object' && v.todos !== null && !Array.isArray(v.todos) &&
-    typeof v.notes === 'object' && v.notes !== null && !Array.isArray(v.notes) &&
-    (v.lastRolloverDay === null || typeof v.lastRolloverDay === 'string')
-  );
+  if (
+    !(
+      typeof v.schemaVersion === 'number' &&
+      Array.isArray(v.fortnights) &&
+      (v.activeFortnightId === null || typeof v.activeFortnightId === 'string') &&
+      typeof v.todos === 'object' && v.todos !== null && !Array.isArray(v.todos) &&
+      typeof v.notes === 'object' && v.notes !== null && !Array.isArray(v.notes) &&
+      (v.lastRolloverDay === null || typeof v.lastRolloverDay === 'string')
+    )
+  ) {
+    return false;
+  }
+  // Referential integrity: activeFortnightId must actually resolve to a
+  // fortnight, otherwise downstream lookups (e.g. store.checkDayTick) would
+  // crash on a non-null-asserted `undefined`.
+  if (v.activeFortnightId !== null) {
+    const fortnights = v.fortnights as Array<{ id?: unknown }>;
+    if (!fortnights.some((f) => f && typeof f === 'object' && f.id === v.activeFortnightId)) {
+      return false;
+    }
+  }
+  return true;
 }
 
 export function serializeState(state: PersistedState): string {

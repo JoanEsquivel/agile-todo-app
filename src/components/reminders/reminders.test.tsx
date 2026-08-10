@@ -1,4 +1,4 @@
-import { render, screen, act } from '@testing-library/react';
+import { render, screen, act, within, fireEvent } from '@testing-library/react';
 import App from '../../App';
 import { seedApp } from '../../test/seed';
 import { useAppStore } from '../../store/store';
@@ -25,6 +25,32 @@ describe('reminders panel', () => {
     expect(panel).toHaveTextContent('Late');
     expect(panel).toHaveTextContent('Upcoming');
     expect(panel).toHaveTextContent('Soon');
+  });
+
+  it('clicking a reminder while viewing a past fortnight switches back to the active one (regression)', () => {
+    // Reminders always come from active-fortnight todos. Previously, picking
+    // a reminder only called selectDay(), so if the user was viewing a past
+    // (read-only) fortnight, selectedDay ended up pointing at a day outside
+    // the *viewed* fortnight's day range -> broken board (no day selected,
+    // heading for a day the viewed fortnight doesn't contain).
+    const st = useAppStore.getState();
+    st.addTodo({ title: 'Late', priority: 'high', scheduledDay: '2026-08-18', reminderAt: '2026-08-18T09:00' });
+    const activeId = useAppStore.getState().activeFortnightId!;
+
+    useAppStore.getState().regenerateFortnight();
+    useAppStore.getState().viewFortnight(activeId); // now viewing the old (read-only) fortnight
+
+    render(<App />);
+    expect(useAppStore.getState().viewedFortnightId).toBe(activeId);
+    expect(useAppStore.getState().viewedFortnightId).not.toBe(useAppStore.getState().activeFortnightId);
+
+    const panel = screen.getByRole('complementary', { name: 'Reminders' });
+    const button = within(panel).getByText('Late').closest('button')!;
+    fireEvent.click(button);
+
+    const s = useAppStore.getState();
+    expect(s.viewedFortnightId).toBe(s.activeFortnightId);
+    expect(s.selectedDay).toBe('2026-08-18');
   });
 
   it('moves an upcoming reminder to overdue as time passes', () => {
