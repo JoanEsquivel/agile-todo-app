@@ -44,4 +44,25 @@ describe('todos on the board', () => {
     render(<App />);
     expect(screen.getByText('Rolled over')).toBeInTheDocument();
   });
+
+  it('hides mutation controls when viewing a read-only (past) fortnight', () => {
+    // Seed a todo, then mark it done so carryOverTodos (which only migrates unfinished
+    // todos to the new active fortnight) leaves it behind on the original fortnight —
+    // that original fortnight becomes the read-only one once a new one is regenerated.
+    useAppStore.getState().addTodo({ title: 'Archived task', priority: 'medium', scheduledDay: '2026-08-18' });
+    const id = Object.values(useAppStore.getState().todos)[0].id;
+    useAppStore.getState().toggleDone(id);
+
+    const oldFortnightId = useAppStore.getState().activeFortnightId!;
+    useAppStore.getState().regenerateFortnight();
+    useAppStore.getState().viewFortnight(oldFortnightId);
+    useAppStore.getState().selectDay('2026-08-18');
+
+    render(<App />);
+
+    expect(screen.getByRole('checkbox', { name: 'Archived task' })).toBeDisabled();
+    expect(screen.queryByRole('button', { name: 'Edit' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Delete' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Add todo' })).not.toBeInTheDocument();
+  });
 });
