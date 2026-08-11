@@ -1,17 +1,17 @@
 # CLAUDE.md — Agile Todo App
 
-> This app is **finished, tested (253 tests), and deployed**. It is not a scaffold to build out — it's a working product. Changes here should be surgical, not exploratory. Every change ships with tests. Read the invariants below before editing anything under `src/`.
+> This app is **finished, tested (297 tests), and deployed**. It is not a scaffold to build out — it's a working product. Changes here should be surgical, not exploratory. Every change ships with tests. Read the invariants below before editing anything under `src/`.
 
 ## Orientation
 
-Browser-only fortnight (2-week, workdays-only) todo board, plus a header Pomodoro timer and a manual light/dark/system theme toggle. No backend, no network calls, no accounts — everything lives in one versioned JSON document in `localStorage` (plus one tiny separate key for the theme preference — see INV-12).
+Browser-only monthly (calendar-month, workdays-only) todo board, plus a header Pomodoro timer and a manual light/dark/system theme toggle. No backend, no network calls, no accounts — everything lives in one versioned JSON document in `localStorage` (plus one tiny separate key for the theme preference — see INV-12).
 
 **Stack:** React 19 + TypeScript 7 (strict) + Vite 8 + Zustand 5 (`persist` middleware) + Vitest 4 + React Testing Library + CSS Modules. **No ESLint, no Prettier** — `tsc` with `strict` + `noUnusedLocals` + `noUnusedParameters` is the linter.
 
 **Keyboard model.** `src/hooks/useShortcuts.ts` is a global `keydown` listener mounted once in `App.tsx`: `⌘K`/`Ctrl+K` opens the command palette (`src/components/commands/CommandPalette.tsx`), `?` opens the shortcuts overlay, `←`/`→`/`Home`/`End` move the selected day (the fortnight tape, `src/components/board/FortnightTape.tsx`, has its own roving-tabindex handler for when focus is already on a day button — the two compose via `e.preventDefault()`/`e.defaultPrevented`, not by one knowing about the other), `T` jumps to today, `N`/`Shift+N` open the todo/note compose form, `S` opens Standup, `P` opens the Pomodoro modal (`src/components/pomodoro/`). Every shortcut but `⌘K` bails while focus is in a text-entry control or a `[role=dialog]` is mounted — which is why the always-mounted `PomodoroWidget` in the header uses plain buttons: they stay operable while a dialog has the shortcuts dead. Escape is deliberately *not* handled there — `Modal.tsx` and `TodoForm`/`NoteForm` each own their own, which is what lets Escape work from inside a text field.
 
 **Where to look for what:**
-- Product behavior, edge cases, the "why" behind a rule → [`docs/superpowers/specs/2026-08-10-agile-todo-app-design.md`](docs/superpowers/specs/2026-08-10-agile-todo-app-design.md) (the approved design spec — product authority)
+- Product behavior, edge cases, the "why" behind a rule → [`docs/superpowers/specs/2026-08-10-agile-todo-app-design.md`](docs/superpowers/specs/2026-08-10-agile-todo-app-design.md) (the original approved design spec — product authority), amended by [`docs/superpowers/specs/2026-08-10-monthly-board-redesign-design.md`](docs/superpowers/specs/2026-08-10-monthly-board-redesign-design.md) (the monthly-board redesign — also product authority, for the board grid, scheduling horizon, and navigation UI it amends)
 - Known gaps and parked issues → [`docs/TECH-DEBT.md`](docs/TECH-DEBT.md)
 - How it was originally built → [`docs/ARCHIVE.md`](docs/ARCHIVE.md) (historical only)
 
@@ -22,7 +22,7 @@ Browser-only fortnight (2-week, workdays-only) todo board, plus a header Pomodor
 | Command | What it does |
 |---|---|
 | `npm run dev` | Dev server at `http://localhost:5173` |
-| `npm test` | `vitest run` — 253 tests, ~3s |
+| `npm test` | `vitest run` — 297 tests, ~4s |
 | `npm run typecheck` | `tsc -b --noEmit` — the real typecheck, ~0.3s |
 | `npm run verify` | typecheck + test — **this is the definition of done** |
 | `npm run build` | `tsc -b && vite build` — production build |
@@ -64,9 +64,12 @@ Numbered so they can be cited precisely (a hook message might say "violates INV-
 **Check.** Any import in `src/domain/*.ts` that isn't a relative sibling path.
 
 ### INV-4. Calendar rules
-**Rule.** Weeks start Monday. **Sunday belongs to the *preceding* Monday**, not the upcoming one (`mondayOfWeek` maps day-of-week 0 to `-6`, not `+1`). Workdays are Mon–Fri only. A fortnight is always exactly 10 workdays (two Mon–Fri weeks).
-**Why.** Gets this wrong once and every fortnight-boundary, rollover, and standup "yesterday" calculation is off by a week for weekend users.
-**Check.** `src/domain/dates.test.ts` and `src/domain/fortnight.test.ts` — the weekend-anchor cases are the ones that catch this.
+**Rule.** Weeks start Monday. **Sunday belongs to the *preceding* Monday**, not the upcoming one (`mondayOfWeek` maps day-of-week 0 to `-6`, not `+1`). Workdays are Mon–Fri only. The active period (still typed and named `Fortnight`, see the naming note below) is the **workdays of the calendar month containing the anchor date** — 20–23 days, with the first and/or last week possibly partial (not necessarily starting Monday or ending Friday); an anchor that falls after the month's last workday rolls forward to the next month. **No consumer of `Fortnight.days` may assume a fixed length** — never `days[9]`, never `length === 10` — because historical 10-workday fortnights (pre-redesign, two Mon–Fri weeks) persist unmigrated in storage and stay navigable in read-only history (see INV-6's schema v3 note).
+**Why.** Gets this wrong once and every period-boundary, rollover, and standup "yesterday" calculation is off by a week for weekend users. The length-agnostic requirement is what lets old 10-day history and new ~21-day months coexist without a data migration touching every stored period.
+**Check.** `src/domain/dates.test.ts` and `src/domain/fortnight.test.ts` — the weekend-anchor and month-generation cases are the ones that catch this.
+
+### Naming note: `Fortnight*` is legacy naming, deliberately kept
+The board's scheduling horizon changed from a 10-workday fortnight to a calendar month, but the internal naming didn't follow: `Fortnight` (the type), `fortnightId`, `FortnightTape`/`FortnightBoard`/`FortnightSwitcher`, `fortnight.ts`, `activeFortnightId`/`viewedFortnightId`, etc. all keep their original names. This is deliberate — renaming would touch the persisted `fortnightId` field and ~40 files for zero user-facing value. All user-visible text (UI copy, docs prose) says "month"; all code identifiers say "fortnight". Don't "fix" this inconsistency piecemeal.
 
 ### INV-5. `fortnightId` is the migration cursor — the anti-double-migration rule
 **Rule.** Two functions move todos between days/fortnights, and they're kept disjoint by which field they key on and which field they write:
@@ -80,7 +83,7 @@ Numbered so they can be cited precisely (a hook message might say "violates INV-
 **Check.** `src/domain/rollover.test.ts`, `src/domain/carryOver.test.ts`, `src/store/dayTick.test.ts`.
 
 ### INV-6. `partialize` is an allowlist — schema changes need a ritual
-**Rule.** `PersistedState` (`src/domain/types.ts`) has 7 fields (schema v2 added `pomodoroSettings`); `partialize` in `src/store/store.ts` explicitly lists all 7. **Adding a field to `PersistedState` and forgetting to add it to `partialize` means it silently never persists** — no error, no warning, just data loss on reload.
+**Rule.** `PersistedState` (`src/domain/types.ts`) has 7 fields (schema v2 added `pomodoroSettings`; v3 reshaped the active fortnight into a calendar month in place — no field changes); `partialize` in `src/store/store.ts` explicitly lists all 7. **Adding a field to `PersistedState` and forgetting to add it to `partialize` means it silently never persists** — no error, no warning, just data loss on reload.
 **Why.** An allowlist (vs. "persist everything except UI state") is the safer default for a store that also holds ephemeral fields (`viewedFortnightId`, `selectedDay`, `rehydrationError`, `announcement`, `composeIntent`, `theme`, `pomodoro`) — an accidental leak the other direction would be much harder to notice. When adding a new ephemeral field, the correct amount of ritual is *none*: put it on `AppState` only, never `PersistedState`, and don't bump `SCHEMA_VERSION`. Add one assertion to `storePersistence.test.ts` confirming it's absent from the persisted blob — that's the whole checklist, and it's the opposite of the 6-step recipe below.
 **Check.** `src/store/storePersistence.test.ts` asserts the ephemeral fields are absent from the persisted blob.
 → See the schema-change recipe below for the full 6-step ritual.

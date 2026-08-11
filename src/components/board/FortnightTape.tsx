@@ -18,10 +18,11 @@ const MAX_SEGMENTS_SHOWN = 4;
  * into weeks, doubling as day navigation. Replaces the old DayStrip's
  * detached chip row.
  *
- * Length-agnostic: renders whatever `fn.days` contains — currently always a
- * 10-workday fortnight, but nothing here assumes that count. The week
- * boundaries come from `chunkByWeek` (a real calendar computation, INV-4),
- * not a fixed split.
+ * Length-agnostic: renders whatever `fn.days` contains — nothing here
+ * assumes a fixed count. The typical case is now a ~21-day calendar month
+ * (the active period); a 10-workday fortnight only shows up when browsing
+ * legacy history. The week boundaries come from `chunkByWeek` (a real
+ * calendar computation, INV-4), not a fixed split.
  *
  * Roving tabindex: exactly one day button is a tab stop (the selected one);
  * arrows/Home/End move focus and selection together.

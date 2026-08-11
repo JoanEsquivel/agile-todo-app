@@ -28,7 +28,7 @@ Mockup (desktop, ≥1024px):
 │ TODOS       │ NOTES       │ REMINDERS   │
 │ ☐ Deploy…   │ ⚑ Blocker…  │ ⏰ 14:00 …  │
 │ ☐ Review…   │ ℹ Info…     │             │
-│ ☑ Fix…      │             │  (o vacío:) │
+│ ☑ Fix…      │             │ (if empty:) │
 │             │             │ "No         │
 │             │             │  reminders" │
 └─────────────┴─────────────┴─────────────┘

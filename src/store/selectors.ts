@@ -37,9 +37,11 @@ export interface WorkloadSegment {
 
 /**
  * One pass over all todos, grouped by day, for the fortnight tape — which
- * needs every day's segments at once to render the whole 10-day strip.
- * Calling `selectTodosForDay` per day (as the old chip strip did) means 10
- * filter+sort passes per render; this does the equivalent work once.
+ * needs every day's segments at once to render the whole strip, whatever its
+ * length (a ~21-day calendar month for the active period, or a legacy
+ * 10-day fortnight in history). Calling `selectTodosForDay` per day (as the
+ * old chip strip did) means one filter+sort pass per day; this does the
+ * equivalent work once regardless of how many days there are.
  *
  * A day with no todos is simply absent from the result rather than mapped
  * to `[]` — callers read it as `workload[day] ?? []`.

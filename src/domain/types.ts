@@ -31,7 +31,7 @@ export interface Note {
 
 export interface Fortnight {
   id: string;
-  startDay: ISODate;          // Monday of week 1
+  startDay: ISODate;          // first workday of the period
   days: ISODate[];            // workdays of the period, ascending — a calendar
                                // month since schema v3; legacy 10-day
                                // fortnights persist unmigrated in history

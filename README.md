@@ -1,23 +1,23 @@
 # Agile Todo App
 
-A browser-only todo board built around a two-week sprint. No backend, no accounts, no network calls — everything lives in your browser.
+A browser-only todo board built around a monthly cadence. No backend, no accounts, no network calls — everything lives in your browser.
 
 **[Live demo →](https://joanesquivel.github.io/agile-todo-app/)**
 
-253 tests · TypeScript strict · zero backend
+297 tests · TypeScript strict · zero backend
 
 Built by [Joan Esquivel](https://www.linkedin.com/in/joanesquivel/) · [source code](https://github.com/JoanEsquivel/agile-todo-app)
 
-![Screenshot of the Agile Todo App: a single-row header with a running Pomodoro timer and theme toggle, the fortnight tape (each day as a stacked column of priority-colored segments), and the selected day's Todos and Notes side by side with a high-priority todo and a blocker note](docs/screenshot.png)
+![Screenshot of the Agile Todo App: a single-row header with a running Pomodoro timer and theme toggle, the month tape (each day as a stacked column of priority-colored segments), and the selected day's Todos and Notes side by side with a high-priority todo and a blocker note](docs/screenshot.png)
 
 ## What it does
 
-- **Fortnight board** — a rolling 10-workday (2-week) view, always anchored to the current week
+- **Month board** — the workdays of the current calendar month, grouped by week, with weekend-anchor rules and roll-forward past month-end handled for you
 - **Daily rollover** — incomplete todos from past days automatically move forward, flagged as "rolled over"
 - **Standup generator** — one click produces a Yesterday/Today/Blockers summary, copyable straight to Slack
 - **Visual reminders** — an Overdue/Upcoming panel, no browser notification permissions needed
 - **Per-day notes** — flag a `blocker` (resolvable) or leave an `info` note
-- **Read-only fortnight history** — generate a new fortnight any time; old ones stay browsable, never editable
+- **Read-only month history** — generate a new month any time; old ones stay browsable, never editable
 - **Pomodoro timer** — an always-visible header widget with classic cycles (25/5, long break every 4th), configurable durations, and an optional sound + browser notification when a phase ends
 - **Light / dark / system theme** — follows your OS by default, with a manual toggle that persists on your device
 - **Keyboard-first** — a command palette and a full set of shortcuts; see below
@@ -29,7 +29,7 @@ Built by [Joan Esquivel](https://www.linkedin.com/in/joanesquivel/) · [source c
 | `⌘K` / `Ctrl+K` | Open the command palette — jump to a day, jump to a todo by title, or run an action |
 | `?` | Show the shortcuts overlay |
 | `←` / `→` | Previous / next day |
-| `Home` / `End` | First / last day of the fortnight |
+| `Home` / `End` | First / last day of the month |
 | `T` | Jump to today |
 | `N` | New todo |
 | `Shift+N` | New note |
@@ -37,13 +37,13 @@ Built by [Joan Esquivel](https://www.linkedin.com/in/joanesquivel/) · [source c
 | `P` | Pomodoro timer |
 | `Esc` | Close the open form or dialog |
 
-Every shortcut but `⌘K` stays out of the way while you're typing in a field. `N`/`Shift+N` (and the palette's Add actions) refuse to open a form while you're viewing read-only fortnight history; day navigation always works, since it isn't a mutation.
+Every shortcut but `⌘K` stays out of the way while you're typing in a field. `N`/`Shift+N` (and the palette's Add actions) refuse to open a form while you're viewing read-only month history; day navigation always works, since it isn't a mutation.
 
 ## Why it's built this way
 
 - **Browser-only, on purpose.** No backend, no network, no accounts — your data never leaves your device.
 - **One versioned JSON document** in `localStorage`, with schema migrations and JSON export/import for backups.
-- **A pure, testable domain core.** All the fortnight/rollover/standup date logic lives in framework-free functions that take time as a parameter — no DOM, no mocking, fast tests.
+- **A pure, testable domain core.** All the month/rollover/standup date logic lives in framework-free functions that take time as a parameter — no DOM, no mocking, fast tests.
 - **Built test-first.** Every feature shipped with tests before the UI did.
 
 ## Quick start
@@ -73,7 +73,7 @@ Open `http://localhost:5173`.
 
 ```
 src/
-  domain/      pure functions — date math, fortnight generation, rollover, standup, reminders
+  domain/      pure functions — date math, month generation, rollover, standup, reminders
   store/       Zustand store — persistence, migrations, backup export/import
   hooks/       React adapters over the store
   components/  UI, organized by feature (board, todos, notes, reminders, standup, history, commands)
@@ -82,11 +82,11 @@ src/
 
 Dependencies point one way: `domain → store → components`. The domain layer has zero framework dependencies, which is what makes the date logic unit-testable in isolation.
 
-Full architecture rationale, data model, and edge-case decisions: [`docs/superpowers/specs/2026-08-10-agile-todo-app-design.md`](docs/superpowers/specs/2026-08-10-agile-todo-app-design.md).
+Full architecture rationale, data model, and edge-case decisions: [`docs/superpowers/specs/2026-08-10-agile-todo-app-design.md`](docs/superpowers/specs/2026-08-10-agile-todo-app-design.md), amended by [`docs/superpowers/specs/2026-08-10-monthly-board-redesign-design.md`](docs/superpowers/specs/2026-08-10-monthly-board-redesign-design.md) for the month board, scheduling horizon, and navigation UI.
 
 ## Testing
 
-Vitest + React Testing Library, 253 tests across 31 files, all colocated with the code they test. Coverage spans pure domain logic, store transitions, persistence/migration behavior, component interaction, and accessibility.
+Vitest + React Testing Library, 297 tests across 31 files, all colocated with the code they test. Coverage spans pure domain logic, store transitions, persistence/migration behavior, component interaction, and accessibility.
 
 ```sh
 npm test                              # everything
@@ -104,7 +104,7 @@ GitHub Actions builds, tests, and deploys to GitHub Pages on every push to `main
 ## Docs
 
 - [`CLAUDE.md`](CLAUDE.md) — architecture invariants and conventions, for anyone (human or AI) making changes
-- [`docs/superpowers/specs/2026-08-10-agile-todo-app-design.md`](docs/superpowers/specs/2026-08-10-agile-todo-app-design.md) — the design spec
+- [`docs/superpowers/specs/2026-08-10-agile-todo-app-design.md`](docs/superpowers/specs/2026-08-10-agile-todo-app-design.md) — the design spec, amended by [`docs/superpowers/specs/2026-08-10-monthly-board-redesign-design.md`](docs/superpowers/specs/2026-08-10-monthly-board-redesign-design.md) (the month-board redesign)
 - [`docs/TECH-DEBT.md`](docs/TECH-DEBT.md) — known, triaged gaps
 - [`docs/ARCHIVE.md`](docs/ARCHIVE.md) — how it was originally built (historical)
 

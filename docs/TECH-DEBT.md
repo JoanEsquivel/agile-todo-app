@@ -19,13 +19,13 @@ Triaged during implementation and the final whole-branch review. Deliberately **
 | TD-11 | `package.json` | `typescript` is `^7.0.2`, unpinned, on TypeScript's native/Go-based compiler line. | A fresh `npm install` by a future contributor or CI could shift to a materially different compiler behavior under a caret range on a bleeding-edge major. | S |
 | TD-12 | `package.json` | `vite` isn't in the plan's original dependency whitelist (unavoidable — the `dev`/`build`/`preview` scripts require it). | None — documented for context only, not an action item. | — |
 | TD-13 | `package.json` | Runtime is React 19 / Zustand 5; the original design spec said "React 18". | Works correctly (nothing depends on a React-18-only API); an undocumented deviation from an approved spec, worth knowing about. | — |
+| TD-14 | `src/domain/fortnight.ts`, `src/store/`, `src/components/board/`, `src/domain/types.ts` | The scheduling horizon moved from a 10-workday fortnight to a calendar month, but the internal naming (`Fortnight` type, `fortnightId`, `FortnightTape`/`FortnightBoard`/`FortnightSwitcher`, `fortnight.ts`) still says "fortnight" — deliberately. | None — cosmetic-only mismatch between code naming and user-visible "month" copy, documented in `CLAUDE.md`. Renaming would touch the persisted `fortnightId` field and ~40 files for zero user-facing value. | — |
 
 ## Minor / cosmetic
 
 Untested edge cases and small nits, grouped separately so the table above stays credible as "things worth doing":
 
 - `src/domain/dates.ts`: `formatDayLabel` has no dedicated test.
-- `src/domain/fortnight.ts`: `generateFortnightDays` for a weekend anchor only asserts `[0]` of the returned array, not the full 10-day set.
 - `src/domain/reminders.ts`: the `reminderAt === now` exact-boundary case is untested; `new Date(t.reminderAt)` is parsed twice per item in `partitionReminders` (minor perf nit, not correctness).
 - `src/store/migrations.ts`: the "no migration step defined for source version" throw path is untested.
 - `src/store/persistence.ts`: single-slot `pending` state — the single-key assumption is undocumented; interleaved writes to two different keys on one adapter instance would silently drop the earlier one. Correct today (one key in use), but worth a comment if the adapter is ever reused.
