@@ -3,7 +3,9 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 import type {
   Fortnight, ISODate, LocalDateTime, Note, NoteCategory, PersistedState, Priority, Todo,
 } from '../domain/types';
-import { generateMonthDays, effectiveBoardDay, carryOverTodos, carryOverNotes } from '../domain/fortnight';
+import {
+  generateMonthDays, effectiveBoardDay, carryOverTodos, carryOverNotes, pruneToRetention,
+} from '../domain/fortnight';
 import { applyRollover, applyNoteRollover } from '../domain/rollover';
 import {
   DEFAULT_POMODORO_SETTINGS, startRun, pauseRun, resumeRun, completePhase, skipPhase,
@@ -43,8 +45,12 @@ export interface AppState extends PersistedState {
   pomodoro: PomodoroRun | null;
 
   initApp: () => void;
-  checkDayTick: () => void;          // implemented in Task 12
-  regenerateFortnight: () => void;   // implemented in Task 12
+  /** The single month-transition pipeline: same-day no-op, daily rollover,
+   *  and (when the active month has ended) automatic generation + pruning. */
+  checkDayTick: () => void;
+  /** Internal safety valve + shared test fixture. No UI door since the
+   *  three-month-window redesign -- generation is automatic in checkDayTick. */
+  regenerateFortnight: () => void;
   addTodo: (input: {
     title: string; description?: string; priority: Priority;
     scheduledDay: ISODate; reminderAt?: LocalDateTime;
@@ -75,6 +81,43 @@ export interface AppState extends PersistedState {
 function buildFortnight(anchor: ISODate): Fortnight {
   const days = generateMonthDays(anchor);
   return { id: crypto.randomUUID(), startDay: days[0], days, createdAt: nowIso() };
+}
+
+/** Shared generation body for checkDayTick's automatic month transition,
+ *  the internal regenerateFortnight safety valve, and initApp's dangling-id
+ *  recovery. Builds the new month from `today`, carries pending todos /
+ *  unresolved blockers over (INV-5's carry-over half -- done todos and
+ *  resolved blockers stay pinned to their month), prunes history to the
+ *  3-month retention window, and stamps lastRolloverDay in the SAME set()
+ *  (INV-5: without it, a same-day second tick would run applyRollover over
+ *  todos carryOverTodos just placed on future overlap days and yank them
+ *  back to today). The view follows the new active month when the user was
+ *  on the old active month or on a month that just got pruned; a view
+ *  parked on a retained past month is left alone. */
+function buildGeneration(s: AppState, today: ISODate): Partial<AppState> {
+  const oldId = s.activeFortnightId;
+  const fn = buildFortnight(today);
+  const carriedTodos = oldId ? carryOverTodos(s.todos, oldId, fn, today) : s.todos;
+  const carriedNotes = oldId ? carryOverNotes(s.notes, oldId, fn, today) : s.notes;
+  const pruned = pruneToRetention([...s.fortnights, fn], carriedTodos, carriedNotes, today);
+  const viewedSurvives =
+    s.viewedFortnightId !== null
+    && s.viewedFortnightId !== oldId
+    && pruned.fortnights.some((f) => f.id === s.viewedFortnightId);
+  return {
+    fortnights: pruned.fortnights,
+    activeFortnightId: fn.id,
+    todos: pruned.todos,
+    notes: pruned.notes,
+    lastRolloverDay: today,
+    viewedFortnightId: viewedSurvives ? s.viewedFortnightId : fn.id,
+    selectedDay: viewedSurvives ? s.selectedDay : effectiveBoardDay(fn, today),
+    // Pruning is silent by product decision, except for this one polite
+    // live-region announcement (spec 2026-08-11 §4).
+    ...(pruned.fortnights.length < s.fortnights.length + 1
+      ? { announcement: 'Oldest month removed from history' }
+      : {}),
+  };
 }
 
 export const appStorage = createDebouncedStorage();
@@ -145,17 +188,21 @@ export const useAppStore = create<AppState>()(
           } else {
             get().checkDayTick();
             const s = get();
-            let active = s.fortnights.find((f) => f.id === s.activeFortnightId);
-            if (!active) {
+            if (!s.fortnights.some((f) => f.id === s.activeFortnightId)) {
               // Defense-in-depth: activeFortnightId doesn't resolve to any
               // fortnight (e.g. corrupted state from a future migration bug).
-              // Recover instead of crashing the whole app at module scope.
-              active = buildFortnight(today);
-              set({ fortnights: [...s.fortnights, active], activeFortnightId: active.id });
+              // Recover through the same generation pipeline as checkDayTick's
+              // expiry branch -- it also rescues todos/notes still keyed to
+              // the dangling id (carry-over keys on the old active id) and
+              // stamps lastRolloverDay (INV-5).
+              set(buildGeneration(s, today));
             }
+            const after = get();
+            const active = after.fortnights.find((f) => f.id === after.activeFortnightId);
+            if (!active) return; // unreachable: buildGeneration installs its month as active
             set({
               viewedFortnightId: active.id,
-              selectedDay: s.selectedDay ?? effectiveBoardDay(active, today) ?? active.days[0],
+              selectedDay: after.selectedDay ?? effectiveBoardDay(active, today) ?? active.days[0],
             });
           }
         },
@@ -163,8 +210,20 @@ export const useAppStore = create<AppState>()(
         checkDayTick: () => {
           const today = todayLocal();
           const s = get();
-          if (s.lastRolloverDay === today || !s.activeFortnightId) return;
+          if (!s.activeFortnightId) return; // first run is initApp's job
           const found = s.fortnights.find((f) => f.id === s.activeFortnightId);
+          // Expiry is evaluated BEFORE the lastRolloverDay latch: an
+          // imported backup can carry lastRolloverDay === today with an
+          // already-expired active month, and with no manual "Generate new
+          // month" button left, the latch alone would block generation
+          // forever. No loop risk: generateMonthDays rolls weekend-tail
+          // anchors forward, so a freshly generated month is never expired
+          // and a same-day re-evaluation lands in the latch below instead.
+          if (found && effectiveBoardDay(found, today) === null) {
+            set(buildGeneration(s, today));
+            return;
+          }
+          if (s.lastRolloverDay === today) return;
           const wasViewingActive = s.viewedFortnightId === s.activeFortnightId;
           const active = found ?? buildFortnight(today);
           const fortnights = found ? s.fortnights : [...s.fortnights, active];
@@ -183,21 +242,7 @@ export const useAppStore = create<AppState>()(
         },
 
         regenerateFortnight: () => {
-          const today = todayLocal();
-          const s = get();
-          const oldId = s.activeFortnightId;
-          const fn = buildFortnight(today);
-          const todos = oldId ? carryOverTodos(s.todos, oldId, fn, today) : s.todos;
-          const notes = oldId ? carryOverNotes(s.notes, oldId, fn, today) : s.notes;
-          set({
-            fortnights: [...s.fortnights, fn],
-            activeFortnightId: fn.id,
-            viewedFortnightId: fn.id,
-            todos,
-            notes,
-            selectedDay: effectiveBoardDay(fn, today),
-            lastRolloverDay: today,
-          });
+          set(buildGeneration(get(), todayLocal()));
         },
 
         addTodo: (input) => {
