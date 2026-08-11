@@ -1,11 +1,10 @@
 import { useRef } from 'react';
 import { useAppStore } from '../../store/store';
 import { selectDayWorkload, selectViewedFortnight } from '../../store/selectors';
-import { formatDayLabel } from '../../domain/dates';
+import { formatDayLabel, chunkByWeek, formatWeekdayShort, dayOfMonth } from '../../domain/dates';
 import { effectiveBoardDay } from '../../domain/fortnight';
 import type { ISODate } from '../../domain/types';
 import { todayLocal } from '../../store/clock';
-import { VisuallyHidden } from '../common/VisuallyHidden';
 import styles from './FortnightTape.module.css';
 
 // Visual budget, not a data limit — the numeric count next to the bars is
@@ -14,15 +13,18 @@ import styles from './FortnightTape.module.css';
 const MAX_SEGMENTS_SHOWN = 4;
 
 /**
- * The fortnight at a glance: each of the 10 workdays as a stacked column of
- * priority-colored segments (one per todo, dimmed when done), split by a
- * real gap at the week boundary, doubling as day navigation. Replaces the
- * old DayStrip's detached chip row.
+ * The board period at a glance: every scheduled workday as a stacked column
+ * of priority-colored segments (one per todo, dimmed when done), chunked
+ * into weeks, doubling as day navigation. Replaces the old DayStrip's
+ * detached chip row.
+ *
+ * Length-agnostic: renders whatever `fn.days` contains — currently always a
+ * 10-workday fortnight, but nothing here assumes that count. The week
+ * boundaries come from `chunkByWeek` (a real calendar computation, INV-4),
+ * not a fixed split.
  *
  * Roving tabindex: exactly one day button is a tab stop (the selected one);
- * arrows/Home/End move focus and selection together. Renders `fn.days`
- * verbatim (always exactly 10 entries) — the week gap is a CSS gap between
- * two groups of 5, never a date computation (INV-4).
+ * arrows/Home/End move focus and selection together.
  */
 export function FortnightTape() {
   const state = useAppStore();
@@ -74,11 +76,15 @@ export function FortnightTape() {
         className={styles.day}
         data-today={isToday ? '' : undefined}
         aria-current={day === selected ? 'date' : undefined}
+        aria-label={isToday ? `${formatDayLabel(day)} (today)` : formatDayLabel(day)}
         tabIndex={day === selected ? 0 : -1}
         onClick={() => state.selectDay(day)}
         onKeyDown={onKeyDown}
       >
-        <span className={styles.date}>{formatDayLabel(day)}</span>
+        <span className={styles.date}>
+          <span className={styles.dow}>{formatWeekdayShort(day)}</span>{' '}
+          <span className={styles.dom}>{dayOfMonth(day)}</span>
+        </span>
         <span className={styles.segments} aria-hidden="true">
           {segments.length === 0
             ? <span className={styles.emptyTick} />
@@ -92,37 +98,30 @@ export function FortnightTape() {
             ))}
         </span>
         {segments.length > 0 && <span className={styles.count}>{segments.length}</span>}
-        {/* The visual playhead dot (CSS, on [data-today]) isn't itself
-           perceivable to a screen reader — this is the actual indication. */}
-        {isToday && <VisuallyHidden> (today)</VisuallyHidden>}
       </button>
     );
   };
 
   return (
-    <nav className={styles.tape} aria-label="Fortnight days">
-      <button
-        type="button"
-        className={styles.navButton}
-        aria-label="Previous day"
-        disabled={idx <= 0}
-        onClick={() => state.selectDay(fn.days[idx - 1])}
-      >
-        ‹
-      </button>
+    <nav className={styles.tape} aria-label="Month days">
       <div className={styles.weeks}>
-        <div className={styles.week}>{fn.days.slice(0, 5).map(renderDay)}</div>
-        <div className={styles.week}>{fn.days.slice(5).map(renderDay)}</div>
+        {chunkByWeek(fn.days).map((week) => (
+          <div key={week[0]} className={styles.week}>{week.map(renderDay)}</div>
+        ))}
       </div>
-      <button
-        type="button"
-        className={styles.navButton}
-        aria-label="Next day"
-        disabled={idx >= fn.days.length - 1}
-        onClick={() => state.selectDay(fn.days[idx + 1])}
-      >
-        ›
-      </button>
+      {today && (
+        <div className={styles.progress}>
+          <span className={styles.progressLabel}>
+            Day {fn.days.indexOf(today) + 1} of {fn.days.length}
+          </span>
+          <span className={styles.progressTrack} aria-hidden="true">
+            <span
+              className={styles.progressFill}
+              style={{ inlineSize: `${((fn.days.indexOf(today) + 1) / fn.days.length) * 100}%` }}
+            />
+          </span>
+        </div>
+      )}
     </nav>
   );
 }

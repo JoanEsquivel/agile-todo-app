@@ -1,23 +1,17 @@
 .tape {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: stretch;
   gap: var(--space-2);
   padding: var(--space-1) var(--space-1) var(--space-2);
 }
 
-.navButton {
-  flex: 0 0 auto;
-  color: var(--color-text-muted);
-}
-
 .weeks {
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-end;
-  gap: var(--space-5); /* the week boundary — a real gap, not a rule or label */
-  flex: 1 1 auto;
-  min-width: 0;
-  overflow-x: auto;
-  scrollbar-width: thin;
+  column-gap: var(--space-5); /* the week boundary — a real gap, not a rule or label */
+  row-gap: var(--space-3);
   padding-bottom: var(--space-2); /* room for the today playhead dot below */
 }
 
@@ -34,7 +28,7 @@
   flex-direction: column;
   align-items: center;
   gap: var(--space-1);
-  min-width: 3.75rem;
+  min-width: 2.75rem;
   padding: var(--space-2) var(--space-2) var(--space-1);
   border-radius: var(--radius-md);
   border: 1px solid var(--color-border);
@@ -80,6 +74,19 @@
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
   color: var(--color-text);
+}
+
+.dow {
+  color: var(--color-text-muted);
+  font-weight: var(--font-weight-normal);
+}
+
+.day[aria-current='date'] .dow {
+  color: inherit;
+}
+
+.dom {
+  color: inherit;
 }
 
 /* A fixed track (always the same background regardless of selection state)
@@ -131,11 +138,34 @@
   font-variant-numeric: tabular-nums;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .weeks {
-    scroll-behavior: smooth;
-  }
+.progress {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
 
+.progressLabel {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.progressTrack {
+  flex: 1 1 auto;
+  height: 3px;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-sunken);
+  overflow: hidden;
+}
+
+.progressFill {
+  display: block;
+  block-size: 100%;
+  background: var(--color-ink);
+}
+
+@media (prefers-reduced-motion: no-preference) {
   .day {
     transition: background var(--transition-fast), border-color var(--transition-fast);
   }

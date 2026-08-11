@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from './App';
 import { seedApp } from './test/seed';
+import { useAppStore } from './store/store';
 
 vi.mock('./store/clock', () => ({
   todayLocal: () => '2026-08-18',
@@ -48,17 +49,27 @@ describe('App shell', () => {
     expect(localStorage.getItem('agile-todo-app.theme')).toBeNull();
   });
 
-  it('navigates days via chips and prev/next, clamped at the ends', async () => {
+  it('navigates days via chips', async () => {
     const user = userEvent.setup();
     render(<App />);
     await user.click(screen.getByRole('button', { name: /Wed, Aug 19/ }));
     expect(screen.getByRole('heading', { name: /Wed, Aug 19/ })).toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: 'Previous day' }));
+    await user.click(screen.getByRole('button', { name: /Tue, Aug 18/ }));
     expect(screen.getByRole('heading', { name: /Tue, Aug 18/ })).toBeInTheDocument();
+  });
 
-    // clamp: click Next repeatedly beyond the last day
-    for (let i = 0; i < 12; i++) await user.click(screen.getByRole('button', { name: 'Next day' }));
-    expect(screen.getByRole('heading', { name: /Fri, Aug 28/ })).toBeInTheDocument();
+  it('shows a progress indicator for the active fortnight, but not for a past one', () => {
+    const { unmount } = render(<App />);
+    // Today (Aug 18) is the 2nd of the 10 days in the Aug 17-28 fortnight.
+    expect(screen.getByText('Day 2 of 10')).toBeInTheDocument();
+    unmount();
+
+    const oldFortnightId = useAppStore.getState().activeFortnightId!;
+    useAppStore.getState().regenerateFortnight();
+    useAppStore.getState().viewFortnight(oldFortnightId);
+
+    render(<App />);
+    expect(screen.queryByText(/Day \d+ of/)).not.toBeInTheDocument();
   });
 });

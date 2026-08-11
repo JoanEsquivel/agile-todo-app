@@ -42,7 +42,9 @@ describe('fortnight tape: roving tabindex', () => {
     expect(dayButtons).toHaveLength(10);
     const tabbable = dayButtons.filter((b) => b.tabIndex === 0);
     expect(tabbable).toHaveLength(1);
-    expect(tabbable[0]).toHaveTextContent('Tue, Aug 18'); // seedApp's selected day
+    // The chip's visible text is now the compact "Tue 18"; the full label
+    // lives in the accessible name (aria-label) instead — see FortnightTape.
+    expect(tabbable[0]).toHaveAccessibleName(/Tue, Aug 18/); // seedApp's selected day
   });
 
   it('arrows move both focus and selection together, and the tab stop follows', async () => {
