@@ -59,6 +59,35 @@ export function carryOverTodos(
   return out;
 }
 
+/** Sibling of carryOverTodos for blocker notes: unresolved blockers move to
+ *  the new fortnight (fortnightId always rewritten -- INV-5's carry-over
+ *  half of the disjointness rule); resolved blockers and info notes stay in
+ *  the old fortnight as history, same as done todos. */
+export function carryOverNotes(
+  notes: Record<string, Note>,
+  oldFortnightId: string,
+  newFortnight: Fortnight,
+  today: ISODate,
+): Record<string, Note> {
+  const target = effectiveBoardDay(newFortnight, today);
+  if (target === null) return notes; // unreachable: newFortnight is anchored to today
+  const out: Record<string, Note> = { ...notes };
+  for (const n of Object.values(notes)) {
+    if (n.fortnightId !== oldFortnightId || n.category !== 'blocker' || n.resolved) continue;
+    if (newFortnight.days.includes(n.day) && n.day >= target) {
+      out[n.id] = { ...n, fortnightId: newFortnight.id };
+    } else {
+      out[n.id] = {
+        ...n,
+        fortnightId: newFortnight.id,
+        day: target,
+        rolledOver: n.day < today ? true : n.rolledOver,
+      };
+    }
+  }
+  return out;
+}
+
 function sameDays(a: ISODate[], b: ISODate[]): boolean {
   return a.length === b.length && a.every((d, i) => d === b[i]);
 }

@@ -1,6 +1,6 @@
 # CLAUDE.md — Agile Todo App
 
-> This app is **finished, tested (297 tests), and deployed**. It is not a scaffold to build out — it's a working product. Changes here should be surgical, not exploratory. Every change ships with tests. Read the invariants below before editing anything under `src/`.
+> This app is **finished, tested (314 tests), and deployed**. It is not a scaffold to build out — it's a working product. Changes here should be surgical, not exploratory. Every change ships with tests. Read the invariants below before editing anything under `src/`.
 
 ## Orientation
 
@@ -22,7 +22,7 @@ Browser-only monthly (calendar-month, workdays-only) todo board, plus a header P
 | Command | What it does |
 |---|---|
 | `npm run dev` | Dev server at `http://localhost:5173` |
-| `npm test` | `vitest run` — 297 tests, ~4s |
+| `npm test` | `vitest run` — 314 tests, ~4s |
 | `npm run typecheck` | `tsc -b --noEmit` — the real typecheck, ~0.3s |
 | `npm run verify` | typecheck + test — **this is the definition of done** |
 | `npm run build` | `tsc -b && vite build` — production build |
@@ -78,8 +78,9 @@ The board's scheduling horizon changed from a 10-workday fortnight to a calendar
 - `done` todos are excluded from both — completed todos stay pinned to the fortnight they were finished in, which is what makes history immutable.
 - `lastRolloverDay` is a once-per-local-day latch (`checkDayTick` early-returns if it already equals today), which is what makes it safe to call from `initApp`, a 60s interval, `visibilitychange`, `focus`, and `importState`.
 - **`regenerateFortnight` must also stamp `lastRolloverDay`.** Without it, a same-day tick after regeneration would run `applyRollover` over todos `carryOverTodos` just placed on future overlap days and yank them back to today — destroying the "future plans aren't touched" rule.
+- Blocker notes follow the identical discipline via sibling functions — `applyNoteRollover`/`carryOverNotes` (also in `rollover.ts`/`fortnight.ts`), keyed and called from the same two actions, same never-writes-`fortnightId`-on-rollover / always-writes-it-on-carry-over split. Only unresolved blockers move; resolved blockers and `info` notes are excluded from both, same as `done` todos.
 
-**Why.** Because `fortnightId` only ever advances forward (old → new) and is the sole key both functions check, the same todo can never be migrated twice, and rollover can never make a todo eligible for a carry-over it wasn't already eligible for.
+**Why.** Because `fortnightId` only ever advances forward (old → new) and is the sole key both functions check, the same todo (or note) can never be migrated twice, and rollover can never make a todo eligible for a carry-over it wasn't already eligible for.
 **Check.** `src/domain/rollover.test.ts`, `src/domain/carryOver.test.ts`, `src/store/dayTick.test.ts`.
 
 ### INV-6. `partialize` is an allowlist — schema changes need a ritual
@@ -140,7 +141,7 @@ The board's scheduling horizon changed from a 10-workday fortnight to a calendar
 **Why.** This is what makes dark mode and design changes a token edit instead of a component-by-component chase, and what keeps CSS Modules from accumulating global leakage over time.
 
 ### INV-13. Semantic `data-*` attributes are public API
-**Rule.** `data-priority` (`'high'|'medium'|'low'`), `data-category` (`'blocker'|'info'`), `data-done`, `data-resolved`, `data-today` are read by both CSS and tests — treat renaming or removing one as a breaking change. Boolean/presence attributes use the pattern `cond ? '' : undefined` — **never `data-x={false}`**, which React renders as the literal string `data-x="false"`, and CSS/test selectors like `[data-x]` still match it. `FortnightTape`'s per-todo segments (`src/components/board/FortnightTape.tsx`) reuse `data-priority`/`data-done` with the identical values `TodoItem` uses rather than inventing new attribute names for the same concepts — reuse an existing `data-*` vocabulary before adding a new one. `data-today` is paired with a real accessible indication — the day button's `aria-label` (`FortnightTape.tsx`) appends " (today)" after the visible-text prefix and full date (and the todo count, per WCAG 2.5.3 Label in Name — the visible chip text must stay a literal substring of the accessible name, never be replaced by it) — the attribute alone was never sufficient for screen-reader users, only for CSS/tests.
+**Rule.** `data-priority` (`'high'|'medium'|'low'`), `data-category` (`'blocker'|'info'`), `data-done`, `data-resolved`, `data-today` are read by both CSS and tests — treat renaming or removing one as a breaking change. Boolean/presence attributes use the pattern `cond ? '' : undefined` — **never `data-x={false}`**, which React renders as the literal string `data-x="false"`, and CSS/test selectors like `[data-x]` still match it. `data-today` is paired with a real accessible indication — `FortnightTape.tsx`'s day-chip `aria-label` appends " (today)" after the visible-text prefix, the full date, and the pending-todo count, per WCAG 2.5.3 Label in Name (the visible chip text must stay a literal substring of the accessible name, never be replaced by it); its folded-week buttons extend the same `data-today` vocabulary additively (present when the folded week *contains* today) rather than inventing a new attribute, paired with an " (includes today)" label suffix — the attribute alone is never sufficient for screen-reader users, only for CSS/tests. `FortnightTape` no longer renders per-todo `data-priority`/`data-done` segments (removed in the accordion redesign, see `docs/superpowers/specs/2026-08-11-tape-accordion-blocker-rollover-design.md`) — those two attributes remain public API on `TodoItem` and `PriorityBadge`, just not on the tape anymore.
 **Why.** Tests assert against these directly; a rename that "looks cosmetic" breaks the suite in confusing ways if you don't grep for the old value first.
 **Note.** Don't treat a `data-*` attribute's presence as proof it's load-bearing — check whether anything actually selects on it (`grep` for `[data-x]` in both `*.module.css` and `*.test.tsx`) before relying on or "preserving" one you haven't verified. `TodoItem`'s `data-overdue` was exactly this trap (dead, `TD-8`) until it was removed in the studio-console redesign.
 

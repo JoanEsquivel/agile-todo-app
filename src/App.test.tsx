@@ -12,11 +12,13 @@ vi.mock('./store/clock', () => ({
 describe('App shell', () => {
   beforeEach(() => seedApp());
 
-  it('renders the title and 21 day chips (calendar month) with today highlighted', () => {
+  it('renders the title, the selected week expanded, the rest folded, with today highlighted', () => {
     render(<App />);
     expect(screen.getByRole('heading', { name: 'Agile Todo' })).toBeInTheDocument();
-    const chips = screen.getAllByRole('button', { name: /Aug \d+/ });
-    expect(chips).toHaveLength(21);
+    const dayChips = screen.getAllByRole('button', { name: /^[A-Z][a-z]{2} \d+ — / });
+    expect(dayChips).toHaveLength(5); // the week containing today (Aug 17-21)
+    const foldedWeeks = screen.getAllByRole('button', { name: /^\d/ });
+    expect(foldedWeeks).toHaveLength(4); // the other 4 weeks of the month
     expect(screen.getByRole('button', { name: /Tue, Aug 18/ })).toHaveAttribute('data-today');
   });
 
@@ -57,6 +59,15 @@ describe('App shell', () => {
 
     await user.click(screen.getByRole('button', { name: /Tue, Aug 18/ }));
     expect(screen.getByRole('heading', { name: /Tue, Aug 18/ })).toBeInTheDocument();
+  });
+
+  it('clicking a folded week expands it and navigates to its first day', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole('button', { name: /^24–28 — / }));
+    expect(screen.getByRole('heading', { name: /Mon, Aug 24/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^Mon 24 — / })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^17–21 — / })).toBeInTheDocument();
   });
 
   it('shows a progress indicator for the active fortnight, but not for a past one', () => {

@@ -1,5 +1,5 @@
-import { applyRollover } from './rollover';
-import type { Fortnight, Todo } from './types';
+import { applyRollover, applyNoteRollover } from './rollover';
+import type { Fortnight, Note, Todo } from './types';
 
 // Literal 10-day fortnight fixture (deliberately NOT generateMonthDays — see
 // INV-5/domain notes: this is the living proof the domain still works with
@@ -64,5 +64,62 @@ describe('applyRollover', () => {
     const res = applyRollover(todos, fn, '2026-08-12');
     expect(res.todos.a.createdAt).toBe('2026-08-10T09:00:00.000Z');
     expect(res.todos.a.reminderAt).toBe('2026-08-10T09:00');
+  });
+});
+
+function makeNote(over: Partial<Note>): Note {
+  return {
+    id: over.id ?? 'n1', fortnightId: 'f1', day: '2026-08-10', category: 'blocker',
+    text: 'blocked', resolved: false, createdAt: '2026-08-10T09:00:00.000Z', ...over,
+  };
+}
+
+describe('applyNoteRollover', () => {
+  it('moves an unresolved past-day blocker to today and flags it rolled over', () => {
+    const notes = { a: makeNote({ id: 'a', day: '2026-08-10' }) };
+    const res = applyNoteRollover(notes, fn, '2026-08-12');
+    expect(res.changed).toBe(true);
+    expect(res.notes.a.day).toBe('2026-08-12');
+    expect(res.notes.a.rolledOver).toBe(true);
+    expect(res.notes.a.fortnightId).toBe('f1');
+  });
+
+  it('leaves an info note untouched even if its day is in the past', () => {
+    const notes = { a: makeNote({ id: 'a', day: '2026-08-10', category: 'info' }) };
+    const res = applyNoteRollover(notes, fn, '2026-08-12');
+    expect(res.changed).toBe(false);
+    expect(res.notes).toEqual(notes);
+  });
+
+  it('leaves a resolved blocker untouched even if its day is in the past', () => {
+    const notes = { a: makeNote({ id: 'a', day: '2026-08-10', resolved: true }) };
+    const res = applyNoteRollover(notes, fn, '2026-08-12');
+    expect(res.changed).toBe(false);
+    expect(res.notes).toEqual(notes);
+  });
+
+  it('leaves a blocker scheduled today or in the future untouched', () => {
+    const notes = { a: makeNote({ id: 'a', day: '2026-08-12' }) };
+    const res = applyNoteRollover(notes, fn, '2026-08-12');
+    expect(res.changed).toBe(false);
+    expect(res.notes).toEqual(notes);
+  });
+
+  it('ignores blockers from other fortnights', () => {
+    const notes = { a: makeNote({ id: 'a', fortnightId: 'OLD', day: '2026-08-10' }) };
+    expect(applyNoteRollover(notes, fn, '2026-08-12').changed).toBe(false);
+  });
+
+  it('no-ops when the fortnight is expired', () => {
+    const notes = { a: makeNote({ id: 'a', day: '2026-08-13' }) };
+    const res = applyNoteRollover(notes, fn, '2026-08-24');
+    expect(res.changed).toBe(false);
+    expect(res.notes.a.day).toBe('2026-08-13');
+  });
+
+  it('on a weekend, rolls to the upcoming Monday', () => {
+    const notes = { a: makeNote({ id: 'a', day: '2026-08-13' }) };
+    const res = applyNoteRollover(notes, fn, '2026-08-15'); // Saturday
+    expect(res.notes.a.day).toBe('2026-08-17');
   });
 });

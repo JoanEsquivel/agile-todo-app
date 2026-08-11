@@ -1,5 +1,6 @@
 import { appStorage, useAppStore, type AppState } from './store';
 import { SCHEMA_VERSION } from './migrations';
+import { serializeState, parseBackup } from './exportImport';
 
 vi.mock('./clock', () => ({
   todayLocal: () => '2026-08-18',
@@ -172,6 +173,38 @@ describe('store persistence', () => {
     expect(imported.scheduledDay).toBe('2026-08-18');
     expect(imported.rolledOver).toBe(true);
     expect(useAppStore.getState().lastRolloverDay).toBe('2026-08-18');
+  });
+
+  it('round-trips note.rolledOver through export -> import, and a legacy note without the field still imports', () => {
+    useAppStore.getState().initApp();
+    const fn = useAppStore.getState().fortnights[0];
+    const snapshot = {
+      schemaVersion: SCHEMA_VERSION,
+      fortnights: useAppStore.getState().fortnights,
+      activeFortnightId: useAppStore.getState().activeFortnightId,
+      todos: {},
+      notes: {
+        rolled: {
+          id: 'rolled', fortnightId: fn.id, day: fn.days[0], category: 'blocker' as const,
+          text: 'stale', resolved: false, createdAt: '2026-08-01T00:00:00.000Z', rolledOver: true,
+        },
+        legacy: {
+          id: 'legacy', fortnightId: fn.id, day: fn.days[0], category: 'info' as const,
+          text: 'no rolledOver field at all', resolved: false, createdAt: '2026-08-01T00:00:00.000Z',
+        },
+      },
+      lastRolloverDay: '2026-08-18',
+      pomodoroSettings: { workMinutes: 25, breakMinutes: 5, longBreakMinutes: 15 },
+    };
+    const serialized = serializeState(snapshot);
+    const parsed = parseBackup(serialized);
+    expect(parsed.notes.rolled.rolledOver).toBe(true);
+    expect(parsed.notes.legacy.rolledOver).toBeUndefined();
+    expect(parsed.schemaVersion).toBe(SCHEMA_VERSION);
+
+    useAppStore.getState().importState(parsed);
+    expect(useAppStore.getState().notes.rolled.rolledOver).toBe(true);
+    expect(useAppStore.getState().notes.legacy.rolledOver).toBeUndefined();
   });
 
   it('onRehydrateStorage sets rehydrationError on corrupt storage, and initApp does not silently create+persist over it (Important 3)', async () => {

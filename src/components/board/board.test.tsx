@@ -10,45 +10,44 @@ vi.mock('../../store/clock', () => ({
 
 // Roving tabindex and arrow/Home/End keyboard mechanics live in
 // a11y.test.tsx alongside the other keyboard-navigation coverage. This file
-// covers what's specific to the tape as a board component: the workload
-// segments it renders per day.
-describe('fortnight tape workload', () => {
+// covers what's specific to the tape as a board component: the pending-todo
+// counts it renders per day and per folded week.
+describe('fortnight tape pending counts', () => {
   beforeEach(() => seedApp());
 
-  it('renders one segment per todo, carrying its priority and done state', () => {
+  it('shows the count of pending (not-done) todos on a day chip', () => {
     const st = useAppStore.getState();
-    st.addTodo({ title: 'high one', priority: 'high', scheduledDay: '2026-08-18' });
-    st.addTodo({ title: 'low one', priority: 'low', scheduledDay: '2026-08-18' });
-    const lowId = Object.values(useAppStore.getState().todos).find((t) => t.title === 'low one')!.id;
-    useAppStore.getState().toggleDone(lowId);
+    st.addTodo({ title: 'open one', priority: 'high', scheduledDay: '2026-08-18' });
+    st.addTodo({ title: 'done one', priority: 'low', scheduledDay: '2026-08-18' });
+    const doneId = Object.values(useAppStore.getState().todos).find((t) => t.title === 'done one')!.id;
+    useAppStore.getState().toggleDone(doneId);
     render(<App />);
 
-    const day = screen.getByRole('button', { name: /Tue, Aug 18/ });
-    const segments = day.querySelectorAll('[data-priority]');
-    expect(segments).toHaveLength(2);
-    const high = Array.from(segments).find((s) => s.getAttribute('data-priority') === 'high')!;
-    const low = Array.from(segments).find((s) => s.getAttribute('data-priority') === 'low')!;
-    expect(high).not.toHaveAttribute('data-done');
-    expect(low).toHaveAttribute('data-done', '');
+    const day = screen.getByRole('button', { name: /^Tue 18 — / });
+    expect(day.querySelectorAll('[data-priority]')).toHaveLength(0); // priority bars are gone
+    expect(day).toHaveTextContent('1'); // 1 pending; the done todo doesn't count
+    expect(day).toHaveAccessibleName(/, 1 pending/);
   });
 
-  it('shows a single faint tick, not zero segments, on a day with no todos', () => {
+  it('renders no pending indicator on a day with nothing pending', () => {
     render(<App />);
-    const day = screen.getByRole('button', { name: /Wed, Aug 19/ });
-    expect(day.querySelectorAll('[data-priority]')).toHaveLength(0);
-    expect(day.querySelector('[class*="emptyTick"]')).toBeInTheDocument();
+    const day = screen.getByRole('button', { name: /^Wed 19 — / });
+    expect(day.querySelector('[class*="pending"]')).not.toBeInTheDocument();
+    expect(day).not.toHaveAccessibleName(/pending/);
   });
 
-  it('caps rendered segments but keeps the visible count exact', () => {
+  it('shows an aggregate pending count on a folded week, excluding done todos', () => {
     const st = useAppStore.getState();
-    for (let i = 0; i < 6; i++) {
-      st.addTodo({ title: `task ${i}`, priority: 'medium', scheduledDay: '2026-08-18' });
-    }
+    st.addTodo({ title: 'a', priority: 'high', scheduledDay: '2026-08-24' });
+    st.addTodo({ title: 'b', priority: 'medium', scheduledDay: '2026-08-25' });
+    st.addTodo({ title: 'c', priority: 'low', scheduledDay: '2026-08-26' });
+    const doneId = Object.values(useAppStore.getState().todos).find((t) => t.title === 'c')!.id;
+    useAppStore.getState().toggleDone(doneId);
     render(<App />);
-    const day = screen.getByRole('button', { name: /Tue, Aug 18/ });
-    // The bar count is a visual budget; the number next to it is always exact.
-    expect(day.querySelectorAll('[data-priority]').length).toBeLessThan(6);
-    expect(day).toHaveTextContent('6');
+
+    const folded = screen.getByRole('button', { name: /^24–28 — / });
+    expect(folded).toHaveTextContent('2');
+    expect(folded).toHaveAccessibleName(/, 2 pending/);
   });
 
   it('gives today a real accessible indication beyond the data-today attribute', () => {
@@ -56,7 +55,7 @@ describe('fortnight tape workload', () => {
     const today = screen.getByRole('button', { name: /Tue, Aug 18.*today/i });
     expect(today).toHaveAttribute('data-today');
 
-    const otherDay = screen.getByRole('button', { name: /Wed, Aug 19/ });
+    const otherDay = screen.getByRole('button', { name: /^Wed 19 — / });
     expect(otherDay).not.toHaveAttribute('data-today');
     expect(screen.queryByRole('button', { name: /Wed, Aug 19.*today/i })).not.toBeInTheDocument();
   });

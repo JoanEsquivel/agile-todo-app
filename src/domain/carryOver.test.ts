@@ -1,5 +1,5 @@
-import { carryOverTodos, generateMonthDays } from './fortnight';
-import type { Fortnight, Todo } from './types';
+import { carryOverTodos, carryOverNotes, generateMonthDays } from './fortnight';
+import type { Fortnight, Note, Todo } from './types';
 
 // Literal 10-day fortnight fixture (deliberately NOT generateMonthDays — see
 // INV-5/domain notes: this is the living proof the domain still works with
@@ -77,5 +77,46 @@ describe('carryOverTodos (mixed history: 10-day fortnight -> calendar month)', (
     const todos = { a: makeTodo({ id: 'a', fortnightId: 'f2', scheduledDay: '2026-08-11' }) };
     const res = carryOverTodos(todos, 'f2', monthFortnight, '2026-08-19');
     expect(res.a).toMatchObject({ fortnightId: 'm-aug', scheduledDay: '2026-08-19', rolledOver: true });
+  });
+});
+
+function makeNote(over: Partial<Note>): Note {
+  return {
+    id: over.id ?? 'n1', fortnightId: 'f1', day: '2026-08-17', category: 'blocker',
+    text: 'blocked', resolved: false, createdAt: '2026-08-10T09:00:00.000Z', ...over,
+  };
+}
+
+describe('carryOverNotes (regenerating on 2026-08-19)', () => {
+  it('keeps an unresolved blocker whose day is future and inside the new fortnight', () => {
+    const notes = { a: makeNote({ id: 'a', day: '2026-08-20' }) };
+    const res = carryOverNotes(notes, 'f1', f2, '2026-08-19');
+    expect(res.a).toMatchObject({ fortnightId: 'f2', day: '2026-08-20' });
+    expect(res.a.rolledOver).toBeFalsy();
+  });
+
+  it('moves an unresolved blocker with a past day to the effective day, flagged rolledOver', () => {
+    const notes = { a: makeNote({ id: 'a', day: '2026-08-11' }) };
+    const res = carryOverNotes(notes, 'f1', f2, '2026-08-19');
+    expect(res.a).toMatchObject({ fortnightId: 'f2', day: '2026-08-19', rolledOver: true });
+  });
+
+  it('leaves a resolved blocker in the old fortnight (history)', () => {
+    const notes = { a: makeNote({ id: 'a', day: '2026-08-11', resolved: true }) };
+    const res = carryOverNotes(notes, 'f1', f2, '2026-08-19');
+    expect(res.a.fortnightId).toBe('f1');
+    expect(res.a.day).toBe('2026-08-11');
+  });
+
+  it('leaves an info note in the old fortnight (history)', () => {
+    const notes = { a: makeNote({ id: 'a', day: '2026-08-11', category: 'info' }) };
+    const res = carryOverNotes(notes, 'f1', f2, '2026-08-19');
+    expect(res.a.fortnightId).toBe('f1');
+  });
+
+  it('ignores notes from other fortnights', () => {
+    const notes = { a: makeNote({ id: 'a', fortnightId: 'OLD', day: '2026-08-11' }) };
+    const res = carryOverNotes(notes, 'f1', f2, '2026-08-19');
+    expect(res.a.fortnightId).toBe('OLD');
   });
 });

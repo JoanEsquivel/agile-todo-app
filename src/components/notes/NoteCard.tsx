@@ -9,6 +9,7 @@ export function NoteCard({ note, readOnly }: { note: Note; readOnly: boolean }) 
     <li className={styles.card} data-resolved={note.resolved ? '' : undefined}>
       <span className={styles.text} data-category={note.category}>{note.text}</span>
       <div className={styles.actions}>
+        {note.rolledOver && <span className={styles.rolloverBadge}>Rolled over</span>}
         {note.category === 'blocker' && (
           note.resolved
             ? <span className={styles.resolvedBadge}>Resolved</span>

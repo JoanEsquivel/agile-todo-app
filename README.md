@@ -4,16 +4,16 @@ A browser-only todo board built around a monthly cadence. No backend, no account
 
 **[Live demo →](https://joanesquivel.github.io/agile-todo-app/)**
 
-297 tests · TypeScript strict · zero backend
+314 tests · TypeScript strict · zero backend
 
 Built by [Joan Esquivel](https://www.linkedin.com/in/joanesquivel/) · [source code](https://github.com/JoanEsquivel/agile-todo-app)
 
-![Screenshot of the Agile Todo App: a single-row header with a running Pomodoro timer and theme toggle, the month tape (each day as a stacked column of priority-colored segments), and the selected day's Todos and Notes side by side with a high-priority todo and a blocker note](docs/screenshot.png)
+![Screenshot of the Agile Todo App: a single-row header with a running Pomodoro timer and theme toggle, the month tape as an accordion (the current week expanded into day chips, other weeks folded to compact date ranges), and the selected day's Todos and Notes side by side with a high-priority todo and a blocker note](docs/screenshot.png)
 
 ## What it does
 
-- **Month board** — the workdays of the current calendar month, grouped by week, with weekend-anchor rules and roll-forward past month-end handled for you
-- **Daily rollover** — incomplete todos from past days automatically move forward, flagged as "rolled over"
+- **Month board** — the workdays of the current calendar month, grouped by week, with weekend-anchor rules and roll-forward past month-end handled for you. The day bar is an accordion: the current week expands to full-width day chips, every other week folds to a compact date range you can click to jump there
+- **Daily rollover** — incomplete todos and unresolved blocker notes from past days automatically move forward, flagged as "rolled over"; unresolved blockers also carry into a newly generated month, so they never get stranded in read-only history
 - **Standup generator** — one click produces a Yesterday/Today/Blockers summary, copyable straight to Slack
 - **Visual reminders** — an Overdue/Upcoming panel, no browser notification permissions needed
 - **Per-day notes** — flag a `blocker` (resolvable) or leave an `info` note
@@ -82,11 +82,11 @@ src/
 
 Dependencies point one way: `domain → store → components`. The domain layer has zero framework dependencies, which is what makes the date logic unit-testable in isolation.
 
-Full architecture rationale, data model, and edge-case decisions: [`docs/superpowers/specs/2026-08-10-agile-todo-app-design.md`](docs/superpowers/specs/2026-08-10-agile-todo-app-design.md), amended by [`docs/superpowers/specs/2026-08-10-monthly-board-redesign-design.md`](docs/superpowers/specs/2026-08-10-monthly-board-redesign-design.md) for the month board, scheduling horizon, and navigation UI.
+Full architecture rationale, data model, and edge-case decisions: [`docs/superpowers/specs/2026-08-10-agile-todo-app-design.md`](docs/superpowers/specs/2026-08-10-agile-todo-app-design.md), amended by [`docs/superpowers/specs/2026-08-10-monthly-board-redesign-design.md`](docs/superpowers/specs/2026-08-10-monthly-board-redesign-design.md) for the month board, scheduling horizon, and navigation UI, and by [`docs/superpowers/specs/2026-08-11-tape-accordion-blocker-rollover-design.md`](docs/superpowers/specs/2026-08-11-tape-accordion-blocker-rollover-design.md) for the day-bar accordion and blocker rollover/carry-over.
 
 ## Testing
 
-Vitest + React Testing Library, 297 tests across 31 files, all colocated with the code they test. Coverage spans pure domain logic, store transitions, persistence/migration behavior, component interaction, and accessibility.
+Vitest + React Testing Library, 314 tests across 31 files, all colocated with the code they test. Coverage spans pure domain logic, store transitions, persistence/migration behavior, component interaction, and accessibility.
 
 ```sh
 npm test                              # everything
@@ -104,7 +104,7 @@ GitHub Actions builds, tests, and deploys to GitHub Pages on every push to `main
 ## Docs
 
 - [`CLAUDE.md`](CLAUDE.md) — architecture invariants and conventions, for anyone (human or AI) making changes
-- [`docs/superpowers/specs/2026-08-10-agile-todo-app-design.md`](docs/superpowers/specs/2026-08-10-agile-todo-app-design.md) — the design spec, amended by [`docs/superpowers/specs/2026-08-10-monthly-board-redesign-design.md`](docs/superpowers/specs/2026-08-10-monthly-board-redesign-design.md) (the month-board redesign)
+- [`docs/superpowers/specs/2026-08-10-agile-todo-app-design.md`](docs/superpowers/specs/2026-08-10-agile-todo-app-design.md) — the design spec, amended by [`docs/superpowers/specs/2026-08-10-monthly-board-redesign-design.md`](docs/superpowers/specs/2026-08-10-monthly-board-redesign-design.md) (the month-board redesign) and [`docs/superpowers/specs/2026-08-11-tape-accordion-blocker-rollover-design.md`](docs/superpowers/specs/2026-08-11-tape-accordion-blocker-rollover-design.md) (the day-bar accordion + blocker rollover)
 - [`docs/TECH-DEBT.md`](docs/TECH-DEBT.md) — known, triaged gaps
 - [`docs/ARCHIVE.md`](docs/ARCHIVE.md) — how it was originally built (historical)
 

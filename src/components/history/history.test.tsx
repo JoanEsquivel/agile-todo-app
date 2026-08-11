@@ -72,6 +72,10 @@ describe('regenerate + history', () => {
     await user.selectOptions(screen.getByRole('combobox', { name: 'Month' }), oldOption);
     expect(screen.getByText('Viewing a past month (read-only).')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Add todo' })).not.toBeInTheDocument();
+    // Selecting the old fortnight opens on its first day (Jul 13), which
+    // expands the Jul 13-17 week -- Jul 24 lives in the folded Jul 20-24
+    // week and needs a click to expand before its chip exists.
+    await user.click(screen.getByRole('button', { name: /^20–24 — / }));
     await user.click(screen.getByRole('button', { name: /Fri, Jul 24/ }));
     expect(screen.getByRole('checkbox', { name: 'old task' })).toBeDisabled();
   });
@@ -115,9 +119,16 @@ describe('regenerate + history', () => {
     await user.selectOptions(screen.getByRole('combobox', { name: 'Month' }), legacy.id);
     expect(screen.getByText('Viewing a past month (read-only).')).toBeInTheDocument();
 
-    const chips = screen.getAllByRole('button', { name: /Jul \d+/ });
-    expect(chips).toHaveLength(10);
+    // Legacy period has no "today"; selecting it opens on days[0] (Jul 13),
+    // so the week containing it (Jul 13-17) expands and the other (Jul
+    // 20-24) folds -- same accordion contract as the active month.
+    const dayChips = screen.getAllByRole('button', { name: /^[A-Z][a-z]{2} \d+ — / });
+    expect(dayChips).toHaveLength(5);
     const weeksWrapper = screen.getByRole('navigation', { name: 'Month days' }).firstElementChild!;
-    expect(weeksWrapper.children).toHaveLength(2);
+    expect(weeksWrapper.children).toHaveLength(2); // one child per week, contract preserved
+
+    const foldedWeek = screen.getByRole('button', { name: /^20–24 — / });
+    await user.click(foldedWeek);
+    expect(screen.getAllByRole('button', { name: /^Mon 20 — / })).toHaveLength(1);
   });
 });

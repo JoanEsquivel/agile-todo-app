@@ -8,34 +8,53 @@
 
 .weeks {
   display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  column-gap: var(--space-5); /* the week boundary — a real gap, not a rule or label */
-  row-gap: var(--space-3);
+  flex-wrap: nowrap;
+  align-items: stretch;
+  gap: var(--space-2);
+  width: 100%;
   padding-bottom: var(--space-2); /* room for the today playhead dot below */
 }
 
 .week {
+  flex: 1 1 auto;
+  min-width: 0;
   display: flex;
-  align-items: flex-end;
-  gap: var(--space-2);
+  gap: var(--space-1);
 }
 
-.day {
+.day,
+.foldedWeek {
   position: relative;
-  flex: 0 0 auto;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--space-1);
-  min-width: 2.75rem;
-  padding: var(--space-2) var(--space-2) var(--space-1);
+  justify-content: center;
+  gap: 2px;
+  padding: var(--space-2) var(--space-1) var(--space-1);
   border-radius: var(--radius-md);
   border: 1px solid var(--color-border);
   background: var(--color-surface);
 }
 
-.day:hover:not(:disabled):not([aria-current='date']) {
+.day {
+  flex: 1 1 0;
+  /* 20% = one day's fair share of a full 5-day week. Capping it (rather
+     than letting a short week's day(s) grow to fill 100% of the row) keeps
+     every chip the same width regardless of how many days are in the
+     expanded week -- a 1-day trailing week (the month's last week, e.g.
+     just Aug 31) doesn't balloon into one giant chip; it just leaves the
+     rest of that week's slot blank, like the tape trailing off. */
+  max-width: 20%;
+}
+
+.foldedWeek {
+  flex: 0 0 auto;
+  min-width: 2.5rem;
+}
+
+.day:hover:not(:disabled):not([aria-current='date']),
+.foldedWeek:hover {
   background: var(--color-surface-hover);
 }
 
@@ -47,15 +66,17 @@
 }
 
 .day[aria-current='date'] .date,
-.day[aria-current='date'] .count {
+.day[aria-current='date'] .pending {
   color: var(--color-on-ink);
 }
 
-/* The today playhead — a small ink dot beneath the day, independent of
-   whether that day is also selected. Deliberately achromatic: the violet
-   focus ring is reserved for focus alone (see tokens.css), so "today" can't
-   borrow it without making a focus indicator ambiguous with a status. */
-.day[data-today]::after {
+/* The today playhead — a small ink dot beneath the day (or the folded week
+   that contains it), independent of whether that day is also selected.
+   Deliberately achromatic: the violet focus ring is reserved for focus
+   alone (see tokens.css), so "today" can't borrow it without making a focus
+   indicator ambiguous with a status. */
+.day[data-today]::after,
+.foldedWeek[data-today]::after {
   content: '';
   position: absolute;
   bottom: -6px;
@@ -68,17 +89,19 @@
 }
 
 .date {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   font-family: var(--font-mono);
-  font-size: var(--text-sm);
-  font-weight: var(--font-weight-semibold);
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
   color: var(--color-text);
 }
 
 .dow {
+  font-size: var(--text-xs);
   color: var(--color-text-muted);
-  font-weight: var(--font-weight-normal);
+  text-transform: uppercase;
 }
 
 .day[aria-current='date'] .dow {
@@ -86,52 +109,21 @@
 }
 
 .dom {
+  font-size: var(--text-md);
+  font-weight: var(--font-weight-semibold);
   color: inherit;
 }
 
-/* A fixed track (always the same background regardless of selection state)
-   so priority segments read consistently — including when the day itself
-   is ink-filled, where the segment colors alone wouldn't have reliable
-   contrast against a near-black background. */
-.segments {
-  display: flex;
-  flex-direction: column-reverse;
-  align-items: stretch;
-  gap: 2px;
-  width: 100%;
-  padding: 2px;
-  border-radius: var(--radius-sm);
-  background: var(--color-surface-sunken);
+.range {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
-.segment {
-  flex: 0 0 auto;
-  height: 3px;
-  border-radius: 1px;
-  background: var(--color-priority-low);
-}
-
-.segment[data-priority='high'] {
-  background: var(--color-priority-high);
-}
-
-.segment[data-priority='medium'] {
-  background: var(--color-priority-medium);
-}
-
-.segment[data-done] {
-  opacity: 0.4;
-}
-
-.emptyTick {
-  align-self: center;
-  width: 60%;
-  height: 2px;
-  border-radius: 1px;
-  background: var(--color-text-faint);
-}
-
-.count {
+.pending {
   font-family: var(--font-mono);
   font-size: var(--text-xs);
   color: var(--color-text-muted);
@@ -166,7 +158,8 @@
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .day {
+  .day,
+  .foldedWeek {
     transition: background var(--transition-fast), border-color var(--transition-fast);
   }
 }

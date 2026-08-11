@@ -27,6 +27,11 @@ export interface Note {
   text: string;
   resolved: boolean;          // only meaningful for 'blocker'; always false for 'info'
   createdAt: ISODateTime;
+  // Optional: absent (undefined) means false. No schema bump needed -- see
+  // exportImport.ts's validatePersistedState, which never inspects note
+  // internals, only that `notes` is an object (INV-6 is for top-level
+  // PersistedState fields, not nested value types).
+  rolledOver?: boolean;
 }
 
 export interface Fortnight {

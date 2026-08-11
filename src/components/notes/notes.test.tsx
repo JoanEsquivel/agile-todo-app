@@ -1,4 +1,4 @@
-import { render, screen, act } from '@testing-library/react';
+import { render, screen, act, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from '../../App';
 import { seedApp } from '../../test/seed';
@@ -90,11 +90,32 @@ describe('notes on the board', () => {
     expect(Object.keys(useAppStore.getState().notes)).toHaveLength(0);
   });
 
+  it('shows a Rolled over badge on a rolled-over blocker, even in read-only history', () => {
+    useAppStore.getState().addNote({ day: '2026-08-18', category: 'blocker', text: 'stale blocker' });
+    const note = Object.values(useAppStore.getState().notes)[0];
+    useAppStore.setState({ notes: { [note.id]: { ...note, rolledOver: true } } });
+    render(<App />);
+    const card = screen.getByText('stale blocker').closest('li')!;
+    expect(within(card).getByText('Rolled over')).toBeInTheDocument();
+  });
+
+  it('does not show a Rolled over badge on a note that has never rolled over', () => {
+    useAppStore.getState().addNote({ day: '2026-08-18', category: 'blocker', text: 'fresh blocker' });
+    render(<App />);
+    const card = screen.getByText('fresh blocker').closest('li')!;
+    expect(within(card).queryByText('Rolled over')).not.toBeInTheDocument();
+  });
+
   it('hides mutation controls when viewing a read-only (past) fortnight', () => {
-    // Seed an unresolved blocker note on the current (active) fortnight/day, then
+    // Seed a RESOLVED blocker note on the current (active) fortnight/day, then
     // regenerate to create a new active fortnight, leaving the original fortnight
-    // (and its notes) read-only.
+    // (and its notes) read-only. Resolved blockers are excluded from carry-over
+    // (only unresolved ones move to the new fortnight -- see carryOverNotes),
+    // so this one stays behind, which is what lets this test exercise the
+    // read-only guard on a real note.
     useAppStore.getState().addNote({ day: '2026-08-18', category: 'blocker', text: 'Archived blocker' });
+    const seeded = Object.values(useAppStore.getState().notes)[0];
+    useAppStore.getState().resolveBlocker(seeded.id);
 
     const oldFortnightId = useAppStore.getState().activeFortnightId!;
     useAppStore.getState().regenerateFortnight();

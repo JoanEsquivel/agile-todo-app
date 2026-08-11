@@ -130,11 +130,6 @@ const pairs: Array<[fg: string, bg: string, min: number]> = [
   ['--color-rollover', '--color-rollover-bg', TEXT],
   ['--color-success', '--color-surface', TEXT],
   ['--color-success', '--color-success-bg', TEXT],
-
-  // Tape segments are graphics conveying priority, drawn on the sunken track.
-  ['--color-priority-high', '--color-surface-sunken', GRAPHIC],
-  ['--color-priority-medium', '--color-surface-sunken', GRAPHIC],
-  ['--color-priority-low', '--color-surface-sunken', GRAPHIC],
 ];
 
 describe('design tokens', () => {

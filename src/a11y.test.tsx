@@ -25,21 +25,23 @@ describe('skip link', () => {
 describe('fortnight tape: roving tabindex', () => {
   beforeEach(() => seedApp());
 
-  it('is exactly one tab stop, not thirteen', async () => {
-    // The old chip strip was a focusable <nav> plus prev + N chips + next
-    // -- N+3 consecutive stops. The tape must be exactly one: whichever day
-    // button is selected, every other day button is tabIndex=-1.
+  it('is exactly one tab stop across day chips and folded weeks', async () => {
+    // The tape is now an accordion: the week containing the selected day
+    // renders as 5 day chips, every other week folds to one compact button.
+    // Exactly one control in the whole nav is a tab stop, whichever it is.
     render(<App />);
-    const dayButtons = screen.getAllByRole('button', { name: /Aug \d+/ });
-    expect(dayButtons).toHaveLength(21);
-    const tabbable = dayButtons.filter((b) => b.tabIndex === 0);
+    const dayChips = screen.getAllByRole('button', { name: /^[A-Z][a-z]{2} \d+ — / });
+    expect(dayChips).toHaveLength(5);
+    const foldedWeeks = screen.getAllByRole('button', { name: /^\d/ });
+    expect(foldedWeeks).toHaveLength(4);
+    const tabbable = [...dayChips, ...foldedWeeks].filter((b) => b.tabIndex === 0);
     expect(tabbable).toHaveLength(1);
     // The chip's visible text is now the compact "Tue 18"; the full label
     // lives in the accessible name (aria-label) instead — see FortnightTape.
     expect(tabbable[0]).toHaveAccessibleName(/Tue, Aug 18/); // seedApp's selected day
   });
 
-  it('arrows move both focus and selection together, and the tab stop follows', async () => {
+  it('arrows move both focus and selection together within a week, and the tab stop follows', async () => {
     const user = userEvent.setup();
     render(<App />);
     screen.getByRole('button', { name: /Tue, Aug 18/ }).focus();
@@ -56,6 +58,22 @@ describe('fortnight tape: roving tabindex', () => {
     expect(screen.getByRole('heading', { name: /Mon, Aug 17/ })).toBeInTheDocument();
   });
 
+  it('crossing a week boundary collapses the old week and expands+focuses the new one', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    // A click both selects and focuses Fri 21 -- required before arrowing,
+    // since roving tabindex only lets the selected chip be a tab stop.
+    await user.click(screen.getByRole('button', { name: /^Fri 21 — / }));
+
+    await user.keyboard('{ArrowRight}');
+    const mon24 = screen.getByRole('button', { name: /^Mon 24 — / });
+    expect(mon24).toHaveFocus();
+    expect(mon24).toHaveAttribute('tabIndex', '0');
+    expect(screen.queryByRole('button', { name: /^Fri 21 — / })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^17–21 — / })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Mon, Aug 24/ })).toBeInTheDocument();
+  });
+
   it('Home and End jump to the first and last day of the month', async () => {
     // Anchored names: with 21 days the month has both Aug 3 and Aug 31, and
     // an unanchored /Aug 3/ would match both -- see task-3 brief.
@@ -65,7 +83,7 @@ describe('fortnight tape: roving tabindex', () => {
 
     await user.keyboard('{End}');
     expect(screen.getByRole('heading', { name: /^Mon, Aug 31$/ })).toBeInTheDocument();
-    // The button's accessible name is now "Mon 31 -- Mon, Aug 31" (see
+    // The button's accessible name is still "Mon 31 -- Mon, Aug 31" (see
     // FortnightTape's WCAG 2.5.3 fix) -- still anchored so it can't also
     // match "Mon 3 -- Mon, Aug 3".
     expect(screen.getByRole('button', { name: /^Mon 31 — Mon, Aug 31$/ })).toHaveFocus();

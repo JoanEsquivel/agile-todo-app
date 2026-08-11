@@ -31,6 +31,29 @@ describe('checkDayTick', () => {
     useAppStore.getState().checkDayTick(); // same day again: no-op
     expect(Object.values(useAppStore.getState().todos)[0]).toEqual(afterFirst);
   });
+
+  it('rolls an unresolved blocker note forward, leaves info/resolved notes alone', () => {
+    useAppStore.getState().addNote({ day: '2026-08-18', category: 'blocker', text: 'blocked' });
+    useAppStore.getState().addNote({ day: '2026-08-18', category: 'info', text: 'fyi' });
+    const notes = Object.values(useAppStore.getState().notes);
+    const blocker = notes.find((n) => n.category === 'blocker')!;
+    const info = notes.find((n) => n.category === 'info')!;
+    useAppStore.getState().resolveBlocker(blocker.id); // start a second, unresolved blocker instead
+    useAppStore.getState().addNote({ day: '2026-08-18', category: 'blocker', text: 'still blocked' });
+
+    clock.today = '2026-08-19';
+    useAppStore.getState().checkDayTick();
+
+    const after = useAppStore.getState().notes;
+    expect(after[blocker.id]).toMatchObject({ day: '2026-08-18', resolved: true }); // resolved: untouched
+    expect(after[info.id]).toMatchObject({ day: '2026-08-18' }); // info: untouched
+    const stillBlocked = Object.values(after).find((n) => n.text === 'still blocked')!;
+    expect(stillBlocked).toMatchObject({ day: '2026-08-19', rolledOver: true });
+
+    const afterFirst = { ...after };
+    useAppStore.getState().checkDayTick(); // same day again: no-op
+    expect(useAppStore.getState().notes).toEqual(afterFirst);
+  });
 });
 
 describe('regenerateFortnight', () => {
@@ -59,5 +82,24 @@ describe('regenerateFortnight', () => {
     expect(pending.scheduledDay).toBe('2026-08-25');
     expect(pending.rolledOver).toBe(true);
     expect(Object.values(s.todos).find((t) => t.title === 'shipped')!.fortnightId).toBe(oldId);
+  });
+
+  it('carries an unresolved blocker note over, leaves a resolved one behind', () => {
+    useAppStore.getState().addNote({ day: '2026-08-18', category: 'blocker', text: 'open blocker' });
+    useAppStore.getState().addNote({ day: '2026-08-18', category: 'blocker', text: 'closed blocker' });
+    const closed = Object.values(useAppStore.getState().notes).find((n) => n.text === 'closed blocker')!;
+    useAppStore.getState().resolveBlocker(closed.id);
+
+    clock.today = '2026-08-25';
+    const oldId = useAppStore.getState().activeFortnightId!;
+    useAppStore.getState().regenerateFortnight();
+
+    const s = useAppStore.getState();
+    const open = Object.values(s.notes).find((n) => n.text === 'open blocker')!;
+    expect(open.fortnightId).toBe(s.activeFortnightId);
+    expect(open.day).toBe('2026-08-25');
+    expect(open.rolledOver).toBe(true);
+    expect(Object.values(s.notes).find((n) => n.text === 'closed blocker')!.fortnightId).toBe(oldId);
+    expect(s.lastRolloverDay).toBe('2026-08-25');
   });
 });

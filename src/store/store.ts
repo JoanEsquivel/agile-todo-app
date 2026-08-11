@@ -3,8 +3,8 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 import type {
   Fortnight, ISODate, LocalDateTime, Note, NoteCategory, PersistedState, Priority, Todo,
 } from '../domain/types';
-import { generateMonthDays, effectiveBoardDay, carryOverTodos } from '../domain/fortnight';
-import { applyRollover } from '../domain/rollover';
+import { generateMonthDays, effectiveBoardDay, carryOverTodos, carryOverNotes } from '../domain/fortnight';
+import { applyRollover, applyNoteRollover } from '../domain/rollover';
 import {
   DEFAULT_POMODORO_SETTINGS, startRun, pauseRun, resumeRun, completePhase, skipPhase,
   type PomodoroRun,
@@ -169,11 +169,13 @@ export const useAppStore = create<AppState>()(
           const active = found ?? buildFortnight(today);
           const fortnights = found ? s.fortnights : [...s.fortnights, active];
           const { todos } = applyRollover(s.todos, active, today);
+          const { notes } = applyNoteRollover(s.notes, active, today);
           const effective = effectiveBoardDay(active, today);
           set({
             fortnights,
             activeFortnightId: active.id,
             todos,
+            notes,
             lastRolloverDay: today,
             selectedDay: wasViewingActive && effective !== null ? effective : s.selectedDay,
             viewedFortnightId: wasViewingActive ? active.id : s.viewedFortnightId,
@@ -186,11 +188,13 @@ export const useAppStore = create<AppState>()(
           const oldId = s.activeFortnightId;
           const fn = buildFortnight(today);
           const todos = oldId ? carryOverTodos(s.todos, oldId, fn, today) : s.todos;
+          const notes = oldId ? carryOverNotes(s.notes, oldId, fn, today) : s.notes;
           set({
             fortnights: [...s.fortnights, fn],
             activeFortnightId: fn.id,
             viewedFortnightId: fn.id,
             todos,
+            notes,
             selectedDay: effectiveBoardDay(fn, today),
             lastRolloverDay: today,
           });
