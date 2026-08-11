@@ -9,6 +9,7 @@ import { formatDayLabel } from '../domain/dates';
 import { nowIso, todayLocal } from './clock';
 import { createDebouncedStorage } from './persistence';
 import { runMigrations, SCHEMA_VERSION } from './migrations';
+import { applyThemePreference, type ThemePreference } from './theme';
 
 /** What DayColumn's compose form is currently showing for the selected day, if any. */
 export type ComposeIntent = 'todo' | 'note' | null;
@@ -26,6 +27,11 @@ export interface AppState extends PersistedState {
    *  written directly — see INV-9: a compose form must never be openable
    *  while viewing a read-only fortnight, including via this field. */
   composeIntent: ComposeIntent;
+  /** Ephemeral mirror of the manual theme preference. The durable copy lives
+   *  in its own localStorage key owned by src/store/theme.ts — deliberately
+   *  outside the persisted blob (see that file's header), so this never goes
+   *  through `partialize`. */
+  theme: ThemePreference;
 
   initApp: () => void;
   checkDayTick: () => void;          // implemented in Task 12
@@ -47,6 +53,7 @@ export interface AppState extends PersistedState {
   importState: (state: PersistedState) => void;
   announce: (message: string) => void;
   setComposeIntent: (intent: ComposeIntent) => void;
+  setTheme: (theme: ThemePreference) => void;
 }
 
 function buildFortnight(anchor: ISODate): Fortnight {
@@ -98,6 +105,7 @@ export const useAppStore = create<AppState>()(
         rehydrationError: null,
         announcement: null,
         composeIntent: null,
+        theme: 'system',
 
         initApp: () => {
           // A failed rehydration means whatever is in localStorage could not be
@@ -286,6 +294,15 @@ export const useAppStore = create<AppState>()(
         // palette action). Closing (intent === null) is always allowed.
         setComposeIntent: (intent) =>
           set((s) => (intent !== null && s.viewedFortnightId !== s.activeFortnightId ? {} : { composeIntent: intent })),
+
+        setTheme: (theme) => {
+          applyThemePreference(theme);
+          set({
+            theme,
+            announcement:
+              theme === 'system' ? 'Theme follows your system setting' : `Theme set to ${theme}`,
+          });
+        },
       };
     },
     {

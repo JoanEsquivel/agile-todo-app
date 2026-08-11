@@ -113,8 +113,9 @@ function main() {
     }
     if (/#[0-9a-fA-F]{3,8}\b/.test(src) && !rel.startsWith('src/styles/')) {
       flag('INV-12', 'hard-coded hex color in a CSS module',
-        'All colors come from src/styles/tokens.css custom properties, which is what makes the ' +
-        '@media (prefers-color-scheme: dark) block work with no JS and no theme state. ' +
+        'All colors come from src/styles/tokens.css custom properties, each declared once as a ' +
+        'light-dark(lightValue, darkValue) pair — that is what makes both the OS preference and ' +
+        'the manual data-theme toggle work without any per-component theme branching. ' +
         'Add a token if none fits. (rgba()/hsla() for opacity, e.g. a modal scrim, is fine.)');
     }
   }

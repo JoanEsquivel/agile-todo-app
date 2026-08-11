@@ -8,6 +8,11 @@ import css from './tokens.css?raw';
  * instead of shipping. See the header comment in tokens.css for what the two
  * border tokens mean and why they have different floors.
  *
+ * Palette format: every color token is declared exactly once in `:root` as
+ * `light-dark(lightValue, darkValue)`; the mode is chosen by `color-scheme`,
+ * overridden by `:root[data-theme='light'|'dark']` (the manual toggle).
+ * This file splits each pair into a light and a dark map and checks both.
+ *
  * `?raw` only returns real content here because vite.config.ts opts this one
  * file into `test.css.include` — Vitest stubs CSS as an empty string by
  * default (verified: a non-CSS asset imports fine with `?raw`; only .css
@@ -16,7 +21,11 @@ import css from './tokens.css?raw';
  * `?raw` query suffix.
  */
 
-/** `:root` blocks contain no nested braces, so a non-greedy body match is safe. */
+/**
+ * The bare `:root {` block only — `:root[data-theme=...]` blocks don't match
+ * because the brace doesn't directly follow `:root`. Bodies contain no nested
+ * braces, so a non-greedy body match is safe.
+ */
 function rootBlocks(source: string): string[] {
   return [...source.matchAll(/:root\s*\{([^}]*)\}/g)].map((m) => m[1]);
 }
@@ -27,6 +36,23 @@ function declarations(block: string): Record<string, string> {
     out[name] = value.trim();
   }
   return out;
+}
+
+/** Strict hex-pair form. Shadows nest rgba() commas and deliberately don't match. */
+const LIGHT_DARK = /^light-dark\(\s*(#[0-9a-fA-F]{3,8})\s*,\s*(#[0-9a-fA-F]{3,8})\s*\)$/;
+
+function splitModes(all: Record<string, string>): {
+  light: Record<string, string>;
+  dark: Record<string, string>;
+} {
+  const light: Record<string, string> = {};
+  const dark: Record<string, string> = {};
+  for (const [name, value] of Object.entries(all)) {
+    const pair = value.match(LIGHT_DARK);
+    light[name] = pair ? pair[1] : value;
+    dark[name] = pair ? pair[2] : value;
+  }
+  return { light, dark };
 }
 
 /** Resolves `var(--x)` aliases (tokens.css uses them for the transitional accent names). */
@@ -56,8 +82,8 @@ function contrast(a: string, b: string): number {
 }
 
 const blocks = rootBlocks(css);
-const light = declarations(blocks[0]);
-const dark = { ...light, ...declarations(blocks[1]) };
+const all = declarations(blocks[0]);
+const { light, dark } = splitModes(all);
 
 /** WCAG 2.1: 4.5:1 for body text (1.4.3), 3:1 for UI components & graphics (1.4.11). */
 const TEXT = 4.5;
@@ -112,9 +138,26 @@ const pairs: Array<[fg: string, bg: string, min: number]> = [
 ];
 
 describe('design tokens', () => {
-  it('defines a light and a dark palette', () => {
-    expect(blocks).toHaveLength(2);
+  it('declares the palette once, as light-dark() pairs in a single :root block', () => {
+    expect(blocks).toHaveLength(1);
+    // Completeness guard: a color token added without a dark half would
+    // silently render its light value in dark mode.
+    const colorTokens = Object.keys(all).filter((n) => n.startsWith('--color-'));
+    expect(colorTokens.length).toBeGreaterThan(0);
+    for (const name of colorTokens) {
+      const value = all[name];
+      if (LIGHT_DARK.test(value)) continue;
+      // The transitional aliases are the one non-pair form allowed.
+      expect(value, `${name} must be a light-dark(#hex, #hex) pair or a var() alias`).toMatch(
+        /^var\(\s*--[\w-]+\s*\)$/,
+      );
+    }
     expect(dark['--color-bg']).not.toBe(light['--color-bg']);
+  });
+
+  it('lets the manual toggle override color-scheme in both directions', () => {
+    expect(css).toMatch(/:root\[data-theme='light'\]\s*\{\s*color-scheme:\s*light;\s*\}/);
+    expect(css).toMatch(/:root\[data-theme='dark'\]\s*\{\s*color-scheme:\s*dark;\s*\}/);
   });
 
   describe.each([

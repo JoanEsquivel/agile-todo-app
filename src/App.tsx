@@ -10,6 +10,7 @@ import { StandupModal } from './components/standup/StandupModal';
 import { FortnightSwitcher } from './components/history/FortnightSwitcher';
 import { BackupControls } from './components/common/BackupControls';
 import { AuthorLinks } from './components/common/AuthorLinks';
+import { ThemeToggle } from './components/common/ThemeToggle';
 import { ConfirmDialog } from './components/common/ConfirmDialog';
 import { Announcer } from './components/common/Announcer';
 import { CommandPalette, type CommandAction } from './components/commands/CommandPalette';
@@ -65,6 +66,7 @@ export default function App() {
           <button onClick={() => setConfirmRegenerateOpen(true)}>Generate new fortnight</button>
           <FortnightSwitcher />
           <BackupControls />
+          <ThemeToggle />
           <AuthorLinks />
         </div>
       </header>

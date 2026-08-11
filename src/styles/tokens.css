@@ -16,13 +16,18 @@
  * Most dashboards run a brand accent in direct competition with their status
  * colors. Refusing one is what keeps the semantic palette legible here.
  *
- * Light is the primary mode (a daytime tool, used beside an IDE). Dark is
- * `prefers-color-scheme` only — no toggle, no JS, no theme state (INV-12).
+ * Light is the primary mode (a daytime tool, used beside an IDE). Every
+ * color token is declared exactly ONCE, as `light-dark(lightValue,
+ * darkValue)`; which half applies is decided by `color-scheme` — the OS
+ * preference by default, overridden by `:root[data-theme='light'|'dark']`
+ * (set by the manual toggle; see src/store/theme.ts and the inline script
+ * in index.html). Never branch on theme in a component — add a token.
  *
  * CONTRAST IS ENFORCED, NOT ASSERTED. Every pair below is verified by
- * `tokens.test.ts`, which parses this file and re-derives WCAG 2.1 ratios.
- * Body text >= 4.5:1, control borders and tape segments >= 3:1. Edit a color
- * here and `npm run verify` will tell you if you broke it.
+ * `tokens.test.ts`, which parses this file, splits each light-dark() pair,
+ * and re-derives WCAG 2.1 ratios per mode. Body text >= 4.5:1, control
+ * borders and tape segments >= 3:1. Edit a color here and `npm run verify`
+ * will tell you if you broke it.
  *
  * Two border tokens with DISTINCT meanings (they used to be interchangeable):
  *   --color-border         hairline decoration: card edges, dividers, rules.
@@ -39,50 +44,51 @@
   color-scheme: light dark;
 
   /* ---- Color: surfaces & text ---- */
-  --color-bg: #fafafb;
-  --color-surface: #ffffff;
-  --color-surface-sunken: #f1f2f4;
-  --color-surface-hover: #f4f5f7;
-  --color-border: #e4e6ea;
-  --color-border-strong: #868d9b;
-  --color-text: #14161a;
-  --color-text-muted: #5c626d;
-  --color-text-faint: #666d79;
+  --color-bg: light-dark(#fafafb, #0c0d10);
+  --color-surface: light-dark(#ffffff, #16181c);
+  --color-surface-sunken: light-dark(#f1f2f4, #101216);
+  --color-surface-hover: light-dark(#f4f5f7, #1d2026);
+  --color-border: light-dark(#e4e6ea, #262a31);
+  --color-border-strong: light-dark(#868d9b, #6b717c);
+  --color-text: light-dark(#14161a, #e8eaee);
+  --color-text-muted: light-dark(#5c626d, #9ba1ad);
+  --color-text-faint: light-dark(#666d79, #838a96);
 
   /* ---- Color: ink (primary / selected — this replaces "accent") ---- */
-  --color-ink: #14161a;
-  --color-ink-hover: #2e333b;
-  --color-ink-soft: #eaecef;
-  --color-on-ink: #ffffff;
+  /* Ink inverts: the "filled" state is light-on-dark in dark mode. */
+  --color-ink: light-dark(#14161a, #e8eaee);
+  --color-ink-hover: light-dark(#2e333b, #c9ced8);
+  --color-ink-soft: light-dark(#eaecef, #22262d);
+  --color-on-ink: light-dark(#ffffff, #0c0d10);
 
   /* ---- Color: focus ---- */
   /* Reserved. If this violet appears anywhere that isn't a focus
    * indicator, that's a bug — see the header comment. */
-  --color-focus-ring: #5b3df5;
+  --color-focus-ring: light-dark(#5b3df5, #a08cff);
   --focus-ring-width: 2px;
   --focus-ring-offset: 2px;
 
   /* ---- Color: semantic — priority ---- */
-  --color-priority-high: #c0341c;
-  --color-priority-high-bg: #fceae6;
-  --color-priority-medium: #8a5d08;
-  --color-priority-medium-bg: #faf0dc;
-  --color-priority-low: #5c6672;
-  --color-priority-low-bg: #eef0f3;
+  --color-priority-high: light-dark(#c0341c, #f08a6e);
+  --color-priority-high-bg: light-dark(#fceae6, #3a1a12);
+  --color-priority-medium: light-dark(#8a5d08, #e0ac5a);
+  --color-priority-medium-bg: light-dark(#faf0dc, #33260d);
+  --color-priority-low: light-dark(#5c6672, #9aa3b0);
+  --color-priority-low-bg: light-dark(#eef0f3, #22262c);
 
   /* ---- Color: semantic — notes ---- */
-  --color-blocker: #b3261e;
-  --color-blocker-bg: #fce9e7;
-  --color-info: #1f5fa8;
-  --color-info-bg: #e8f0fa;
+  --color-blocker: light-dark(#b3261e, #f0857a);
+  --color-blocker-bg: light-dark(#fce9e7, #371815);
+  --color-info: light-dark(#1f5fa8, #7fb0ea);
+  --color-info-bg: light-dark(#e8f0fa, #14243a);
 
   /* ---- Color: semantic — status ---- */
-  --color-attention: #c4271c;
-  --color-attention-bg: #fdeae7;
-  --color-rollover: #8a5a00;
-  --color-rollover-bg: #faf0da;
-  --color-success: #1e7a4b;
-  --color-success-bg: #e6f4ec;
+  --color-attention: light-dark(#c4271c, #f58a7e);
+  --color-attention-bg: light-dark(#fdeae7, #3a1a16);
+  --color-rollover: light-dark(#8a5a00, #dfb05e);
+  --color-rollover-bg: light-dark(#faf0da, #302408);
+  --color-success: light-dark(#1e7a4b, #6ecb97);
+  --color-success-bg: light-dark(#e6f4ec, #10281c);
 
   /* ---- Typography ---- */
   /* Self-hosted display/data faces, system stack retained as the fallback
@@ -134,8 +140,8 @@
   /* ---- Shadow ---- */
   /* Used sparingly: this design separates with hairlines, not elevation.
    * `lg` exists for overlays, which genuinely float. */
-  --shadow-sm: 0 1px 2px rgba(20, 22, 26, 0.06);
-  --shadow-lg: 0 16px 48px rgba(20, 22, 26, 0.18);
+  --shadow-sm: 0 1px 2px light-dark(rgba(20, 22, 26, 0.06), rgba(0, 0, 0, 0.4));
+  --shadow-lg: 0 16px 48px light-dark(rgba(20, 22, 26, 0.18), rgba(0, 0, 0, 0.6));
 
   /* ---- Motion ---- */
   --transition-fast: 100ms ease;
@@ -145,46 +151,15 @@
   --width-app: 1600px;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-bg: #0c0d10;
-    --color-surface: #16181c;
-    --color-surface-sunken: #101216;
-    --color-surface-hover: #1d2026;
-    --color-border: #262a31;
-    --color-border-strong: #6b717c;
-    --color-text: #e8eaee;
-    --color-text-muted: #9ba1ad;
-    --color-text-faint: #838a96;
+/* The manual theme toggle. No attribute (or 'system') = follow the OS via
+ * the `color-scheme: light dark` above; an explicit choice pins one half of
+ * every light-dark() pair. The attribute is set pre-React by the inline
+ * script in index.html (no flash of the wrong theme) and afterwards by
+ * setTheme via src/store/theme.ts. */
+:root[data-theme='light'] {
+  color-scheme: light;
+}
 
-    /* Ink inverts: the "filled" state is now light-on-dark. */
-    --color-ink: #e8eaee;
-    --color-ink-hover: #c9ced8;
-    --color-ink-soft: #22262d;
-    --color-on-ink: #0c0d10;
-
-    --color-focus-ring: #a08cff;
-
-    --color-priority-high: #f08a6e;
-    --color-priority-high-bg: #3a1a12;
-    --color-priority-medium: #e0ac5a;
-    --color-priority-medium-bg: #33260d;
-    --color-priority-low: #9aa3b0;
-    --color-priority-low-bg: #22262c;
-
-    --color-blocker: #f0857a;
-    --color-blocker-bg: #371815;
-    --color-info: #7fb0ea;
-    --color-info-bg: #14243a;
-
-    --color-attention: #f58a7e;
-    --color-attention-bg: #3a1a16;
-    --color-rollover: #dfb05e;
-    --color-rollover-bg: #302408;
-    --color-success: #6ecb97;
-    --color-success-bg: #10281c;
-
-    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
-    --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.6);
-  }
+:root[data-theme='dark'] {
+  color-scheme: dark;
 }

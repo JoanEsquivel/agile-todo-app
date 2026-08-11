@@ -9,6 +9,17 @@
     <title>Agile Todo App</title>
   </head>
   <body>
+    <!-- Applies the stored manual theme before first paint — without this,
+         a user who picked the non-OS theme gets a flash of the wrong one on
+         every load. Key and values are owned by src/store/theme.ts. -->
+    <script>
+      try {
+        var storedTheme = localStorage.getItem('agile-todo-app.theme');
+        if (storedTheme === 'dark' || storedTheme === 'light') {
+          document.documentElement.dataset.theme = storedTheme;
+        }
+      } catch (e) {}
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

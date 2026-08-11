@@ -43,6 +43,15 @@ describe('store persistence', () => {
     expect(persisted.state.composeIntent).toBeUndefined(); // ...but excluded from the persisted blob.
   });
 
+  it('theme is ephemeral in the store -- its durable copy is theme.ts\'s own key (INV-6)', () => {
+    useAppStore.getState().initApp();
+    useAppStore.getState().setTheme('dark');
+    expect(useAppStore.getState().theme).toBe('dark'); // set in memory...
+    appStorage.flush();
+    const persisted = JSON.parse(localStorage.getItem('agile-todo-app.v-state')!);
+    expect(persisted.state.theme).toBeUndefined(); // ...but excluded from the persisted blob.
+  });
+
   it('importState replaces persisted fields and re-derives the view', () => {
     useAppStore.getState().initApp();
     const snapshot = {

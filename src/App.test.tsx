@@ -32,6 +32,22 @@ describe('App shell', () => {
     expect(source.getAttribute('rel')).toContain('noopener');
   });
 
+  it('cycles the theme toggle through system, light, and dark', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole('button', { name: 'Theme: system' }));
+    expect(document.documentElement.dataset.theme).toBe('light');
+
+    await user.click(screen.getByRole('button', { name: 'Theme: light' }));
+    expect(document.documentElement.dataset.theme).toBe('dark');
+
+    // Back to system: attribute and stored key are both cleared.
+    await user.click(screen.getByRole('button', { name: 'Theme: dark' }));
+    expect(screen.getByRole('button', { name: 'Theme: system' })).toBeInTheDocument();
+    expect(document.documentElement.dataset.theme).toBeUndefined();
+    expect(localStorage.getItem('agile-todo-app.theme')).toBeNull();
+  });
+
   it('navigates days via chips and prev/next, clamped at the ends', async () => {
     const user = userEvent.setup();
     render(<App />);
