@@ -36,6 +36,12 @@ export interface Fortnight {
   createdAt: ISODateTime;
 }
 
+export interface PomodoroSettings {
+  workMinutes: number;
+  breakMinutes: number;
+  longBreakMinutes: number;
+}
+
 export interface PersistedState {
   schemaVersion: number;
   fortnights: Fortnight[];            // chronological; last = active
