@@ -99,8 +99,8 @@ function sameDays(a: ISODate[], b: ISODate[]): boolean {
  *
  *  Returns null when it must not apply:
  *  - no overlap between the old days and the new month (the user is
- *    returning months later — leave it expired, the banner + "Generate new
- *    month" flow handles that);
+ *    returning months later — leave it expired; the next checkDayTick
+ *    auto-generates the following month and prunes history);
  *  - the days are already identical (idempotence — safe to re-run, e.g. via
  *    `parseBackup` on an already-migrated document). */
 export function adaptFortnightToMonth(
