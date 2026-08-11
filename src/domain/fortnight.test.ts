@@ -1,5 +1,5 @@
-import { generateMonthDays, effectiveBoardDay } from './fortnight';
-import type { Fortnight } from './types';
+import { generateMonthDays, effectiveBoardDay, adaptFortnightToMonth } from './fortnight';
+import type { Fortnight, Note, Todo } from './types';
 
 const fn: Fortnight = {
   id: 'f1',
@@ -118,5 +118,155 @@ describe('generateMonthDays', () => {
       expect(days[0]).toBe('2026-08-03');
       expect(days[days.length - 1]).toBe('2026-08-31');
     });
+  });
+});
+
+describe('adaptFortnightToMonth', () => {
+  function makeTodo(overrides: Partial<Todo>): Todo {
+    return {
+      id: 't1', fortnightId: 'f1', title: 'x', priority: 'low', scheduledDay: '2026-08-18',
+      done: false, createdAt: '2026-08-01T00:00:00.000Z', rolledOver: false, ...overrides,
+    };
+  }
+  function makeNote(overrides: Partial<Note>): Note {
+    return {
+      id: 'n1', fortnightId: 'f1', day: '2026-08-18', category: 'blocker', text: 'blocked',
+      resolved: false, createdAt: '2026-08-01T00:00:00.000Z', ...overrides,
+    };
+  }
+
+  it('reshapes a literal 10-day fortnight into the containing calendar month, keeping id/createdAt and leaving todos/notes intact', () => {
+    const active: Fortnight = {
+      id: 'f1',
+      startDay: '2026-08-17',
+      days: [
+        '2026-08-17', '2026-08-18', '2026-08-19', '2026-08-20', '2026-08-21',
+        '2026-08-24', '2026-08-25', '2026-08-26', '2026-08-27', '2026-08-28',
+      ],
+      createdAt: '2026-08-17T09:00:00.000Z',
+    };
+    const todo = makeTodo({ id: 't1', fortnightId: 'f1', scheduledDay: '2026-08-19' });
+    const note = makeNote({ id: 'n1', fortnightId: 'f1', day: '2026-08-19' });
+    const result = adaptFortnightToMonth(active, { t1: todo }, { n1: note }, '2026-08-18');
+
+    expect(result).not.toBeNull();
+    expect(result!.fortnight.id).toBe('f1');
+    expect(result!.fortnight.createdAt).toBe('2026-08-17T09:00:00.000Z');
+    expect(result!.fortnight.startDay).toBe('2026-08-03');
+    expect(result!.fortnight.days).toHaveLength(21);
+    expect(result!.fortnight.days[0]).toBe('2026-08-03');
+    expect(result!.fortnight.days[result!.fortnight.days.length - 1]).toBe('2026-08-31');
+    // Both already land inside the reshaped month, so they're untouched.
+    expect(result!.todos.t1).toBe(todo);
+    expect(result!.notes.n1).toBe(note);
+  });
+
+  it('rescues a period whose days no longer include today, as long as it overlaps the current month', () => {
+    // Same fixture as effectiveBoardDay's `fn` above: active Aug 10-21, but
+    // "today" (Aug 25) has moved past its last day. Still same month though,
+    // so the board should continue rather than show as expired.
+    const active: Fortnight = { ...fn, id: 'f1' };
+    const result = adaptFortnightToMonth(active, {}, {}, '2026-08-25');
+    expect(result).not.toBeNull();
+    expect(result!.fortnight.id).toBe('f1');
+    expect(result!.fortnight.startDay).toBe('2026-08-03');
+    expect(result!.fortnight.days[result!.fortnight.days.length - 1]).toBe('2026-08-31');
+  });
+
+  it('returns null when the old period does not overlap the current month at all', () => {
+    const active: Fortnight = {
+      id: 'f1',
+      startDay: '2026-06-15',
+      days: [
+        '2026-06-15', '2026-06-16', '2026-06-17', '2026-06-18', '2026-06-19',
+        '2026-06-22', '2026-06-23', '2026-06-24', '2026-06-25', '2026-06-26',
+      ],
+      createdAt: '2026-06-15T09:00:00.000Z',
+    };
+    expect(adaptFortnightToMonth(active, {}, {}, '2026-08-18')).toBeNull();
+  });
+
+  it('returns null when the fortnight is already the current calendar month (idempotence)', () => {
+    const augustDays = generateMonthDays('2026-08-18');
+    const active: Fortnight = {
+      id: 'f1', startDay: augustDays[0], days: augustDays, createdAt: '2026-08-01T00:00:00.000Z',
+    };
+    expect(adaptFortnightToMonth(active, {}, {}, '2026-08-18')).toBeNull();
+  });
+
+  describe('crossing a month boundary (active Aug 31 - Sep 11, today Aug 31)', () => {
+    const active: Fortnight = {
+      id: 'f1',
+      startDay: '2026-08-31',
+      days: [
+        '2026-08-31', '2026-09-01', '2026-09-02', '2026-09-03', '2026-09-04',
+        '2026-09-07', '2026-09-08', '2026-09-09', '2026-09-10', '2026-09-11',
+      ],
+      createdAt: '2026-08-31T09:00:00.000Z',
+    };
+
+    it('relocates a non-done todo that fell outside the month to the effective board day, without marking it rolled over when it was not yet due', () => {
+      const todo = makeTodo({ id: 't1', fortnightId: 'f1', scheduledDay: '2026-09-03', done: false, rolledOver: false });
+      const result = adaptFortnightToMonth(active, { t1: todo }, {}, '2026-08-31');
+      expect(result).not.toBeNull();
+      expect(result!.fortnight.days[result!.fortnight.days.length - 1]).toBe('2026-08-31');
+      expect(result!.todos.t1.scheduledDay).toBe('2026-08-31');
+      expect(result!.todos.t1.rolledOver).toBe(false);
+    });
+
+    it('marks rolledOver when the relocated day was strictly before today', () => {
+      // 2026-08-15 is a Saturday: inside the old fortnight's span but not a
+      // workday, so it is not part of the reshaped month either — and it's
+      // in the past relative to today (2026-08-31).
+      const todo = makeTodo({ id: 't2', fortnightId: 'f1', scheduledDay: '2026-08-15', done: false, rolledOver: false });
+      const result = adaptFortnightToMonth(active, { t2: todo }, {}, '2026-08-31');
+      expect(result).not.toBeNull();
+      expect(result!.todos.t2.scheduledDay).toBe('2026-08-31');
+      expect(result!.todos.t2.rolledOver).toBe(true);
+    });
+
+    it('relocates a done todo too, preserving done/completedAt and leaving rolledOver untouched', () => {
+      const todo = makeTodo({
+        id: 't3', fortnightId: 'f1', scheduledDay: '2026-09-03', done: true,
+        completedAt: '2026-08-30T10:00:00.000Z', rolledOver: false,
+      });
+      const result = adaptFortnightToMonth(active, { t3: todo }, {}, '2026-08-31');
+      expect(result).not.toBeNull();
+      expect(result!.todos.t3.scheduledDay).toBe('2026-08-31');
+      expect(result!.todos.t3.done).toBe(true);
+      expect(result!.todos.t3.completedAt).toBe('2026-08-30T10:00:00.000Z');
+      expect(result!.todos.t3.rolledOver).toBe(false);
+    });
+
+    it('relocates a note whose day fell outside the month', () => {
+      const note = makeNote({ id: 'n1', fortnightId: 'f1', day: '2026-09-03' });
+      const result = adaptFortnightToMonth(active, {}, { n1: note }, '2026-08-31');
+      expect(result).not.toBeNull();
+      expect(result!.notes.n1.day).toBe('2026-08-31');
+    });
+
+    it('leaves todos and notes belonging to OTHER fortnights untouched, byte for byte', () => {
+      const otherTodo = makeTodo({ id: 'o1', fortnightId: 'other', scheduledDay: '2026-09-03' });
+      const otherNote = makeNote({ id: 'o2', fortnightId: 'other', day: '2026-09-03' });
+      const result = adaptFortnightToMonth(active, { o1: otherTodo }, { o2: otherNote }, '2026-08-31');
+      expect(result).not.toBeNull();
+      expect(result!.todos.o1).toBe(otherTodo);
+      expect(result!.notes.o2).toBe(otherNote);
+    });
+  });
+
+  it('returns null on a weekend-tail anchor that rolls the new month past the old period entirely', () => {
+    const active: Fortnight = {
+      id: 'f1',
+      startDay: '2026-05-18',
+      days: [
+        '2026-05-18', '2026-05-19', '2026-05-20', '2026-05-21', '2026-05-22',
+        '2026-05-25', '2026-05-26', '2026-05-27', '2026-05-28', '2026-05-29',
+      ],
+      createdAt: '2026-05-18T09:00:00.000Z',
+    };
+    // 2026-05-30 is a Saturday after May's last workday, so generateMonthDays
+    // rolls forward to June — no overlap with the May-anchored fortnight.
+    expect(adaptFortnightToMonth(active, {}, {}, '2026-05-30')).toBeNull();
   });
 });

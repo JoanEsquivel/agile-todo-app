@@ -81,6 +81,41 @@ describe('store persistence', () => {
     });
   });
 
+  it('rehydrating a v2 blob with a literal 10-day active fortnight adapts it into the containing calendar month', async () => {
+    const tenDayFortnight = {
+      id: 'fn-1', startDay: '2026-08-17',
+      days: [
+        '2026-08-17', '2026-08-18', '2026-08-19', '2026-08-20', '2026-08-21',
+        '2026-08-24', '2026-08-25', '2026-08-26', '2026-08-27', '2026-08-28',
+      ],
+      createdAt: '2026-08-17T00:00:00.000Z',
+    };
+    const staleTodo = {
+      id: 't1', fortnightId: 'fn-1', title: 'stranded', priority: 'low' as const,
+      scheduledDay: '2026-08-19', done: false, createdAt: '2026-08-01T00:00:00.000Z', rolledOver: false,
+    };
+    appStorage.setItem('agile-todo-app.v-state', JSON.stringify({
+      state: {
+        schemaVersion: 2, fortnights: [tenDayFortnight], activeFortnightId: 'fn-1',
+        todos: { t1: staleTodo }, notes: {}, lastRolloverDay: '2026-08-17',
+        pomodoroSettings: { workMinutes: 25, breakMinutes: 5, longBreakMinutes: 15 },
+      },
+      version: 2,
+    }));
+    await useAppStore.persist.rehydrate();
+    expect(useAppStore.getState().rehydrationError).toBeNull();
+    expect(useAppStore.getState().schemaVersion).toBe(SCHEMA_VERSION);
+    const active = useAppStore.getState().fortnights.find((f) => f.id === 'fn-1')!;
+    expect(active.days).toHaveLength(21);
+    expect(active.startDay).toBe('2026-08-03');
+    expect(useAppStore.getState().todos.t1).toBeDefined();
+    expect(useAppStore.getState().todos.t1.scheduledDay).toBe('2026-08-19'); // already inside the month
+
+    appStorage.flush();
+    const persisted = JSON.parse(localStorage.getItem('agile-todo-app.v-state')!);
+    expect(persisted.version).toBe(SCHEMA_VERSION);
+  });
+
   it('importState replaces persisted fields and re-derives the view', () => {
     useAppStore.getState().initApp();
     const snapshot = {
