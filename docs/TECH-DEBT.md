@@ -20,6 +20,7 @@ Triaged during implementation and the final whole-branch review. Deliberately **
 | TD-12 | `package.json` | `vite` isn't in the plan's original dependency whitelist (unavoidable — the `dev`/`build`/`preview` scripts require it). | None — documented for context only, not an action item. | — |
 | TD-13 | `package.json` | Runtime is React 19 / Zustand 5; the original design spec said "React 18". | Works correctly (nothing depends on a React-18-only API); an undocumented deviation from an approved spec, worth knowing about. | — |
 | TD-14 | `src/domain/fortnight.ts`, `src/store/`, `src/components/board/`, `src/domain/types.ts` | The scheduling horizon moved from a 10-workday fortnight to a calendar month, but the internal naming (`Fortnight` type, `fortnightId`, `FortnightTape`/`FortnightBoard`/`FortnightNav`, `fortnight.ts`) still says "fortnight" — deliberately. | None — cosmetic-only mismatch between code naming and user-visible "month" copy, documented in `CLAUDE.md`. Renaming would touch the persisted `fortnightId` field and ~40 files for zero user-facing value. | — |
+| TD-15 | `src/components/common/Modal.tsx` | Focus trap selector doesn't exclude `[tabindex=\"-1\"]` on button elements; Shift+Tab from close button can focus inactive roving-tabindex controls (like HelpModal tabs) outside the modal. | Semantic focus boundary breaks when cycling from modal's last element. | M |
 
 ## Minor / cosmetic
 

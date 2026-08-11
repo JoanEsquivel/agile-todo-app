@@ -4,7 +4,7 @@ A browser-only todo board built around a monthly cadence. No backend, no account
 
 **[Live demo →](https://joanesquivel.github.io/agile-todo-app/)**
 
-334 tests · TypeScript strict · zero backend
+344 tests · TypeScript strict · zero backend
 
 Built by [Joan Esquivel](https://www.linkedin.com/in/joanesquivel/) · [source code](https://github.com/JoanEsquivel/agile-todo-app)
 
@@ -20,6 +20,7 @@ Built by [Joan Esquivel](https://www.linkedin.com/in/joanesquivel/) · [source c
 - **Automatic month rollover, three months of history** — when the active month ends, the next one is generated for you, nothing to click; the three most recent calendar months stay browsable (read-only, never editable) through a `‹ Month YYYY ›` stepper, and anything older is quietly pruned
 - **Pomodoro timer** — an always-visible header widget with classic cycles (25/5, long break every 4th), configurable durations, and an optional sound + browser notification when a phase ends
 - **Light / dark / system theme** — follows your OS by default, with a manual toggle that persists on your device
+- **Built-in help** — an ⓘ button beside the theme toggle opens a guide to every feature above, plus the full shortcut list
 - **Keyboard-first** — a command palette and a full set of shortcuts; see below
 
 ## Keyboard shortcuts
@@ -27,7 +28,7 @@ Built by [Joan Esquivel](https://www.linkedin.com/in/joanesquivel/) · [source c
 | Key | Does |
 |---|---|
 | `⌘K` / `Ctrl+K` | Open the command palette — jump to a day, jump to a todo by title, or run an action |
-| `?` | Show the shortcuts overlay |
+| `?` | Open the help (Shortcuts tab) |
 | `←` / `→` | Previous / next day |
 | `Home` / `End` | First / last day of the month |
 | `T` | Jump to today |
@@ -76,17 +77,17 @@ src/
   domain/      pure functions — date math, month generation, rollover, standup, reminders
   store/       Zustand store — persistence, migrations, backup export/import
   hooks/       React adapters over the store
-  components/  UI, organized by feature (board, todos, notes, reminders, standup, history, commands)
+  components/  UI, organized by feature (board, todos, notes, reminders, standup, history, commands, help)
   styles/      design tokens + global element defaults
 ```
 
 Dependencies point one way: `domain → store → components`. The domain layer has zero framework dependencies, which is what makes the date logic unit-testable in isolation.
 
-Full architecture rationale, data model, and edge-case decisions: [`docs/superpowers/specs/2026-08-10-agile-todo-app-design.md`](docs/superpowers/specs/2026-08-10-agile-todo-app-design.md), amended by [`docs/superpowers/specs/2026-08-10-monthly-board-redesign-design.md`](docs/superpowers/specs/2026-08-10-monthly-board-redesign-design.md) for the month board, scheduling horizon, and navigation UI, by [`docs/superpowers/specs/2026-08-11-tape-accordion-blocker-rollover-design.md`](docs/superpowers/specs/2026-08-11-tape-accordion-blocker-rollover-design.md) for the day-bar accordion and blocker rollover/carry-over, and by [`docs/superpowers/specs/2026-08-11-three-month-window-auto-rollover-design.md`](docs/superpowers/specs/2026-08-11-three-month-window-auto-rollover-design.md) for automatic month rollover, the three-month retention window, and the `‹ Month ›` stepper.
+Full architecture rationale, data model, and edge-case decisions: [`docs/superpowers/specs/2026-08-10-agile-todo-app-design.md`](docs/superpowers/specs/2026-08-10-agile-todo-app-design.md), amended by [`docs/superpowers/specs/2026-08-10-monthly-board-redesign-design.md`](docs/superpowers/specs/2026-08-10-monthly-board-redesign-design.md) for the month board, scheduling horizon, and navigation UI, by [`docs/superpowers/specs/2026-08-11-tape-accordion-blocker-rollover-design.md`](docs/superpowers/specs/2026-08-11-tape-accordion-blocker-rollover-design.md) for the day-bar accordion and blocker rollover/carry-over, by [`docs/superpowers/specs/2026-08-11-three-month-window-auto-rollover-design.md`](docs/superpowers/specs/2026-08-11-three-month-window-auto-rollover-design.md) for automatic month rollover, the three-month retention window, and the `‹ Month ›` stepper, and by [`docs/superpowers/specs/2026-08-11-help-modal-design.md`](docs/superpowers/specs/2026-08-11-help-modal-design.md) (the header help button + unified Help modal).
 
 ## Testing
 
-Vitest + React Testing Library, 334 tests across 31 files, all colocated with the code they test. Coverage spans pure domain logic, store transitions, persistence/migration behavior, component interaction, and accessibility.
+Vitest + React Testing Library, 344 tests across 32 files, all colocated with the code they test. Coverage spans pure domain logic, store transitions, persistence/migration behavior, component interaction, and accessibility.
 
 ```sh
 npm test                              # everything
@@ -104,7 +105,7 @@ GitHub Actions builds, tests, and deploys to GitHub Pages on every push to `main
 ## Docs
 
 - [`CLAUDE.md`](CLAUDE.md) — architecture invariants and conventions, for anyone (human or AI) making changes
-- [`docs/superpowers/specs/2026-08-10-agile-todo-app-design.md`](docs/superpowers/specs/2026-08-10-agile-todo-app-design.md) — the design spec, amended by [`docs/superpowers/specs/2026-08-10-monthly-board-redesign-design.md`](docs/superpowers/specs/2026-08-10-monthly-board-redesign-design.md) (the month-board redesign), [`docs/superpowers/specs/2026-08-11-tape-accordion-blocker-rollover-design.md`](docs/superpowers/specs/2026-08-11-tape-accordion-blocker-rollover-design.md) (the day-bar accordion + blocker rollover), and [`docs/superpowers/specs/2026-08-11-three-month-window-auto-rollover-design.md`](docs/superpowers/specs/2026-08-11-three-month-window-auto-rollover-design.md) (automatic month rollover, three-month retention, and stepper navigation)
+- [`docs/superpowers/specs/2026-08-10-agile-todo-app-design.md`](docs/superpowers/specs/2026-08-10-agile-todo-app-design.md) — the design spec, amended by [`docs/superpowers/specs/2026-08-10-monthly-board-redesign-design.md`](docs/superpowers/specs/2026-08-10-monthly-board-redesign-design.md) (the month-board redesign), [`docs/superpowers/specs/2026-08-11-tape-accordion-blocker-rollover-design.md`](docs/superpowers/specs/2026-08-11-tape-accordion-blocker-rollover-design.md) (the day-bar accordion + blocker rollover), [`docs/superpowers/specs/2026-08-11-three-month-window-auto-rollover-design.md`](docs/superpowers/specs/2026-08-11-three-month-window-auto-rollover-design.md) (automatic month rollover, three-month retention, and stepper navigation), and [`docs/superpowers/specs/2026-08-11-help-modal-design.md`](docs/superpowers/specs/2026-08-11-help-modal-design.md) (the header help button + unified Help modal)
 - [`docs/TECH-DEBT.md`](docs/TECH-DEBT.md) — known, triaged gaps
 - [`docs/ARCHIVE.md`](docs/ARCHIVE.md) — how it was originally built (historical)
 

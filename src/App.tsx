@@ -13,7 +13,8 @@ import { AuthorLinks } from './components/common/AuthorLinks';
 import { ThemeToggle } from './components/common/ThemeToggle';
 import { Announcer } from './components/common/Announcer';
 import { CommandPalette, type CommandAction } from './components/commands/CommandPalette';
-import { ShortcutsOverlay } from './components/commands/ShortcutsOverlay';
+import { HelpButton } from './components/help/HelpButton';
+import { HelpModal, type HelpTab } from './components/help/HelpModal';
 import { PomodoroWidget } from './components/pomodoro/PomodoroWidget';
 import { PomodoroModal } from './components/pomodoro/PomodoroModal';
 import styles from './App.module.css';
@@ -26,12 +27,12 @@ export default function App() {
   const setComposeIntent = useAppStore((s) => s.setComposeIntent);
   const [standupOpen, setStandupOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
-  const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState<HelpTab | null>(null);
   const [pomodoroOpen, setPomodoroOpen] = useState(false);
   useShortcuts({
     onOpenStandup: () => setStandupOpen(true),
     onOpenPalette: () => setPaletteOpen(true),
-    onOpenShortcutsOverlay: () => setShortcutsOpen(true),
+    onOpenHelp: () => setHelpOpen('shortcuts'),
     onOpenPomodoro: () => setPomodoroOpen(true),
   });
 
@@ -48,7 +49,8 @@ export default function App() {
     // Not board mutation, so no read-only gate — the timer works while
     // viewing a past fortnight.
     { id: 'pomodoro', label: 'Pomodoro timer', run: () => setPomodoroOpen(true) },
-    { id: 'keyboard-shortcuts', label: 'Keyboard shortcuts', run: () => setShortcutsOpen(true) },
+    { id: 'help-guide', label: 'Help guide', run: () => setHelpOpen('guide') },
+    { id: 'keyboard-shortcuts', label: 'Keyboard shortcuts', run: () => setHelpOpen('shortcuts') },
   ];
 
   return (
@@ -69,6 +71,7 @@ export default function App() {
           <FortnightNav />
           <BackupControls />
           <PomodoroWidget onOpenModal={() => setPomodoroOpen(true)} />
+          <HelpButton onClick={() => setHelpOpen('guide')} />
           <ThemeToggle />
           <AuthorLinks />
         </div>
@@ -86,7 +89,7 @@ export default function App() {
       <FortnightBoard />
       {standupOpen && <StandupModal onClose={() => setStandupOpen(false)} />}
       {paletteOpen && <CommandPalette onClose={() => setPaletteOpen(false)} actions={paletteActions} />}
-      {shortcutsOpen && <ShortcutsOverlay onClose={() => setShortcutsOpen(false)} />}
+      {helpOpen && <HelpModal initialTab={helpOpen} onClose={() => setHelpOpen(null)} />}
       {pomodoroOpen && <PomodoroModal onClose={() => setPomodoroOpen(false)} />}
     </div>
   );
