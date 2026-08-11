@@ -1,10 +1,12 @@
 import { parseBackup, serializeState, validatePersistedState } from './exportImport';
 import { SCHEMA_VERSION } from './migrations';
+import { DEFAULT_POMODORO_SETTINGS } from '../domain/pomodoro';
 import type { PersistedState } from '../domain/types';
 
 const good: PersistedState = {
   schemaVersion: SCHEMA_VERSION, fortnights: [], activeFortnightId: null,
   todos: {}, notes: {}, lastRolloverDay: null,
+  pomodoroSettings: DEFAULT_POMODORO_SETTINGS,
 };
 
 describe('backup export/import', () => {
@@ -56,5 +58,28 @@ describe('backup export/import', () => {
   it('rejects a malformed backup that survives the version sniff', () => {
     const malformed = JSON.stringify({ schemaVersion: SCHEMA_VERSION, todos: 'nope' });
     expect(() => parseBackup(malformed)).toThrow(/malformed/i);
+  });
+
+  it('rejects missing or malformed pomodoro settings', () => {
+    const { pomodoroSettings: _dropped, ...withoutSettings } = good;
+    expect(validatePersistedState(withoutSettings)).toBe(false);
+    expect(validatePersistedState({ ...good, pomodoroSettings: { workMinutes: 0, breakMinutes: 5, longBreakMinutes: 15 } })).toBe(false);
+    expect(validatePersistedState({ ...good, pomodoroSettings: { workMinutes: '25', breakMinutes: 5, longBreakMinutes: 15 } })).toBe(false);
+  });
+
+  it('imports a pre-pomodoro v1 backup by filling default settings', () => {
+    const v1 = JSON.stringify({
+      schemaVersion: 1, fortnights: [], activeFortnightId: null,
+      todos: {}, notes: {}, lastRolloverDay: null,
+    });
+    expect(parseBackup(v1).pomodoroSettings).toEqual(DEFAULT_POMODORO_SETTINGS);
+  });
+
+  it('round-trips customised pomodoro settings', () => {
+    const custom: PersistedState = {
+      ...good,
+      pomodoroSettings: { workMinutes: 50, breakMinutes: 10, longBreakMinutes: 30 },
+    };
+    expect(parseBackup(serializeState(custom)).pomodoroSettings).toEqual(custom.pomodoroSettings);
   });
 });

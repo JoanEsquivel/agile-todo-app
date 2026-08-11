@@ -1,14 +1,21 @@
 import { useAppStore } from './store';
+import { SCHEMA_VERSION } from './migrations';
+import { DEFAULT_POMODORO_SETTINGS } from '../domain/pomodoro';
+
+// Mutable so the pomodoro tests can advance time mid-test (INV-10).
+const clock = { iso: '2026-08-18T12:00:00.000Z' };
 
 vi.mock('./clock', () => ({
   todayLocal: () => '2026-08-18',
-  nowIso: () => '2026-08-18T12:00:00.000Z',
+  nowIso: () => clock.iso,
 }));
 
 function reset() {
+  clock.iso = '2026-08-18T12:00:00.000Z';
   useAppStore.setState({
-    schemaVersion: 1, fortnights: [], activeFortnightId: null,
+    schemaVersion: SCHEMA_VERSION, fortnights: [], activeFortnightId: null,
     todos: {}, notes: {}, lastRolloverDay: null,
+    pomodoroSettings: DEFAULT_POMODORO_SETTINGS, pomodoro: null,
     viewedFortnightId: null, selectedDay: null, composeIntent: null,
   });
 }
@@ -142,5 +149,67 @@ describe('store', () => {
       useAppStore.getState().viewFortnight(activeId); // switching view, even to the same fortnight
       expect(useAppStore.getState().composeIntent).toBeNull();
     });
+  });
+});
+
+describe('pomodoro actions', () => {
+  beforeEach(reset);
+  const MIN = 60_000;
+
+  it('startPomodoro begins a running work phase from the persisted settings', () => {
+    useAppStore.getState().startPomodoro();
+    const run = useAppStore.getState().pomodoro!;
+    expect(run.phase).toBe('work');
+    expect(run.running).toBe(true);
+    expect(run.endsAt).toBe('2026-08-18T12:25:00.000Z');
+  });
+
+  it('pause freezes and resume re-derives the deadline from the frozen remainder', () => {
+    useAppStore.getState().startPomodoro();
+    clock.iso = '2026-08-18T12:05:00.000Z';
+    useAppStore.getState().pausePomodoro();
+    expect(useAppStore.getState().pomodoro!.running).toBe(false);
+    expect(useAppStore.getState().pomodoro!.remainingMs).toBe(20 * MIN);
+
+    clock.iso = '2026-08-18T13:00:00.000Z';
+    useAppStore.getState().resumePomodoro();
+    expect(useAppStore.getState().pomodoro!.endsAt).toBe('2026-08-18T13:20:00.000Z');
+  });
+
+  it('completePomodoroPhase advances to the break and announces it', () => {
+    useAppStore.getState().startPomodoro();
+    clock.iso = '2026-08-18T12:25:00.000Z';
+    useAppStore.getState().completePomodoroPhase();
+    const run = useAppStore.getState().pomodoro!;
+    expect(run.phase).toBe('break');
+    expect(run.completedWork).toBe(1);
+    expect(useAppStore.getState().announcement).toMatch(/break/i);
+  });
+
+  it('skipPomodoroPhase advances without crediting a pomodoro', () => {
+    useAppStore.getState().startPomodoro();
+    useAppStore.getState().skipPomodoroPhase();
+    const run = useAppStore.getState().pomodoro!;
+    expect(run.phase).toBe('break');
+    expect(run.completedWork).toBe(0);
+  });
+
+  it('stopPomodoro clears the run entirely', () => {
+    useAppStore.getState().startPomodoro();
+    useAppStore.getState().stopPomodoro();
+    expect(useAppStore.getState().pomodoro).toBeNull();
+  });
+
+  it('setPomodoroSettings clamps to positive whole minutes and ignores junk', () => {
+    useAppStore.getState().setPomodoroSettings({ workMinutes: 50 });
+    expect(useAppStore.getState().pomodoroSettings.workMinutes).toBe(50);
+    expect(useAppStore.getState().pomodoroSettings.breakMinutes).toBe(5);
+
+    useAppStore.getState().setPomodoroSettings({ workMinutes: 0 });
+    expect(useAppStore.getState().pomodoroSettings.workMinutes).toBe(50);
+    useAppStore.getState().setPomodoroSettings({ breakMinutes: 2.7 });
+    expect(useAppStore.getState().pomodoroSettings.breakMinutes).toBe(2);
+    useAppStore.getState().setPomodoroSettings({ longBreakMinutes: Number.NaN });
+    expect(useAppStore.getState().pomodoroSettings.longBreakMinutes).toBe(15);
   });
 });

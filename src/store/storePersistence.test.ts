@@ -1,4 +1,5 @@
 import { appStorage, useAppStore, type AppState } from './store';
+import { SCHEMA_VERSION } from './migrations';
 
 vi.mock('./clock', () => ({
   todayLocal: () => '2026-08-18',
@@ -9,7 +10,7 @@ describe('store persistence', () => {
   beforeEach(() => {
     localStorage.clear();
     useAppStore.setState({
-      schemaVersion: 1, fortnights: [], activeFortnightId: null,
+      schemaVersion: SCHEMA_VERSION, fortnights: [], activeFortnightId: null,
       todos: {}, notes: {}, lastRolloverDay: null,
       viewedFortnightId: null, selectedDay: null, rehydrationError: null, announcement: null,
       composeIntent: null,
@@ -52,13 +53,42 @@ describe('store persistence', () => {
     expect(persisted.state.theme).toBeUndefined(); // ...but excluded from the persisted blob.
   });
 
+  it('pomodoro run state is ephemeral, but pomodoroSettings persist (INV-6)', () => {
+    useAppStore.getState().initApp();
+    useAppStore.getState().startPomodoro();
+    expect(useAppStore.getState().pomodoro).not.toBeNull(); // running in memory...
+    appStorage.flush();
+    const persisted = JSON.parse(localStorage.getItem('agile-todo-app.v-state')!);
+    expect(persisted.state.pomodoro).toBeUndefined(); // ...but the run never persists,
+    expect(persisted.state.pomodoroSettings).toEqual({ // only the settings do.
+      workMinutes: 25, breakMinutes: 5, longBreakMinutes: 15,
+    });
+  });
+
+  it('rehydrating a v1 blob (no pomodoroSettings) migrates it to the defaults', async () => {
+    appStorage.setItem('agile-todo-app.v-state', JSON.stringify({
+      state: {
+        schemaVersion: 1, fortnights: [], activeFortnightId: null,
+        todos: {}, notes: {}, lastRolloverDay: null,
+      },
+      version: 1,
+    }));
+    await useAppStore.persist.rehydrate();
+    expect(useAppStore.getState().rehydrationError).toBeNull();
+    expect(useAppStore.getState().schemaVersion).toBe(SCHEMA_VERSION);
+    expect(useAppStore.getState().pomodoroSettings).toEqual({
+      workMinutes: 25, breakMinutes: 5, longBreakMinutes: 15,
+    });
+  });
+
   it('importState replaces persisted fields and re-derives the view', () => {
     useAppStore.getState().initApp();
     const snapshot = {
-      schemaVersion: 1,
+      schemaVersion: SCHEMA_VERSION,
       fortnights: useAppStore.getState().fortnights,
       activeFortnightId: useAppStore.getState().activeFortnightId,
       todos: {}, notes: {}, lastRolloverDay: '2026-08-18',
+      pomodoroSettings: { workMinutes: 25, breakMinutes: 5, longBreakMinutes: 15 },
     };
     useAppStore.getState().addTodo({ title: 'will vanish', priority: 'low', scheduledDay: '2026-08-18' });
     useAppStore.getState().importState(snapshot);
@@ -73,10 +103,11 @@ describe('store persistence', () => {
     // action name. If importState ever goes back to `set({ ...state, ... })`
     // this would clobber the `toggleDone` action with `null`.
     const malicious = {
-      schemaVersion: 1,
+      schemaVersion: SCHEMA_VERSION,
       fortnights: useAppStore.getState().fortnights,
       activeFortnightId: useAppStore.getState().activeFortnightId,
       todos: {}, notes: {}, lastRolloverDay: '2026-08-18',
+      pomodoroSettings: { workMinutes: 25, breakMinutes: 5, longBreakMinutes: 15 },
       toggleDone: null,
     } as unknown as Parameters<AppState['importState']>[0];
     useAppStore.getState().importState(malicious);
@@ -99,6 +130,7 @@ describe('store persistence', () => {
       },
       notes: {},
       lastRolloverDay: '2026-08-01', // stale relative to the mocked "today" of 2026-08-18
+      pomodoroSettings: { workMinutes: 25, breakMinutes: 5, longBreakMinutes: 15 },
     };
     useAppStore.getState().importState(snapshot);
     const imported = useAppStore.getState().todos['stale'];

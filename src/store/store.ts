@@ -5,6 +5,10 @@ import type {
 } from '../domain/types';
 import { generateFortnightDays, effectiveBoardDay, carryOverTodos } from '../domain/fortnight';
 import { applyRollover } from '../domain/rollover';
+import {
+  DEFAULT_POMODORO_SETTINGS, startRun, pauseRun, resumeRun, completePhase, skipPhase,
+  type PomodoroRun,
+} from '../domain/pomodoro';
 import { formatDayLabel } from '../domain/dates';
 import { nowIso, todayLocal } from './clock';
 import { createDebouncedStorage } from './persistence';
@@ -32,6 +36,11 @@ export interface AppState extends PersistedState {
    *  outside the persisted blob (see that file's header), so this never goes
    *  through `partialize`. */
   theme: ThemePreference;
+  /** The running timer, ephemeral by decision: a deadline that expired while
+   *  the app was closed has no unambiguous resumed state (missed
+   *  transitions, stale notifications), so a reload starts fresh. Only
+   *  `pomodoroSettings` (on PersistedState) survives. */
+  pomodoro: PomodoroRun | null;
 
   initApp: () => void;
   checkDayTick: () => void;          // implemented in Task 12
@@ -54,6 +63,13 @@ export interface AppState extends PersistedState {
   announce: (message: string) => void;
   setComposeIntent: (intent: ComposeIntent) => void;
   setTheme: (theme: ThemePreference) => void;
+  startPomodoro: () => void;
+  pausePomodoro: () => void;
+  resumePomodoro: () => void;
+  skipPomodoroPhase: () => void;
+  completePomodoroPhase: () => void;
+  stopPomodoro: () => void;
+  setPomodoroSettings: (patch: Partial<PersistedState['pomodoroSettings']>) => void;
 }
 
 function buildFortnight(anchor: ISODate): Fortnight {
@@ -100,12 +116,14 @@ export const useAppStore = create<AppState>()(
         todos: {},
         notes: {},
         lastRolloverDay: null,
+        pomodoroSettings: DEFAULT_POMODORO_SETTINGS,
         viewedFortnightId: null,
         selectedDay: null,
         rehydrationError: null,
         announcement: null,
         composeIntent: null,
         theme: 'system',
+        pomodoro: null,
 
         initApp: () => {
           // A failed rehydration means whatever is in localStorage could not be
@@ -269,6 +287,7 @@ export const useAppStore = create<AppState>()(
             todos: state.todos,
             notes: state.notes,
             lastRolloverDay: state.lastRolloverDay,
+            pomodoroSettings: state.pomodoroSettings,
             // A successful import supersedes any earlier rehydration failure —
             // this is exactly the "retry/import" recovery path, and clearing
             // the flag here (as part of the same set() call) lets the storage
@@ -303,6 +322,53 @@ export const useAppStore = create<AppState>()(
               theme === 'system' ? 'Theme follows your system setting' : `Theme set to ${theme}`,
           });
         },
+
+        startPomodoro: () =>
+          set((s) => ({
+            pomodoro: startRun(s.pomodoroSettings, nowIso()),
+            announcement: 'Focus session started',
+          })),
+
+        pausePomodoro: () =>
+          set((s) => (s.pomodoro ? { pomodoro: pauseRun(s.pomodoro, nowIso()) } : {})),
+
+        resumePomodoro: () =>
+          set((s) => (s.pomodoro ? { pomodoro: resumeRun(s.pomodoro, nowIso()) } : {})),
+
+        skipPomodoroPhase: () =>
+          set((s) => (s.pomodoro ? { pomodoro: skipPhase(s.pomodoro, s.pomodoroSettings, nowIso()) } : {})),
+
+        // Called by the widget when the deadline passes. Idempotent in effect:
+        // completing re-arms `endsAt` in the future, so a second tick in the
+        // same render window finds remaining time > 0 and does nothing.
+        completePomodoroPhase: () =>
+          set((s) => {
+            if (!s.pomodoro) return {};
+            const next = completePhase(s.pomodoro, s.pomodoroSettings, nowIso());
+            const announcement =
+              next.phase === 'work'
+                ? 'Break over — focus session started'
+                : next.phase === 'longBreak'
+                  ? 'Focus session complete — long break started'
+                  : 'Focus session complete — short break started';
+            return { pomodoro: next, announcement };
+          }),
+
+        stopPomodoro: () => set({ pomodoro: null, announcement: 'Pomodoro stopped' }),
+
+        // Clamps to whole positive minutes; anything non-finite is ignored
+        // rather than clobbering a good persisted value.
+        setPomodoroSettings: (patch) =>
+          set((s) => {
+            const next = { ...s.pomodoroSettings };
+            for (const key of ['workMinutes', 'breakMinutes', 'longBreakMinutes'] as const) {
+              const raw = patch[key];
+              if (typeof raw === 'number' && Number.isFinite(raw) && Math.floor(raw) >= 1) {
+                next[key] = Math.floor(raw);
+              }
+            }
+            return { pomodoroSettings: next };
+          }),
       };
     },
     {
@@ -322,6 +388,7 @@ export const useAppStore = create<AppState>()(
         todos: s.todos,
         notes: s.notes,
         lastRolloverDay: s.lastRolloverDay,
+        pomodoroSettings: s.pomodoroSettings,
       }),
     },
   ),

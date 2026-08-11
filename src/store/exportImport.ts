@@ -1,6 +1,14 @@
 import type { PersistedState } from '../domain/types';
 import { runMigrations } from './migrations';
 
+function isPomodoroSettings(value: unknown): boolean {
+  if (typeof value !== 'object' || value === null) return false;
+  const v = value as Record<string, unknown>;
+  return (['workMinutes', 'breakMinutes', 'longBreakMinutes'] as const).every(
+    (k) => typeof v[k] === 'number' && Number.isFinite(v[k]) && (v[k] as number) > 0,
+  );
+}
+
 export function validatePersistedState(value: unknown): value is PersistedState {
   if (typeof value !== 'object' || value === null) return false;
   const v = value as Record<string, unknown>;
@@ -11,7 +19,8 @@ export function validatePersistedState(value: unknown): value is PersistedState 
       (v.activeFortnightId === null || typeof v.activeFortnightId === 'string') &&
       typeof v.todos === 'object' && v.todos !== null && !Array.isArray(v.todos) &&
       typeof v.notes === 'object' && v.notes !== null && !Array.isArray(v.notes) &&
-      (v.lastRolloverDay === null || typeof v.lastRolloverDay === 'string')
+      (v.lastRolloverDay === null || typeof v.lastRolloverDay === 'string') &&
+      isPomodoroSettings(v.pomodoroSettings)
     )
   ) {
     return false;

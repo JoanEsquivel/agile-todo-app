@@ -1,11 +1,15 @@
 import type { PersistedState } from '../domain/types';
+import { DEFAULT_POMODORO_SETTINGS } from '../domain/pomodoro';
 
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;
 
 export class UnsupportedSchemaError extends Error {}
 
-// Add an entry per schema bump, e.g. { 1: (s) => ({ ...s, newField: default }) }
-const defaultSteps: Record<number, (s: unknown) => unknown> = {};
+// One entry per schema bump, keyed by the SOURCE version being migrated from.
+const defaultSteps: Record<number, (s: unknown) => unknown> = {
+  // v1 -> v2: pomodoroSettings was added to PersistedState.
+  1: (s) => ({ ...(s as object), pomodoroSettings: DEFAULT_POMODORO_SETTINGS }),
+};
 
 export function runMigrations(
   state: unknown,

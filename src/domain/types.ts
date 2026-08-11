@@ -49,6 +49,7 @@ export interface PersistedState {
   todos: Record<string, Todo>;
   notes: Record<string, Note>;
   lastRolloverDay: ISODate | null;    // last local day rollover ran (idempotency)
+  pomodoroSettings: PomodoroSettings; // added in schema v2 (defaults filled by migration)
 }
 
 // Store = PersistedState + ephemeral UI state (NOT persisted):

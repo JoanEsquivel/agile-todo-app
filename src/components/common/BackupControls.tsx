@@ -12,7 +12,7 @@ export function BackupControls() {
     const json = serializeState({
       schemaVersion: s.schemaVersion, fortnights: s.fortnights,
       activeFortnightId: s.activeFortnightId, todos: s.todos, notes: s.notes,
-      lastRolloverDay: s.lastRolloverDay,
+      lastRolloverDay: s.lastRolloverDay, pomodoroSettings: s.pomodoroSettings,
     });
     const url = URL.createObjectURL(new Blob([json], { type: 'application/json' }));
     const a = document.createElement('a');
