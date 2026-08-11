@@ -214,17 +214,6 @@ describe('adaptFortnightToMonth', () => {
       expect(result!.todos.t1.rolledOver).toBe(false);
     });
 
-    it('marks rolledOver when the relocated day was strictly before today', () => {
-      // 2026-08-15 is a Saturday: inside the old fortnight's span but not a
-      // workday, so it is not part of the reshaped month either — and it's
-      // in the past relative to today (2026-08-31).
-      const todo = makeTodo({ id: 't2', fortnightId: 'f1', scheduledDay: '2026-08-15', done: false, rolledOver: false });
-      const result = adaptFortnightToMonth(active, { t2: todo }, {}, '2026-08-31');
-      expect(result).not.toBeNull();
-      expect(result!.todos.t2.scheduledDay).toBe('2026-08-31');
-      expect(result!.todos.t2.rolledOver).toBe(true);
-    });
-
     it('relocates a done todo too, preserving done/completedAt and leaving rolledOver untouched', () => {
       const todo = makeTodo({
         id: 't3', fortnightId: 'f1', scheduledDay: '2026-09-03', done: true,
@@ -252,6 +241,47 @@ describe('adaptFortnightToMonth', () => {
       expect(result).not.toBeNull();
       expect(result!.todos.o1).toBe(otherTodo);
       expect(result!.notes.o2).toBe(otherNote);
+    });
+  });
+
+  describe('crossing into the previous month (active Jul 27 - Aug 7, today Aug 3)', () => {
+    // A real, reachable "outside the new month AND in the past" state:
+    // days from the tail of the old fortnight that spilled into July are
+    // both before today and outside the reshaped (August) month.
+    const active: Fortnight = {
+      id: 'f1',
+      startDay: '2026-07-27',
+      days: [
+        '2026-07-27', '2026-07-28', '2026-07-29', '2026-07-30', '2026-07-31',
+        '2026-08-03', '2026-08-04', '2026-08-05', '2026-08-06', '2026-08-07',
+      ],
+      createdAt: '2026-07-27T09:00:00.000Z',
+    };
+
+    it('marks rolledOver when a non-done todo relocated from a real past day outside the month', () => {
+      const todo = makeTodo({ id: 't1', fortnightId: 'f1', scheduledDay: '2026-07-28', done: false, rolledOver: false });
+      const result = adaptFortnightToMonth(active, { t1: todo }, {}, '2026-08-03');
+      expect(result).not.toBeNull();
+      expect(result!.fortnight.days[0]).toBe('2026-08-03');
+      expect(result!.todos.t1.scheduledDay).toBe('2026-08-03');
+      expect(result!.todos.t1.rolledOver).toBe(true);
+    });
+
+    it('leaves rolledOver untouched for a done todo relocated from the same kind of past day (exercises the done branch of the ternary distinctly from the non-done branch)', () => {
+      // Without the `t.done` check, the non-done branch's condition
+      // (`t.scheduledDay < today`) would ALSO evaluate true here and flip
+      // rolledOver to true -- so this only stays false if the done branch is
+      // actually taken.
+      const todo = makeTodo({
+        id: 't2', fortnightId: 'f1', scheduledDay: '2026-07-29', done: true,
+        completedAt: '2026-07-29T10:00:00.000Z', rolledOver: false,
+      });
+      const result = adaptFortnightToMonth(active, { t2: todo }, {}, '2026-08-03');
+      expect(result).not.toBeNull();
+      expect(result!.todos.t2.scheduledDay).toBe('2026-08-03');
+      expect(result!.todos.t2.done).toBe(true);
+      expect(result!.todos.t2.completedAt).toBe('2026-07-29T10:00:00.000Z');
+      expect(result!.todos.t2.rolledOver).toBe(false);
     });
   });
 

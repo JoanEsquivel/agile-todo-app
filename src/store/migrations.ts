@@ -24,6 +24,13 @@ const defaultSteps: Record<number, (s: unknown) => unknown> = {
   // put them (effectiveBoardDay).
   2: (s) => {
     const state = s as PersistedState;
+    // Guard against malformed pre-v3 backups (missing/non-array `fortnights`)
+    // reaching `.find` before `validatePersistedState` gets a chance to
+    // report a readable "malformed backup" error — parseBackup runs
+    // migrations on unvalidated raw JSON (exportImport.ts), so a corrupt v1/
+    // v2 backup must fall through to validation rather than throw a raw
+    // TypeError the UI would surface verbatim.
+    if (!Array.isArray(state?.fortnights)) return s;
     const active = state.fortnights.find((f) => f.id === state.activeFortnightId);
     if (!active) return s;
     const adapted = adaptFortnightToMonth(active, state.todos, state.notes, todayLocal());

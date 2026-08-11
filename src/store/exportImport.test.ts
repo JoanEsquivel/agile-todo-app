@@ -65,6 +65,19 @@ describe('backup export/import', () => {
     expect(() => parseBackup(malformed)).toThrow(/malformed/i);
   });
 
+  it('rejects a malformed pre-v3 backup (missing fortnights) with a readable error instead of a raw TypeError', () => {
+    // parseBackup runs runMigrations on unvalidated raw JSON *before*
+    // validatePersistedState -- the v2->v3 step must not dereference
+    // `fortnights` (e.g. `.find`) without checking it's actually an array
+    // first, or a corrupt v1/v2 backup crashes with a raw TypeError instead
+    // of the app's normal "malformed backup" message.
+    const malformedV2 = JSON.stringify({ schemaVersion: 2, todos: 'nope' });
+    expect(() => parseBackup(malformedV2)).toThrow(/malformed/i);
+
+    const malformedV1 = JSON.stringify({ schemaVersion: 1, fortnights: undefined, todos: 'nope' });
+    expect(() => parseBackup(malformedV1)).toThrow(/malformed/i);
+  });
+
   it('rejects missing or malformed pomodoro settings', () => {
     const { pomodoroSettings: _dropped, ...withoutSettings } = good;
     expect(validatePersistedState(withoutSettings)).toBe(false);
