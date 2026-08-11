@@ -51,7 +51,14 @@ export default function App() {
     // Not board mutation, so no read-only gate — the timer works while
     // viewing a past fortnight.
     { id: 'pomodoro', label: 'Pomodoro timer', run: () => setPomodoroOpen(true) },
-    { id: 'generate-fortnight', label: 'Generate new month', run: () => setConfirmRegenerateOpen(true) },
+    // Excludes generating a new month until the active one has actually
+    // ended -- doing it mid-month would create a second period covering the
+    // same date range as the active one, indistinguishable in the history
+    // switcher except for the "(current)" suffix, and would strand any
+    // already-completed todos in the newly-inactive copy.
+    ...(selectFortnightExpired(state) ? [
+      { id: 'generate-fortnight', label: 'Generate new month', run: () => setConfirmRegenerateOpen(true) },
+    ] : []),
     { id: 'keyboard-shortcuts', label: 'Keyboard shortcuts', run: () => setShortcutsOpen(true) },
   ];
 
@@ -70,7 +77,13 @@ export default function App() {
         </div>
         <div className={styles.headerActions}>
           <button className={styles.primaryAction} onClick={() => setStandupOpen(true)}>Standup</button>
-          <button onClick={() => setConfirmRegenerateOpen(true)}>Generate new month</button>
+          <button
+            onClick={() => setConfirmRegenerateOpen(true)}
+            disabled={!selectFortnightExpired(state)}
+            title={selectFortnightExpired(state) ? undefined : 'Available once this month has ended'}
+          >
+            Generate new month
+          </button>
           <FortnightSwitcher />
           <BackupControls />
           <PomodoroWidget onOpenModal={() => setPomodoroOpen(true)} />

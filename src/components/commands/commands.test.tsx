@@ -49,6 +49,31 @@ describe('command palette', () => {
     expect(listbox).toHaveTextContent('Standup'); // non-mutating actions stay available
   });
 
+  it('excludes "Generate new month" until the active period has ended, then includes it', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.keyboard('{Control>}k{/Control}');
+    expect(screen.getByRole('listbox', { name: 'Results' })).not.toHaveTextContent('Generate new month');
+    await user.keyboard('{Escape}');
+
+    // Expire the active period the same way history.test.tsx does: overwrite
+    // it in place with a legacy date range entirely before the mocked
+    // "today", keeping its id so activeFortnightId stays valid.
+    const activeId = useAppStore.getState().activeFortnightId!;
+    const days = [
+      '2026-07-13', '2026-07-14', '2026-07-15', '2026-07-16', '2026-07-17',
+      '2026-07-20', '2026-07-21', '2026-07-22', '2026-07-23', '2026-07-24',
+    ];
+    useAppStore.setState({
+      fortnights: useAppStore.getState().fortnights.map((f) =>
+        f.id === activeId ? { ...f, startDay: days[0], days } : f,
+      ),
+    });
+
+    await user.keyboard('{Control>}k{/Control}');
+    expect(screen.getByRole('listbox', { name: 'Results' })).toHaveTextContent('Generate new month');
+  });
+
   it('finds a todo by title and jumps to its day on Enter', async () => {
     const user = userEvent.setup();
     useAppStore.getState().addTodo({ title: 'Ship the deck', priority: 'high', scheduledDay: '2026-08-19' });
