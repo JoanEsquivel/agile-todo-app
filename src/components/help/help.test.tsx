@@ -20,8 +20,14 @@ describe('HelpModal', () => {
     expect(panel).toHaveTextContent('Monthly board');
     expect(panel).toHaveTextContent('Automatic rollover');
     expect(panel).toHaveTextContent('Month history');
+    expect(panel).toHaveTextContent('Checklists');
+    expect(panel).toHaveTextContent('When every item is checked the todo completes itself');
     expect(panel).toHaveTextContent('Standup');
     expect(panel).toHaveTextContent('Backup & theme');
+    // Placed right after the todos section, where the feature lives.
+    const text = panel.textContent ?? '';
+    expect(text.indexOf('Checklists')).toBeGreaterThan(text.indexOf('Todos & priorities'));
+    expect(text.indexOf('Checklists')).toBeLessThan(text.indexOf('Notes: blockers & info'));
   });
 
   it('opens directly on the Shortcuts tab when initialTab is shortcuts', () => {
