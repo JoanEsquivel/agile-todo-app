@@ -62,7 +62,10 @@ export function startRun(settings: PomodoroSettings, now: ISODateTime): Pomodoro
 
 export function remainingMs(run: PomodoroRun, now: ISODateTime): number {
   if (!run.running || run.endsAt === null) return run.remainingMs;
-  return Math.max(0, Date.parse(run.endsAt) - Date.parse(now));
+  // Clamped both ways: to 0 past the deadline, and to the snapshot taken at
+  // the last transition — a caller's clock can tick up to an interval before
+  // the deadline was created, which would otherwise read as "25:01".
+  return Math.min(run.remainingMs, Math.max(0, Date.parse(run.endsAt) - Date.parse(now)));
 }
 
 export function pauseRun(run: PomodoroRun, now: ISODateTime): PomodoroRun {

@@ -39,6 +39,14 @@ describe('remainingMs', () => {
     const run = startRun(DEFAULT_POMODORO_SETTINGS, T0);
     expect(remainingMs(run, at(26 * MIN))).toBe(0);
   });
+
+  it('a stale now (before the phase began) never reports more than the phase snapshot', () => {
+    // A UI clock ticking on its own interval can be up to a tick older than
+    // the deadline just created by start/complete — without the upper clamp
+    // that renders as "25:01" for a moment.
+    const run = startRun(DEFAULT_POMODORO_SETTINGS, T0);
+    expect(remainingMs(run, at(-800))).toBe(25 * MIN);
+  });
 });
 
 describe('pause and resume', () => {
