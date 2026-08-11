@@ -15,6 +15,12 @@ describe('reminders panel', () => {
   });
   afterEach(() => vi.useRealTimers());
 
+  it('shows an empty state instead of unmounting when there are no reminders', () => {
+    render(<App />);
+    const panel = screen.getByRole('complementary', { name: 'Reminders' });
+    expect(panel).toHaveTextContent('No reminders');
+  });
+
   it('lists overdue and upcoming reminders', () => {
     const st = useAppStore.getState();
     st.addTodo({ title: 'Late', priority: 'high', scheduledDay: '2026-08-18', reminderAt: '2026-08-18T09:00' });

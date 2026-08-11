@@ -5,15 +5,21 @@
   width: 100%;
 }
 
-/* Spans two of the board's three tracks and splits them with the same gap,
-   so Todos and Notes each align exactly with one board column (see
-   FortnightBoard.module.css). The heading rides above both. */
+/* Subgrids both axes of the board (see FortnightBoard.module.css): the
+   column subgrid inherits the board's tracks *and* its column-gap, so
+   Todos and Notes each align exactly with one board column without
+   duplicating the gap value here. The row subgrid inherits the board's
+   two row tracks -- the heading lands in row 1 (alone, full width) and
+   both sections land in row 2, level with RemindersPanel's own row-2
+   placement -- which is what makes all three column labels start on the
+   same line. */
 @media (min-width: 1024px) {
   .column {
     grid-column: span 2;
+    grid-row: 1 / 3;
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    column-gap: var(--space-5);
+    grid-template-columns: subgrid;
+    grid-template-rows: subgrid;
     row-gap: var(--space-3);
     align-items: start;
   }

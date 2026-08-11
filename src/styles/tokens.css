@@ -149,6 +149,8 @@
 
   /* ---- Layout ---- */
   --width-app: 1600px;
+  /* The one gap shared by the board grid and DayColumn's subgrid. */
+  --board-gap: var(--space-5);
 }
 
 /* The manual theme toggle. No attribute (or 'system') = follow the OS via

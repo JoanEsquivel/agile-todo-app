@@ -1,6 +1,9 @@
 /* A first-class board column, not a boxed card — it sits in the third grid
    track beside Todos and Notes (see FortnightBoard.module.css) and shares
-   their section-label treatment. */
+   their section-label treatment. No top padding of its own, to match
+   DayColumn's sections exactly (see DayColumn.module.css) -- both start
+   flush with the top of their row-2 grid area, which is what puts
+   "Reminders" on the same baseline as "Todos"/"Notes". */
 .panel {
   display: flex;
   flex-direction: column;
@@ -10,6 +13,13 @@
 
 @media (min-width: 1024px) {
   .panel {
+    /* Row 2 only -- skips the day-heading row so the panel's top edge
+       lands level with the Todos/Notes sections, not the heading. */
+    grid-row: 2;
+    /* The sticky containing block is now this row-2 grid area (it no
+       longer spans the heading row above), so the panel can never stick
+       higher than the sections' own top -- top stays the same small
+       viewport offset used elsewhere (matches .app's own top padding). */
     position: sticky;
     top: var(--space-3);
   }
