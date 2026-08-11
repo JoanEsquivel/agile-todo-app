@@ -291,4 +291,56 @@ describe('automatic month generation (checkDayTick expiry branch)', () => {
     const stuck = Object.values(s.todos).find((t) => t.title === 'stranded')!;
     expect(stuck).toMatchObject({ fortnightId: s.activeFortnightId, scheduledDay: '2026-08-18', rolledOver: true });
   });
+
+  it('importing an expired backup generates immediately and prunes imported history to the window (spec §4, deliberate)', () => {
+    // A 5-month archive whose active month (July) is already expired at the
+    // mocked "today" (Sept 1). importState's trailing checkDayTick() call
+    // hits the expiry branch immediately, so the imported history is pruned
+    // to the retention window on the SAME tick that generates September --
+    // spec §4 explicitly accepts this ("acceptable and now explicit +
+    // tested, not accidental"), rather than waiting for the next boundary.
+    const s0 = useAppStore.getState();
+    const marchDays = ['2026-03-02', '2026-03-03', '2026-03-04', '2026-03-05', '2026-03-06'];
+    const snapshot: PersistedState = {
+      schemaVersion: s0.schemaVersion,
+      fortnights: [
+        pastPeriod('p-mar', marchDays), pastPeriod('p-apr', aprilDays),
+        pastPeriod('p-may', mayDays), pastPeriod('p-jun', juneDays), pastPeriod('p-jul', julyDays),
+      ],
+      activeFortnightId: 'p-jul',
+      todos: {
+        ancient: {
+          id: 'ancient', fortnightId: 'p-mar', title: 'ancient', priority: 'low',
+          scheduledDay: '2026-03-02', done: true, completedAt: '2026-03-02T15:00:00.000Z',
+          createdAt: '2026-03-02T09:00:00.000Z', rolledOver: false,
+        },
+        stuck: {
+          id: 'stuck', fortnightId: 'p-jul', title: 'stranded', priority: 'low',
+          scheduledDay: '2026-07-10', done: false,
+          createdAt: '2026-07-06T09:00:00.000Z', rolledOver: false,
+        },
+      },
+      notes: {},
+      lastRolloverDay: '2026-08-18',
+      pomodoroSettings: s0.pomodoroSettings,
+    };
+
+    clock.today = '2026-09-01';
+    useAppStore.getState().importState(snapshot);
+
+    const s = useAppStore.getState();
+    // Only the 3 newest calendar months present survive: the freshly
+    // generated September (active) plus July and June -- March, April, May
+    // (older than the window) are pruned even though they were just imported.
+    expect(s.fortnights.map((f) => f.id)).toEqual(['p-jun', 'p-jul', s.activeFortnightId]);
+    expect(s.activeFortnightId).not.toBe('p-jul');
+    const active = s.fortnights.find((f) => f.id === s.activeFortnightId)!;
+    expect(active.days[0]).toBe('2026-09-01');
+    expect(s.todos.ancient).toBeUndefined(); // pruned along with p-mar
+    const stranded = Object.values(s.todos).find((t) => t.title === 'stranded')!;
+    expect(stranded).toMatchObject({ fortnightId: s.activeFortnightId, scheduledDay: '2026-09-01', rolledOver: true });
+    expect(s.viewedFortnightId).toBe(s.activeFortnightId);
+    expect(s.selectedDay).toBe('2026-09-01');
+    expect(s.announcement).toContain('removed from history');
+  });
 });
