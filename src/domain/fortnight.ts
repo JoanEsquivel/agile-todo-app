@@ -148,3 +148,50 @@ export function adaptFortnightToMonth(
 
   return { fortnight: adapted, todos: outTodos, notes: outNotes };
 }
+
+/** Fixed three-month retention window (spec 2026-08-11): keep every period
+ *  whose day range intersects one of the 3 newest calendar months that have
+ *  stored periods; drop the rest -- along with the dropped periods' todos
+ *  and notes. Leaving orphans is not neutral: partitionReminders and
+ *  buildStandup scan all todos/notes with no fortnightId filter, so
+ *  orphaned items would surface forever with no board to reach them from
+ *  (the INV-9 orphan class).
+ *
+ *  Counted by calendar month, NOT by array entries: two legacy 10-day
+ *  fortnights inside one July occupy one retention slot (INV-4 -- legacy
+ *  periods persist unmigrated). Keyed by the months actually present
+ *  (capped at month(today)) rather than by a literal {month(today), -1, -2}
+ *  so a months-long absence never evicts real history in favor of empty
+ *  ghost months (approved gap decision: history keeps the last
+ *  actually-used months until new real months displace them). A period is
+ *  keyed by the month its LAST day falls in -- for an ascending window
+ *  that is exactly "intersects". Periods in months after month(today)
+ *  (the weekend-tail active month) are always retained, which is what
+ *  makes "never drops the active fortnight" hold by construction.
+ *  Tolerant of any number of months (imported archives); retained
+ *  todos/notes pass through byte-identical, and when nothing is dropped
+ *  the inputs are returned as-is. */
+export function pruneToRetention(
+  fortnights: Fortnight[],
+  todos: Record<string, Todo>,
+  notes: Record<string, Note>,
+  today: ISODate,
+): { fortnights: Fortnight[]; todos: Record<string, Todo>; notes: Record<string, Note> } {
+  const currentMonth = today.slice(0, 7);
+  const monthOf = (f: Fortnight): string => f.days[f.days.length - 1].slice(0, 7);
+  const retainedMonths = new Set(
+    [...new Set(fortnights.map(monthOf).filter((m) => m <= currentMonth))]
+      .sort()
+      .reverse()
+      .slice(0, 3),
+  );
+  const kept = fortnights.filter((f) => monthOf(f) > currentMonth || retainedMonths.has(monthOf(f)));
+  if (kept.length === fortnights.length) return { fortnights, todos, notes };
+
+  const keptIds = new Set(kept.map((f) => f.id));
+  const keptTodos: Record<string, Todo> = {};
+  for (const t of Object.values(todos)) if (keptIds.has(t.fortnightId)) keptTodos[t.id] = t;
+  const keptNotes: Record<string, Note> = {};
+  for (const n of Object.values(notes)) if (keptIds.has(n.fortnightId)) keptNotes[n.id] = n;
+  return { fortnights: kept, todos: keptTodos, notes: keptNotes };
+}

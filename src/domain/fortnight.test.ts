@@ -1,4 +1,4 @@
-import { generateMonthDays, effectiveBoardDay, adaptFortnightToMonth } from './fortnight';
+import { generateMonthDays, effectiveBoardDay, adaptFortnightToMonth, pruneToRetention } from './fortnight';
 import type { Fortnight, Note, Todo } from './types';
 
 const fn: Fortnight = {
@@ -298,5 +298,120 @@ describe('adaptFortnightToMonth', () => {
     // 2026-05-30 is a Saturday after May's last workday, so generateMonthDays
     // rolls forward to June — no overlap with the May-anchored fortnight.
     expect(adaptFortnightToMonth(active, {}, {}, '2026-05-30')).toBeNull();
+  });
+});
+
+describe('pruneToRetention', () => {
+  function period(id: string, days: string[]): Fortnight {
+    return { id, startDay: days[0], days, createdAt: `${days[0]}T09:00:00.000Z` };
+  }
+  function todoIn(id: string, fortnightId: string, day: string): Todo {
+    return {
+      id, fortnightId, title: id, priority: 'low', scheduledDay: day,
+      done: true, completedAt: `${day}T15:00:00.000Z`,
+      createdAt: `${day}T09:00:00.000Z`, rolledOver: false,
+    };
+  }
+  function noteIn(id: string, fortnightId: string, day: string): Note {
+    return {
+      id, fortnightId, day, category: 'info', text: id,
+      resolved: false, createdAt: `${day}T09:00:00.000Z`,
+    };
+  }
+
+  // Legacy-style short periods (length-agnostic per INV-4) in distinct months.
+  const may = period('p-may', ['2026-05-04', '2026-05-05', '2026-05-06', '2026-05-07', '2026-05-08']);
+  const june = period('p-jun', ['2026-06-01', '2026-06-02', '2026-06-03', '2026-06-04', '2026-06-05']);
+  const july = period('p-jul', ['2026-07-06', '2026-07-07', '2026-07-08', '2026-07-09', '2026-07-10']);
+  const august = period('p-aug', generateMonthDays('2026-08-18'));
+  const september = period('p-sep', generateMonthDays('2026-09-01'));
+
+  it('keeps the 3 newest calendar months present and drops everything older, todos/notes included', () => {
+    const todos = {
+      keep: todoIn('keep', 'p-jul', '2026-07-06'),
+      dropA: todoIn('dropA', 'p-may', '2026-05-04'),
+      dropB: todoIn('dropB', 'p-jun', '2026-06-01'),
+    };
+    const notes = {
+      kept: noteIn('kept', 'p-aug', '2026-08-04'),
+      gone: noteIn('gone', 'p-may', '2026-05-05'),
+    };
+    const result = pruneToRetention([may, june, july, august, september], todos, notes, '2026-09-01');
+    expect(result.fortnights.map((f) => f.id)).toEqual(['p-jul', 'p-aug', 'p-sep']);
+    expect(Object.keys(result.todos)).toEqual(['keep']);
+    expect(Object.keys(result.notes)).toEqual(['kept']);
+  });
+
+  it('passes retained todos/notes through byte-identical (same references)', () => {
+    const t = todoIn('t', 'p-aug', '2026-08-04');
+    const n = noteIn('n', 'p-aug', '2026-08-04');
+    const result = pruneToRetention([may, july, august, september], { t }, { n }, '2026-09-01');
+    expect(result.todos.t).toBe(t);
+    expect(result.notes.n).toBe(n);
+  });
+
+  it('is a no-op returning the same references when nothing falls outside the window', () => {
+    const fortnights = [july, august, september];
+    const todos = { t: todoIn('t', 'p-jul', '2026-07-06') };
+    const notes = {};
+    const result = pruneToRetention(fortnights, todos, notes, '2026-09-01');
+    expect(result.fortnights).toBe(fortnights);
+    expect(result.todos).toBe(todos);
+    expect(result.notes).toBe(notes);
+  });
+
+  it('two legacy periods inside one calendar month occupy ONE retention slot: both survive together', () => {
+    const julyB = period('p-jul-b', ['2026-07-20', '2026-07-21', '2026-07-22', '2026-07-23', '2026-07-24']);
+    const result = pruneToRetention([june, july, julyB, august, september], {}, {}, '2026-09-01');
+    expect(result.fortnights.map((f) => f.id)).toEqual(['p-jul', 'p-jul-b', 'p-aug', 'p-sep']);
+  });
+
+  it('a legacy period in month−3 drops even when the total count is small', () => {
+    // June is month−3 relative to September: exactly one month past the window.
+    const result = pruneToRetention([june, july, august, september], {}, {}, '2026-09-01');
+    expect(result.fortnights.map((f) => f.id)).toEqual(['p-jul', 'p-aug', 'p-sep']);
+  });
+
+  it('never drops the active fortnight: weekend-tail generation puts the active month AFTER month(today)', () => {
+    // Sat 2026-10-31 falls after October's last workday (Fri Oct 30), so the
+    // freshly generated active month is November while today is still October.
+    const september2 = period('p-sep2', generateMonthDays('2026-09-01'));
+    const october = period('p-oct', generateMonthDays('2026-10-15'));
+    const november = period('p-nov', generateMonthDays('2026-10-31')); // rolls forward to November
+    const result = pruneToRetention([august, september2, october, november], {}, {}, '2026-10-31');
+    expect(result.fortnights.map((f) => f.id)).toEqual(['p-aug', 'p-sep2', 'p-oct', 'p-nov']);
+  });
+
+  it('a months-long gap keeps the last actually-used months -- no eviction by empty ghost months', () => {
+    // Away from August to November: the months present are Jun/Jul/Aug + the
+    // new Nov. The 3 newest months PRESENT are Jul/Aug/Nov -- June drops,
+    // real history stays (approved gap decision, spec §2).
+    const november = period('p-nov', generateMonthDays('2026-11-16'));
+    const result = pruneToRetention([june, july, august, november], {}, {}, '2026-11-16');
+    expect(result.fortnights.map((f) => f.id)).toEqual(['p-jul', 'p-aug', 'p-nov']);
+  });
+
+  it('a legacy period spanning two months is keyed by the month it ends in (intersects rule)', () => {
+    const spanning = period('p-span', [
+      '2026-07-27', '2026-07-28', '2026-07-29', '2026-07-30', '2026-07-31',
+      '2026-08-03', '2026-08-04', '2026-08-05', '2026-08-06', '2026-08-07',
+    ]);
+    const october = period('p-oct', generateMonthDays('2026-10-01'));
+    // Window at Oct (months present: Aug/Sep/Oct) reaches back to August, and
+    // the spanning period's tail is in August -- it survives.
+    const kept = pruneToRetention([spanning, august, september, october], {}, {}, '2026-10-01');
+    expect(kept.fortnights.map((f) => f.id)).toEqual(['p-span', 'p-aug', 'p-sep', 'p-oct']);
+    // Once November arrives the window is Sep/Oct/Nov -- it drops.
+    const november = period('p-nov', generateMonthDays('2026-11-02'));
+    const dropped = pruneToRetention([spanning, august, september, october, november], {}, {}, '2026-11-02');
+    expect(dropped.fortnights.map((f) => f.id)).toEqual(['p-sep', 'p-oct', 'p-nov']);
+  });
+
+  it('is tolerant of many months (imported archive): keeps the newest 3, throws nothing', () => {
+    const feb = period('p-feb', ['2026-02-02', '2026-02-03', '2026-02-04', '2026-02-05', '2026-02-06']);
+    const mar = period('p-mar', ['2026-03-02', '2026-03-03', '2026-03-04', '2026-03-05', '2026-03-06']);
+    const apr = period('p-apr', ['2026-04-06', '2026-04-07', '2026-04-08', '2026-04-09', '2026-04-10']);
+    const result = pruneToRetention([feb, mar, apr, may, june, july, august, september], {}, {}, '2026-09-01');
+    expect(result.fortnights.map((f) => f.id)).toEqual(['p-jul', 'p-aug', 'p-sep']);
   });
 });
