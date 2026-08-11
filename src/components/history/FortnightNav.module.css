@@ -1,0 +1,18 @@
+.nav {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.arrow {
+  font-size: var(--text-sm);
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3);
+  line-height: 1;
+}
+
+.label {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}

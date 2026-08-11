@@ -1,6 +1,6 @@
 # CLAUDE.md — Agile Todo App
 
-> This app is **finished, tested (314 tests), and deployed**. It is not a scaffold to build out — it's a working product. Changes here should be surgical, not exploratory. Every change ships with tests. Read the invariants below before editing anything under `src/`.
+> This app is **finished, tested (334 tests), and deployed**. It is not a scaffold to build out — it's a working product. Changes here should be surgical, not exploratory. Every change ships with tests. Read the invariants below before editing anything under `src/`.
 
 ## Orientation
 
@@ -11,7 +11,7 @@ Browser-only monthly (calendar-month, workdays-only) todo board, plus a header P
 **Keyboard model.** `src/hooks/useShortcuts.ts` is a global `keydown` listener mounted once in `App.tsx`: `⌘K`/`Ctrl+K` opens the command palette (`src/components/commands/CommandPalette.tsx`), `?` opens the shortcuts overlay, `←`/`→`/`Home`/`End` move the selected day (the fortnight tape, `src/components/board/FortnightTape.tsx`, has its own roving-tabindex handler for when focus is already on a day button — the two compose via `e.preventDefault()`/`e.defaultPrevented`, not by one knowing about the other), `T` jumps to today, `N`/`Shift+N` open the todo/note compose form, `S` opens Standup, `P` opens the Pomodoro modal (`src/components/pomodoro/`). Every shortcut but `⌘K` bails while focus is in a text-entry control or a `[role=dialog]` is mounted — which is why the always-mounted `PomodoroWidget` in the header uses plain buttons: they stay operable while a dialog has the shortcuts dead. Escape is deliberately *not* handled there — `Modal.tsx` and `TodoForm`/`NoteForm` each own their own, which is what lets Escape work from inside a text field.
 
 **Where to look for what:**
-- Product behavior, edge cases, the "why" behind a rule → [`docs/superpowers/specs/2026-08-10-agile-todo-app-design.md`](docs/superpowers/specs/2026-08-10-agile-todo-app-design.md) (the original approved design spec — product authority), amended by [`docs/superpowers/specs/2026-08-10-monthly-board-redesign-design.md`](docs/superpowers/specs/2026-08-10-monthly-board-redesign-design.md) (the monthly-board redesign — also product authority, for the board grid, scheduling horizon, and navigation UI it amends)
+- Product behavior, edge cases, the "why" behind a rule → [`docs/superpowers/specs/2026-08-10-agile-todo-app-design.md`](docs/superpowers/specs/2026-08-10-agile-todo-app-design.md) (the original approved design spec — product authority), amended by [`docs/superpowers/specs/2026-08-10-monthly-board-redesign-design.md`](docs/superpowers/specs/2026-08-10-monthly-board-redesign-design.md) (the monthly-board redesign — also product authority, for the board grid, scheduling horizon, and navigation UI it amends) and by [`docs/superpowers/specs/2026-08-11-three-month-window-auto-rollover-design.md`](docs/superpowers/specs/2026-08-11-three-month-window-auto-rollover-design.md) (also product authority, for the fixed 3-month retention window, automatic month generation, and the `FortnightNav` stepper it amends)
 - Known gaps and parked issues → [`docs/TECH-DEBT.md`](docs/TECH-DEBT.md)
 - How it was originally built → [`docs/ARCHIVE.md`](docs/ARCHIVE.md) (historical only)
 
@@ -22,7 +22,7 @@ Browser-only monthly (calendar-month, workdays-only) todo board, plus a header P
 | Command | What it does |
 |---|---|
 | `npm run dev` | Dev server at `http://localhost:5173` |
-| `npm test` | `vitest run` — 314 tests, ~4s |
+| `npm test` | `vitest run` — 334 tests, ~4s |
 | `npm run typecheck` | `tsc -b --noEmit` — the real typecheck, ~0.3s |
 | `npm run verify` | typecheck + test — **this is the definition of done** |
 | `npm run build` | `tsc -b && vite build` — production build |
@@ -69,7 +69,7 @@ Numbered so they can be cited precisely (a hook message might say "violates INV-
 **Check.** `src/domain/dates.test.ts` and `src/domain/fortnight.test.ts` — the weekend-anchor and month-generation cases are the ones that catch this.
 
 ### Naming note: `Fortnight*` is legacy naming, deliberately kept
-The board's scheduling horizon changed from a 10-workday fortnight to a calendar month, but the internal naming didn't follow: `Fortnight` (the type), `fortnightId`, `FortnightTape`/`FortnightBoard`/`FortnightSwitcher`, `fortnight.ts`, `activeFortnightId`/`viewedFortnightId`, etc. all keep their original names. This is deliberate — renaming would touch the persisted `fortnightId` field and ~40 files for zero user-facing value. All user-visible text (UI copy, docs prose) says "month"; all code identifiers say "fortnight". Don't "fix" this inconsistency piecemeal.
+The board's scheduling horizon changed from a 10-workday fortnight to a calendar month, but the internal naming didn't follow: `Fortnight` (the type), `fortnightId`, `FortnightTape`/`FortnightBoard`/`FortnightNav`, `fortnight.ts`, `activeFortnightId`/`viewedFortnightId`, etc. all keep their original names. This is deliberate — renaming would touch the persisted `fortnightId` field and ~40 files for zero user-facing value. All user-visible text (UI copy, docs prose) says "month"; all code identifiers say "fortnight". Don't "fix" this inconsistency piecemeal.
 
 ### INV-5. `fortnightId` is the migration cursor — the anti-double-migration rule
 **Rule.** Two functions move todos between days/fortnights, and they're kept disjoint by which field they key on and which field they write:
@@ -77,7 +77,7 @@ The board's scheduling horizon changed from a 10-workday fortnight to a calendar
 - `carryOverTodos` (`src/domain/fortnight.ts`) keys on `todo.fortnightId === oldFortnightId`, and **always** writes `fortnightId = newFortnight.id`.
 - `done` todos are excluded from both — completed todos stay pinned to the fortnight they were finished in, which is what makes history immutable.
 - `lastRolloverDay` is a once-per-local-day latch (`checkDayTick` early-returns if it already equals today), which is what makes it safe to call from `initApp`, a 60s interval, `visibilitychange`, `focus`, and `importState`.
-- **`regenerateFortnight` must also stamp `lastRolloverDay`.** Without it, a same-day tick after regeneration would run `applyRollover` over todos `carryOverTodos` just placed on future overlap days and yank them back to today — destroying the "future plans aren't touched" rule.
+- **`regenerateFortnight` must also stamp `lastRolloverDay`.** Without it, a same-day tick after regeneration would run `applyRollover` over todos `carryOverTodos` just placed on future overlap days and yank them back to today — destroying the "future plans aren't touched" rule. `regenerateFortnight` is now internal-only (no UI door since the three-month-window redesign — it survives as a safety valve and shared test fixture); `checkDayTick`'s own generation branch, the one that actually fires when the active month has ended, goes through the same shared `buildGeneration` helper in `src/store/store.ts` and so carries the identical stamp-`lastRolloverDay`-in-the-same-`set()` obligation.
 - Blocker notes follow the identical discipline via sibling functions — `applyNoteRollover`/`carryOverNotes` (also in `rollover.ts`/`fortnight.ts`), keyed and called from the same two actions, same never-writes-`fortnightId`-on-rollover / always-writes-it-on-carry-over split. Only unresolved blockers move; resolved blockers and `info` notes are excluded from both, same as `done` todos.
 
 **Why.** Because `fortnightId` only ever advances forward (old → new) and is the sole key both functions check, the same todo (or note) can never be migrated twice, and rollover can never make a todo eligible for a carry-over it wasn't already eligible for.

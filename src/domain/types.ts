@@ -51,7 +51,10 @@ export interface PomodoroSettings {
 
 export interface PersistedState {
   schemaVersion: number;
-  fortnights: Fortnight[];            // chronological; last = active
+  fortnights: Fortnight[];            // last = active; bounded by the 3-month
+                                      // retention window (pruneToRetention runs
+                                      // at month generation). Append-order --
+                                      // sort by days[0] for display.
   activeFortnightId: string | null;
   todos: Record<string, Todo>;
   notes: Record<string, Note>;

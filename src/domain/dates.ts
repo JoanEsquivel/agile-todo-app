@@ -50,6 +50,10 @@ export function formatDayLabel(day: ISODate): string {
   });
 }
 
+export function formatMonthLabel(day: ISODate): string {
+  return parseISODate(day).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+}
+
 export function firstOfMonth(day: ISODate): ISODate {
   const d = parseISODate(day);
   return toISODate(new Date(d.getFullYear(), d.getMonth(), 1));
