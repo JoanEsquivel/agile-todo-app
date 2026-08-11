@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- Ink square + check, inverting with the browser's color scheme so the
+       tab icon reads on both light and dark chrome. -->
+  <style>
+    .plate { fill: #14161a; }
+    .check { stroke: #ffffff; }
+    @media (prefers-color-scheme: dark) {
+      .plate { fill: #e8eaee; }
+      .check { stroke: #0c0d10; }
+    }
+  </style>
+  <rect class="plate" width="32" height="32" rx="7" />
+  <path class="check" d="M9 16.5l5 5 9-11" stroke-width="3.4" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+</svg>
