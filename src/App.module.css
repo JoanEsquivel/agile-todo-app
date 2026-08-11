@@ -1,11 +1,11 @@
 .app {
   min-height: 100vh;
-  padding: var(--space-4) var(--space-4) var(--space-8);
-  max-width: 1280px;
+  padding: var(--space-3) var(--space-4) var(--space-6);
+  max-width: var(--width-app);
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--space-3);
 }
 
 /* Off-screen until focused — the first tab stop on the page, so a keyboard
@@ -35,20 +35,21 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--space-3);
-  padding-bottom: var(--space-4);
+  padding-bottom: var(--space-3);
   border-bottom: 1px solid var(--color-border);
 }
 
+/* Title and range share one baseline — the header is a single dense row. */
 .headerTitle {
   display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
+  align-items: baseline;
+  gap: var(--space-3);
 }
 
 /* letter-spacing comes from the global h1 rule (--tracking-tight) --
    nothing to override here. */
 .heading {
-  font-size: var(--text-xl);
+  font-size: var(--text-lg);
 }
 
 .range {
@@ -94,15 +95,3 @@
   color: var(--color-text-muted);
 }
 
-.layout {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-5);
-  align-items: flex-start;
-}
-
-@media (min-width: 1024px) {
-  .layout {
-    flex-direction: row;
-  }
-}

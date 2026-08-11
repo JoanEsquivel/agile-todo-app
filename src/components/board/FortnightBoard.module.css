@@ -6,3 +6,21 @@
   min-width: 0;
   width: 100%;
 }
+
+/* Three equal columns: Todos | Notes | Reminders. The day column spans two
+   tracks and splits them internally with the same gap, so all three land at
+   exactly one third of the row. When there are no reminders (the panel
+   renders nothing), fall back to two halves instead of leaving a dead
+   third — detected with :has() rather than a prop (INV-12 pattern). */
+@media (min-width: 1024px) {
+  .board {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    column-gap: var(--space-5);
+    align-items: start;
+  }
+
+  .board:not(:has(aside)) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

@@ -1,9 +1,26 @@
 .column {
   display: flex;
   flex-direction: column;
-  gap: var(--space-5);
-  max-width: var(--measure-column);
+  gap: var(--space-4);
   width: 100%;
+}
+
+/* Spans two of the board's three tracks and splits them with the same gap,
+   so Todos and Notes each align exactly with one board column (see
+   FortnightBoard.module.css). The heading rides above both. */
+@media (min-width: 1024px) {
+  .column {
+    grid-column: span 2;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: var(--space-5);
+    row-gap: var(--space-3);
+    align-items: start;
+  }
+
+  .heading {
+    grid-column: 1 / -1;
+  }
 }
 
 .heading {

@@ -142,8 +142,7 @@
   --transition-base: 160ms ease;
 
   /* ---- Layout ---- */
-  --measure-column: 640px;
-  --width-sidebar: 300px;
+  --width-app: 1600px;
 }
 
 @media (prefers-color-scheme: dark) {

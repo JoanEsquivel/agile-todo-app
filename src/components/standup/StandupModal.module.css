@@ -17,12 +17,29 @@
 .list {
   display: flex;
   flex-direction: column;
-  gap: var(--space-1);
 }
 
+/* A visible dot marker plus a hairline between lines — without them the
+   items read as one run-on block (the global reset strips list-style). */
 .item {
+  position: relative;
   font-size: var(--text-base);
-  padding: var(--space-1) 0;
+  padding: var(--space-2) 0 var(--space-2) var(--space-4);
+}
+
+.item::before {
+  content: '';
+  position: absolute;
+  left: var(--space-1);
+  top: calc(var(--space-2) + 0.5em);
+  width: 5px;
+  height: 5px;
+  border-radius: var(--radius-pill);
+  background: var(--color-border-strong);
+}
+
+.item + .item {
+  border-top: 1px solid var(--color-border);
 }
 
 .empty {

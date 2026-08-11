@@ -1,27 +1,27 @@
+/* A first-class board column, not a boxed card — it sits in the third grid
+   track beside Todos and Notes (see FortnightBoard.module.css) and shares
+   their section-label treatment. */
 .panel {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--space-3);
   width: 100%;
-  padding: var(--space-4);
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
-  align-self: stretch;
 }
 
 @media (min-width: 1024px) {
   .panel {
-    width: var(--width-sidebar);
-    flex: 0 0 var(--width-sidebar);
     position: sticky;
-    top: var(--space-4);
+    top: var(--space-3);
   }
 }
 
+/* Matches DayColumn's .sectionLabel — the three columns read as siblings. */
 .heading {
-  font-size: var(--text-md);
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-label);
+  color: var(--color-text-muted);
 }
 
 .group {

@@ -5,7 +5,7 @@ import { useShortcuts } from './hooks/useShortcuts';
 import { selectViewedFortnight, selectFortnightExpired, selectIsReadOnly } from './store/selectors';
 import { formatDayLabel } from './domain/dates';
 import { FortnightBoard } from './components/board/FortnightBoard';
-import { RemindersPanel } from './components/reminders/RemindersPanel';
+import { FortnightTape } from './components/board/FortnightTape';
 import { StandupModal } from './components/standup/StandupModal';
 import { FortnightSwitcher } from './components/history/FortnightSwitcher';
 import { BackupControls } from './components/common/BackupControls';
@@ -80,10 +80,8 @@ export default function App() {
       {selectIsReadOnly(state) && (
         <p className={styles.bannerMuted} role="status">Viewing a past fortnight (read-only).</p>
       )}
-      <div className={styles.layout}>
-        <FortnightBoard />
-        <RemindersPanel />
-      </div>
+      <FortnightTape />
+      <FortnightBoard />
       {standupOpen && <StandupModal onClose={() => setStandupOpen(false)} />}
       {confirmRegenerateOpen && (
         <ConfirmDialog
