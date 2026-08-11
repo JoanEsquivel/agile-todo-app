@@ -49,3 +49,35 @@ export function formatDayLabel(day: ISODate): string {
     weekday: 'short', month: 'short', day: 'numeric',
   });
 }
+
+export function firstOfMonth(day: ISODate): ISODate {
+  const d = parseISODate(day);
+  return toISODate(new Date(d.getFullYear(), d.getMonth(), 1));
+}
+
+export function firstOfNextMonth(day: ISODate): ISODate {
+  const d = parseISODate(day);
+  return toISODate(new Date(d.getFullYear(), d.getMonth() + 1, 1));
+}
+
+export function chunkByWeek(days: ISODate[]): ISODate[][] {
+  const chunks: ISODate[][] = [];
+  let currentWeek: ISODate | null = null;
+  for (const day of days) {
+    const week = mondayOfWeek(day);
+    if (week !== currentWeek) {
+      chunks.push([]);
+      currentWeek = week;
+    }
+    chunks[chunks.length - 1].push(day);
+  }
+  return chunks;
+}
+
+export function formatWeekdayShort(day: ISODate): string {
+  return parseISODate(day).toLocaleDateString('en-US', { weekday: 'short' });
+}
+
+export function dayOfMonth(day: ISODate): number {
+  return parseISODate(day).getDate();
+}

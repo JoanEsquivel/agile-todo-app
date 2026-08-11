@@ -1,11 +1,34 @@
 import type { Fortnight, ISODate, Todo } from './types';
-import { addDays, mondayOfWeek, nextWorkday } from './dates';
+import { addDays, firstOfMonth, firstOfNextMonth, isWorkday, mondayOfWeek, nextWorkday } from './dates';
 
 export function generateFortnightDays(anchor: ISODate): ISODate[] {
   const monday = mondayOfWeek(anchor);
   const days: ISODate[] = [];
   for (const weekStart of [monday, addDays(monday, 7)]) {
     for (let i = 0; i < 5; i++) days.push(addDays(weekStart, i));
+  }
+  return days;
+}
+
+/** Workdays (Mon–Fri) of the calendar month containing `anchor`, ascending.
+ *  If `anchor` falls AFTER the month's last workday (a weekend tail like
+ *  Sat May 30 2026), returns the NEXT month's workdays instead — otherwise
+ *  "Generate new month" on such a day would create an instantly-expired
+ *  period and the regenerate flow would loop on it forever. */
+export function generateMonthDays(anchor: ISODate): ISODate[] {
+  const days = workdaysOfMonth(firstOfMonth(anchor));
+  return anchor > days[days.length - 1]
+    ? workdaysOfMonth(firstOfNextMonth(anchor))
+    : days;
+}
+
+function workdaysOfMonth(monthFirstDay: ISODate): ISODate[] {
+  const month = monthFirstDay.slice(0, 7);
+  const days: ISODate[] = [];
+  let d = monthFirstDay;
+  while (d.slice(0, 7) === month) {
+    if (isWorkday(d)) days.push(d);
+    d = addDays(d, 1);
   }
   return days;
 }
