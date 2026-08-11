@@ -22,7 +22,7 @@ Remove all human interaction from month transitions, and bound history to a fixe
 
 ### 1. Retention model
 
-Retention is counted **by calendar month, not by array entries**: a period is retained iff its day range intersects `{month(today), month(today)−1, month(today)−2}`. This is what keeps legacy 10-day fortnights honest — two of them inside one July count as *one* month of history, not two retention slots (INV-4: legacy periods persist unmigrated and stay navigable).
+Retention is counted **by calendar month, not by array entries**: the **3 newest calendar months actually present among stored periods** (capped at `month(today)`; later months — the weekend-tail active month — are always retained) are kept; every period belonging to an older month is dropped. In the steady state (consecutive months) this is identical to "intersects `{month(today), −1, −2}`"; it differs only after a usage gap, where it implements §2's approved decision — the last actually-used months stay until new real months displace them, rather than being evicted by empty calendar time. Counting by month is also what keeps legacy 10-day fortnights honest — two of them inside one July count as *one* month of history, not two retention slots (INV-4: legacy periods persist unmigrated and stay navigable).
 
 New pure function in `src/domain/fortnight.ts` (INV-3 — domain, no ambient time):
 
