@@ -27,6 +27,29 @@ describe('useShortcuts', () => {
     expect(screen.getByRole('dialog', { name: 'Daily standup' })).toBeInTheDocument();
   });
 
+  it('P opens the pomodoro modal, but not while typing or over another dialog', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    blur();
+
+    // Dead in a text input: N opens the todo form and focuses Title.
+    await user.keyboard('n');
+    await user.keyboard('p');
+    expect(screen.queryByRole('dialog', { name: 'Pomodoro' })).not.toBeInTheDocument();
+    blur();
+    await user.keyboard('{Escape}');
+
+    // Dead while another dialog is open.
+    await user.keyboard('s');
+    expect(screen.getByRole('dialog', { name: 'Daily standup' })).toBeInTheDocument();
+    await user.keyboard('p');
+    expect(screen.queryByRole('dialog', { name: 'Pomodoro' })).not.toBeInTheDocument();
+    await user.keyboard('{Escape}');
+
+    await user.keyboard('p');
+    expect(screen.getByRole('dialog', { name: 'Pomodoro' })).toBeInTheDocument();
+  });
+
   it('N opens the todo form, Shift+N opens the note form', async () => {
     const user = userEvent.setup();
     render(<App />);

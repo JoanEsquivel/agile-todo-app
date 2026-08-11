@@ -15,6 +15,8 @@ import { ConfirmDialog } from './components/common/ConfirmDialog';
 import { Announcer } from './components/common/Announcer';
 import { CommandPalette, type CommandAction } from './components/commands/CommandPalette';
 import { ShortcutsOverlay } from './components/commands/ShortcutsOverlay';
+import { PomodoroWidget } from './components/pomodoro/PomodoroWidget';
+import { PomodoroModal } from './components/pomodoro/PomodoroModal';
 import styles from './App.module.css';
 
 export default function App() {
@@ -28,10 +30,12 @@ export default function App() {
   const [confirmRegenerateOpen, setConfirmRegenerateOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const [pomodoroOpen, setPomodoroOpen] = useState(false);
   useShortcuts({
     onOpenStandup: () => setStandupOpen(true),
     onOpenPalette: () => setPaletteOpen(true),
     onOpenShortcutsOverlay: () => setShortcutsOpen(true),
+    onOpenPomodoro: () => setPomodoroOpen(true),
   });
 
   // Excludes the two compose actions while read-only, same as the N/Shift+N
@@ -44,6 +48,9 @@ export default function App() {
       { id: 'add-note', label: 'Add note', run: () => setComposeIntent('note') },
     ]),
     { id: 'standup', label: 'Standup', run: () => setStandupOpen(true) },
+    // Not board mutation, so no read-only gate — the timer works while
+    // viewing a past fortnight.
+    { id: 'pomodoro', label: 'Pomodoro timer', run: () => setPomodoroOpen(true) },
     { id: 'generate-fortnight', label: 'Generate new fortnight', run: () => setConfirmRegenerateOpen(true) },
     { id: 'keyboard-shortcuts', label: 'Keyboard shortcuts', run: () => setShortcutsOpen(true) },
   ];
@@ -66,6 +73,7 @@ export default function App() {
           <button onClick={() => setConfirmRegenerateOpen(true)}>Generate new fortnight</button>
           <FortnightSwitcher />
           <BackupControls />
+          <PomodoroWidget onOpenModal={() => setPomodoroOpen(true)} />
           <ThemeToggle />
           <AuthorLinks />
         </div>
@@ -96,6 +104,7 @@ export default function App() {
       )}
       {paletteOpen && <CommandPalette onClose={() => setPaletteOpen(false)} actions={paletteActions} />}
       {shortcutsOpen && <ShortcutsOverlay onClose={() => setShortcutsOpen(false)} />}
+      {pomodoroOpen && <PomodoroModal onClose={() => setPomodoroOpen(false)} />}
     </div>
   );
 }

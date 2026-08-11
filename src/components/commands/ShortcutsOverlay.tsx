@@ -11,6 +11,7 @@ const SHORTCUTS: Array<{ combo: string[]; description: string }> = [
   { combo: ['N'], description: 'New todo' },
   { combo: ['⇧', 'N'], description: 'New note' },
   { combo: ['S'], description: 'Standup' },
+  { combo: ['P'], description: 'Pomodoro timer' },
   { combo: ['Esc'], description: 'Close the open form or dialog' },
 ];
 

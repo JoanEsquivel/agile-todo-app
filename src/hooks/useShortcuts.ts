@@ -27,10 +27,11 @@ function isTypingTarget(target: EventTarget | null): boolean {
  * palette back to the palette, or open it over the shortcuts overlay), so
  * it's checked before both of those guards, not after.
  */
-export function useShortcuts({ onOpenStandup, onOpenPalette, onOpenShortcutsOverlay }: {
+export function useShortcuts({ onOpenStandup, onOpenPalette, onOpenShortcutsOverlay, onOpenPomodoro }: {
   onOpenStandup: () => void;
   onOpenPalette: () => void;
   onOpenShortcutsOverlay: () => void;
+  onOpenPomodoro: () => void;
 }) {
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -60,6 +61,12 @@ export function useShortcuts({ onOpenStandup, onOpenPalette, onOpenShortcutsOver
         case 'S':
           e.preventDefault();
           onOpenStandup();
+          return;
+
+        case 'p':
+        case 'P':
+          e.preventDefault();
+          onOpenPomodoro();
           return;
 
         case 'n':
@@ -112,5 +119,5 @@ export function useShortcuts({ onOpenStandup, onOpenPalette, onOpenShortcutsOver
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [onOpenStandup, onOpenPalette, onOpenShortcutsOverlay]);
+  }, [onOpenStandup, onOpenPalette, onOpenShortcutsOverlay, onOpenPomodoro]);
 }
