@@ -83,4 +83,21 @@ describe('App shell', () => {
     render(<App />);
     expect(screen.queryByText(/Day \d+ of/)).not.toBeInTheDocument();
   });
+
+  it('an expired active month renders no banner and no Generate button -- month transitions are automatic now', () => {
+    // Expire the active period in place (legacy July range, id preserved).
+    const activeId = useAppStore.getState().activeFortnightId!;
+    const days = [
+      '2026-07-13', '2026-07-14', '2026-07-15', '2026-07-16', '2026-07-17',
+      '2026-07-20', '2026-07-21', '2026-07-22', '2026-07-23', '2026-07-24',
+    ];
+    useAppStore.setState({
+      fortnights: useAppStore.getState().fortnights.map((f) =>
+        f.id === activeId ? { ...f, startDay: days[0], days } : f,
+      ),
+    });
+    render(<App />);
+    expect(screen.queryByText(/This month has ended/)).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Generate new month' })).not.toBeInTheDocument();
+  });
 });

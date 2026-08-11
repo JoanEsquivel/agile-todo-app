@@ -40,9 +40,8 @@ function unlockAppInteraction() {
 
 export function Modal({ title, onClose, children, initialFocusRef }: {
   title: string; onClose: () => void; children: ReactNode;
-  /** Focused on open instead of the dialog container -- e.g. ConfirmDialog
-   * defaults focus to Cancel rather than the (destructive) confirm action,
-   * CommandPalette focuses its search input. */
+  /** Focused on open instead of the dialog container -- e.g. CommandPalette
+   * focuses its search input. */
   initialFocusRef?: RefObject<HTMLElement | null>;
 }) {
   const ref = useRef<HTMLDivElement>(null);

@@ -1,6 +1,4 @@
 import type { Fortnight, ISODate, Note, Todo } from '../domain/types';
-import { effectiveBoardDay } from '../domain/fortnight';
-import { todayLocal } from './clock';
 import type { AppState } from './store';
 
 const PRIORITY_RANK = { high: 0, medium: 1, low: 2 } as const;
@@ -62,7 +60,3 @@ export function selectDayWorkload(s: AppState, fortnightId: string): Record<ISOD
   return byDay;
 }
 
-export function selectFortnightExpired(s: AppState): boolean {
-  const active = s.fortnights.find((f) => f.id === s.activeFortnightId);
-  return active !== undefined && effectiveBoardDay(active, todayLocal()) === null;
-}

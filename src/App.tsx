@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useAppStore } from './store/store';
 import { useDayChangeWatcher } from './hooks/useDayChangeWatcher';
 import { useShortcuts } from './hooks/useShortcuts';
-import { selectViewedFortnight, selectFortnightExpired, selectIsReadOnly } from './store/selectors';
+import { selectViewedFortnight, selectIsReadOnly } from './store/selectors';
 import { formatDayLabel } from './domain/dates';
 import { FortnightBoard } from './components/board/FortnightBoard';
 import { FortnightTape } from './components/board/FortnightTape';
@@ -11,7 +11,6 @@ import { FortnightSwitcher } from './components/history/FortnightSwitcher';
 import { BackupControls } from './components/common/BackupControls';
 import { AuthorLinks } from './components/common/AuthorLinks';
 import { ThemeToggle } from './components/common/ThemeToggle';
-import { ConfirmDialog } from './components/common/ConfirmDialog';
 import { Announcer } from './components/common/Announcer';
 import { CommandPalette, type CommandAction } from './components/commands/CommandPalette';
 import { ShortcutsOverlay } from './components/commands/ShortcutsOverlay';
@@ -24,10 +23,8 @@ export default function App() {
   const state = useAppStore();
   const fn = selectViewedFortnight(state);
   const readOnly = selectIsReadOnly(state);
-  const regenerateFortnight = useAppStore((s) => s.regenerateFortnight);
   const setComposeIntent = useAppStore((s) => s.setComposeIntent);
   const [standupOpen, setStandupOpen] = useState(false);
-  const [confirmRegenerateOpen, setConfirmRegenerateOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [pomodoroOpen, setPomodoroOpen] = useState(false);
@@ -51,14 +48,6 @@ export default function App() {
     // Not board mutation, so no read-only gate — the timer works while
     // viewing a past fortnight.
     { id: 'pomodoro', label: 'Pomodoro timer', run: () => setPomodoroOpen(true) },
-    // Excludes generating a new month until the active one has actually
-    // ended -- doing it mid-month would create a second period covering the
-    // same date range as the active one, indistinguishable in the history
-    // switcher except for the "(current)" suffix, and would strand any
-    // already-completed todos in the newly-inactive copy.
-    ...(selectFortnightExpired(state) ? [
-      { id: 'generate-fortnight', label: 'Generate new month', run: () => setConfirmRegenerateOpen(true) },
-    ] : []),
     { id: 'keyboard-shortcuts', label: 'Keyboard shortcuts', run: () => setShortcutsOpen(true) },
   ];
 
@@ -77,13 +66,6 @@ export default function App() {
         </div>
         <div className={styles.headerActions}>
           <button className={styles.primaryAction} onClick={() => setStandupOpen(true)}>Standup</button>
-          <button
-            onClick={() => setConfirmRegenerateOpen(true)}
-            disabled={!selectFortnightExpired(state)}
-            title={selectFortnightExpired(state) ? undefined : 'Available once this month has ended'}
-          >
-            Generate new month
-          </button>
           <FortnightSwitcher />
           <BackupControls />
           <PomodoroWidget onOpenModal={() => setPomodoroOpen(true)} />
@@ -97,24 +79,12 @@ export default function App() {
           been modified. Try reloading, or import a backup below.
         </p>
       )}
-      {selectFortnightExpired(state) && (
-        <p className={styles.banner} role="alert">This month has ended. Generate a new month to continue.</p>
-      )}
       {selectIsReadOnly(state) && (
         <p className={styles.bannerMuted} role="status">Viewing a past month (read-only).</p>
       )}
       <FortnightTape />
       <FortnightBoard />
       {standupOpen && <StandupModal onClose={() => setStandupOpen(false)} />}
-      {confirmRegenerateOpen && (
-        <ConfirmDialog
-          title="Generate new month?"
-          message="Incomplete todos carry over automatically. This can't be undone."
-          confirmLabel="Generate"
-          onConfirm={() => { regenerateFortnight(); setConfirmRegenerateOpen(false); }}
-          onCancel={() => setConfirmRegenerateOpen(false)}
-        />
-      )}
       {paletteOpen && <CommandPalette onClose={() => setPaletteOpen(false)} actions={paletteActions} />}
       {shortcutsOpen && <ShortcutsOverlay onClose={() => setShortcutsOpen(false)} />}
       {pomodoroOpen && <PomodoroModal onClose={() => setPomodoroOpen(false)} />}
