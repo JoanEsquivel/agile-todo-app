@@ -105,7 +105,7 @@ export function HelpModal({ initialTab, onClose }: { initialTab: HelpTab; onClos
         >
           <dl className={styles.guide}>
             {GUIDE_SECTIONS.map((s) => (
-              <div key={s.title} className={styles.guideEntry}>
+              <div key={s.title}>
                 <dt className={styles.guideTitle}>{s.title}</dt>
                 <dd className={styles.guideBody}>{s.body}</dd>
               </div>

@@ -24,7 +24,7 @@ function isTypingTarget(target: EventTarget | null): boolean {
  * Every shortcut other than ⌘K bails while focus is in a text-entry
  * control, and while any [role=dialog] is mounted — ⌘K itself must stay
  * reachable even with a dialog already open (that's how you get from the
- * palette back to the palette, or open it over the shortcuts overlay), so
+ * palette back to the palette, or open it over the Help modal), so
  * it's checked before both of those guards, not after.
  */
 export function useShortcuts({ onOpenStandup, onOpenPalette, onOpenHelp, onOpenPomodoro }: {
