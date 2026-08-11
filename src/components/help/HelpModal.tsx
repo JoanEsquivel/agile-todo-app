@@ -1,0 +1,138 @@
+import { useId, useState } from 'react';
+import { Modal } from '../common/Modal';
+import styles from './HelpModal.module.css';
+
+export type HelpTab = 'guide' | 'shortcuts';
+
+// Guide copy is spec-final (docs/superpowers/specs/2026-08-11-help-modal-design.md §4):
+// every claim must stay verifiable app behavior.
+const GUIDE_SECTIONS: Array<{ title: string; body: string }> = [
+  {
+    title: 'Monthly board',
+    body: 'The board shows the workdays (Mon–Fri) of the current month. Move between days with ← →, or press T to jump to today.',
+  },
+  {
+    title: 'Automatic rollover',
+    body: 'When a new day starts, unfinished todos move forward to today and are marked as rolled over. Completed todos stay on the day you finished them.',
+  },
+  {
+    title: 'Month history',
+    body: 'When a month ends, the next one is generated automatically. Use the ‹ › stepper to revisit the two previous months — past months are read-only.',
+  },
+  {
+    title: 'Todos & priorities',
+    body: 'Press N to add a todo to the selected day, with high, medium or low priority. Click the checkbox to mark it done.',
+  },
+  {
+    title: 'Notes: blockers & info',
+    body: 'Press Shift+N to add a note. Unresolved blockers follow you from day to day and appear in the standup until you resolve them; info notes stay where you put them.',
+  },
+  {
+    title: 'Standup',
+    body: 'Press S for a summary of yesterday, today and open blockers, ready to copy for your standup.',
+  },
+  {
+    title: 'Pomodoro',
+    body: 'The header timer runs focus and break sessions; press P to configure durations. Settings are saved between visits.',
+  },
+  {
+    title: 'Backup & theme',
+    body: 'Export downloads your whole board as a JSON file; Import restores it. The sun/moon button switches between light, dark and system theme.',
+  },
+];
+
+// Migrated verbatim from the deleted ShortcutsOverlay, except the `?` row
+// ("Show this overlay" → "Open this help").
+const SHORTCUTS: Array<{ combo: string[]; description: string }> = [
+  { combo: ['⌘', 'K'], description: 'Command palette (also Ctrl+K)' },
+  { combo: ['?'], description: 'Open this help' },
+  { combo: ['←', '→'], description: 'Previous / next day' },
+  { combo: ['Home'], description: 'First day of the month' },
+  { combo: ['End'], description: 'Last day of the month' },
+  { combo: ['T'], description: 'Jump to today' },
+  { combo: ['N'], description: 'New todo' },
+  { combo: ['⇧', 'N'], description: 'New note' },
+  { combo: ['S'], description: 'Standup' },
+  { combo: ['P'], description: 'Pomodoro timer' },
+  { combo: ['Esc'], description: 'Close the open form or dialog' },
+];
+
+const TABS: Array<{ id: HelpTab; label: string }> = [
+  { id: 'guide', label: 'Guide' },
+  { id: 'shortcuts', label: 'Shortcuts' },
+];
+
+export function HelpModal({ initialTab, onClose }: { initialTab: HelpTab; onClose: () => void }) {
+  const [tab, setTab] = useState<HelpTab>(initialTab);
+  const baseId = useId();
+
+  // With two tabs, either arrow key means "the other one". The global ←/→
+  // day-navigation shortcuts can't collide: useShortcuts bails while any
+  // [role=dialog] is mounted.
+  const onTablistKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    e.preventDefault();
+    const next: HelpTab = tab === 'guide' ? 'shortcuts' : 'guide';
+    setTab(next);
+    document.getElementById(`${baseId}-tab-${next}`)?.focus();
+  };
+
+  return (
+    <Modal title="Help" onClose={onClose}>
+      <div className={styles.tabs} role="tablist" aria-label="Help sections" onKeyDown={onTablistKeyDown}>
+        {TABS.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            id={`${baseId}-tab-${t.id}`}
+            role="tab"
+            aria-selected={tab === t.id}
+            aria-controls={`${baseId}-panel-${t.id}`}
+            tabIndex={tab === t.id ? 0 : -1}
+            className={styles.tab}
+            onClick={() => setTab(t.id)}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+      {tab === 'guide' ? (
+        <div
+          id={`${baseId}-panel-guide`}
+          role="tabpanel"
+          aria-labelledby={`${baseId}-tab-guide`}
+          className={styles.panel}
+        >
+          <dl className={styles.guide}>
+            {GUIDE_SECTIONS.map((s) => (
+              <div key={s.title} className={styles.guideEntry}>
+                <dt className={styles.guideTitle}>{s.title}</dt>
+                <dd className={styles.guideBody}>{s.body}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+      ) : (
+        <div
+          id={`${baseId}-panel-shortcuts`}
+          role="tabpanel"
+          aria-labelledby={`${baseId}-tab-shortcuts`}
+          className={styles.panel}
+        >
+          <ul className={styles.list}>
+            {SHORTCUTS.map((s) => (
+              <li key={s.description} className={styles.row}>
+                <span className={styles.combo}>
+                  {s.combo.map((k, i) => (
+                    <kbd key={i} className={styles.key}>{k}</kbd>
+                  ))}
+                </span>
+                <span className={styles.description}>{s.description}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </Modal>
+  );
+}
