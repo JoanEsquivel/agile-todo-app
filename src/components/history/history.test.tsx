@@ -15,7 +15,7 @@ describe('regenerate + history', () => {
   it('regenerates after confirming in the dialog and lists the old fortnight in the switcher', async () => {
     const user = userEvent.setup();
     render(<App />);
-    await user.click(screen.getByRole('button', { name: 'Generate new fortnight' }));
+    await user.click(screen.getByRole('button', { name: 'Generate new month' }));
     await user.click(screen.getByRole('button', { name: 'Generate' }));
     expect(useAppStore.getState().fortnights).toHaveLength(2);
     const options = screen.getAllByRole('option');
@@ -26,8 +26,8 @@ describe('regenerate + history', () => {
   it('cancelling the dialog does not regenerate; focus defaults to Cancel, not Generate', async () => {
     const user = userEvent.setup();
     render(<App />);
-    await user.click(screen.getByRole('button', { name: 'Generate new fortnight' }));
-    const dialog = screen.getByRole('dialog', { name: 'Generate new fortnight?' });
+    await user.click(screen.getByRole('button', { name: 'Generate new month' }));
+    const dialog = screen.getByRole('dialog', { name: 'Generate new month?' });
     expect(screen.getByRole('button', { name: 'Cancel' })).toHaveFocus();
 
     await user.click(screen.getByRole('button', { name: 'Cancel' }));
@@ -41,12 +41,12 @@ describe('regenerate + history', () => {
     const t = Object.values(useAppStore.getState().todos)[0];
     useAppStore.getState().toggleDone(t.id); // stays in old fortnight after regenerate
     render(<App />);
-    await user.click(screen.getByRole('button', { name: 'Generate new fortnight' }));
+    await user.click(screen.getByRole('button', { name: 'Generate new month' }));
     await user.click(screen.getByRole('button', { name: 'Generate' }));
 
     const oldOption = screen.getAllByRole('option').find((o) => !o.textContent!.includes('current'))!;
-    await user.selectOptions(screen.getByRole('combobox', { name: 'Fortnight' }), oldOption);
-    expect(screen.getByText('Viewing a past fortnight (read-only).')).toBeInTheDocument();
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Month' }), oldOption);
+    expect(screen.getByText('Viewing a past month (read-only).')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Add todo' })).not.toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /Tue, Aug 18/ }));
     expect(screen.getByRole('checkbox', { name: 'old task' })).toBeDisabled();
@@ -77,8 +77,8 @@ describe('regenerate + history', () => {
       'Mon, Jul 13 – Fri, Jul 24',
     ]);
 
-    await user.selectOptions(screen.getByRole('combobox', { name: 'Fortnight' }), legacy.id);
-    expect(screen.getByText('Viewing a past fortnight (read-only).')).toBeInTheDocument();
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Month' }), legacy.id);
+    expect(screen.getByText('Viewing a past month (read-only).')).toBeInTheDocument();
 
     const chips = screen.getAllByRole('button', { name: /Jul \d+/ });
     expect(chips).toHaveLength(10);

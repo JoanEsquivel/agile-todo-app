@@ -83,7 +83,7 @@ describe('notes on the board', () => {
       useAppStore.getState().viewFortnight(oldFortnightId);
     });
 
-    expect(screen.getByText('Viewing a past fortnight (read-only).')).toBeInTheDocument();
+    expect(screen.getByText('Viewing a past month (read-only).')).toBeInTheDocument();
     expect(screen.queryByLabelText('Text')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Save note' })).not.toBeInTheDocument();
     // No note was ever created via the stale form.

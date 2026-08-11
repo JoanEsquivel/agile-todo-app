@@ -10,7 +10,7 @@ export function FortnightSwitcher() {
   if (fortnights.length < 2) return null;
 
   return (
-    <select className={styles.select} aria-label="Fortnight" value={viewedId ?? ''}
+    <select className={styles.select} aria-label="Month" value={viewedId ?? ''}
       onChange={(e) => viewFortnight(e.target.value)}>
       {[...fortnights].reverse().map((f) => (
         <option key={f.id} value={f.id}>

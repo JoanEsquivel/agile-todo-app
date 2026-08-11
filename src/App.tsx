@@ -51,7 +51,7 @@ export default function App() {
     // Not board mutation, so no read-only gate — the timer works while
     // viewing a past fortnight.
     { id: 'pomodoro', label: 'Pomodoro timer', run: () => setPomodoroOpen(true) },
-    { id: 'generate-fortnight', label: 'Generate new fortnight', run: () => setConfirmRegenerateOpen(true) },
+    { id: 'generate-fortnight', label: 'Generate new month', run: () => setConfirmRegenerateOpen(true) },
     { id: 'keyboard-shortcuts', label: 'Keyboard shortcuts', run: () => setShortcutsOpen(true) },
   ];
 
@@ -70,7 +70,7 @@ export default function App() {
         </div>
         <div className={styles.headerActions}>
           <button className={styles.primaryAction} onClick={() => setStandupOpen(true)}>Standup</button>
-          <button onClick={() => setConfirmRegenerateOpen(true)}>Generate new fortnight</button>
+          <button onClick={() => setConfirmRegenerateOpen(true)}>Generate new month</button>
           <FortnightSwitcher />
           <BackupControls />
           <PomodoroWidget onOpenModal={() => setPomodoroOpen(true)} />
@@ -85,17 +85,17 @@ export default function App() {
         </p>
       )}
       {selectFortnightExpired(state) && (
-        <p className={styles.banner} role="alert">This fortnight has ended. Generate a new one to continue.</p>
+        <p className={styles.banner} role="alert">This month has ended. Generate a new month to continue.</p>
       )}
       {selectIsReadOnly(state) && (
-        <p className={styles.bannerMuted} role="status">Viewing a past fortnight (read-only).</p>
+        <p className={styles.bannerMuted} role="status">Viewing a past month (read-only).</p>
       )}
       <FortnightTape />
       <FortnightBoard />
       {standupOpen && <StandupModal onClose={() => setStandupOpen(false)} />}
       {confirmRegenerateOpen && (
         <ConfirmDialog
-          title="Generate new fortnight?"
+          title="Generate new month?"
           message="Incomplete todos carry over automatically. This can't be undone."
           confirmLabel="Generate"
           onConfirm={() => { regenerateFortnight(); setConfirmRegenerateOpen(false); }}
