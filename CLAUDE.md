@@ -1,14 +1,14 @@
 # CLAUDE.md — Agile Todo App
 
-> This app is **finished, tested (205 tests), and deployed**. It is not a scaffold to build out — it's a working product. Changes here should be surgical, not exploratory. Every change ships with tests. Read the invariants below before editing anything under `src/`.
+> This app is **finished, tested (253 tests), and deployed**. It is not a scaffold to build out — it's a working product. Changes here should be surgical, not exploratory. Every change ships with tests. Read the invariants below before editing anything under `src/`.
 
 ## Orientation
 
-Browser-only fortnight (2-week, workdays-only) todo board. No backend, no network calls, no accounts — everything lives in one versioned JSON document in `localStorage`.
+Browser-only fortnight (2-week, workdays-only) todo board, plus a header Pomodoro timer and a manual light/dark/system theme toggle. No backend, no network calls, no accounts — everything lives in one versioned JSON document in `localStorage` (plus one tiny separate key for the theme preference — see INV-12).
 
 **Stack:** React 19 + TypeScript 7 (strict) + Vite 8 + Zustand 5 (`persist` middleware) + Vitest 4 + React Testing Library + CSS Modules. **No ESLint, no Prettier** — `tsc` with `strict` + `noUnusedLocals` + `noUnusedParameters` is the linter.
 
-**Keyboard model.** `src/hooks/useShortcuts.ts` is a global `keydown` listener mounted once in `App.tsx`: `⌘K`/`Ctrl+K` opens the command palette (`src/components/commands/CommandPalette.tsx`), `?` opens the shortcuts overlay, `←`/`→`/`Home`/`End` move the selected day (the fortnight tape, `src/components/board/FortnightTape.tsx`, has its own roving-tabindex handler for when focus is already on a day button — the two compose via `e.preventDefault()`/`e.defaultPrevented`, not by one knowing about the other), `T` jumps to today, `N`/`Shift+N` open the todo/note compose form, `S` opens Standup. Every shortcut but `⌘K` bails while focus is in a text-entry control or a `[role=dialog]` is mounted. Escape is deliberately *not* handled there — `Modal.tsx` and `TodoForm`/`NoteForm` each own their own, which is what lets Escape work from inside a text field.
+**Keyboard model.** `src/hooks/useShortcuts.ts` is a global `keydown` listener mounted once in `App.tsx`: `⌘K`/`Ctrl+K` opens the command palette (`src/components/commands/CommandPalette.tsx`), `?` opens the shortcuts overlay, `←`/`→`/`Home`/`End` move the selected day (the fortnight tape, `src/components/board/FortnightTape.tsx`, has its own roving-tabindex handler for when focus is already on a day button — the two compose via `e.preventDefault()`/`e.defaultPrevented`, not by one knowing about the other), `T` jumps to today, `N`/`Shift+N` open the todo/note compose form, `S` opens Standup, `P` opens the Pomodoro modal (`src/components/pomodoro/`). Every shortcut but `⌘K` bails while focus is in a text-entry control or a `[role=dialog]` is mounted — which is why the always-mounted `PomodoroWidget` in the header uses plain buttons: they stay operable while a dialog has the shortcuts dead. Escape is deliberately *not* handled there — `Modal.tsx` and `TodoForm`/`NoteForm` each own their own, which is what lets Escape work from inside a text field.
 
 **Where to look for what:**
 - Product behavior, edge cases, the "why" behind a rule → [`docs/superpowers/specs/2026-08-10-agile-todo-app-design.md`](docs/superpowers/specs/2026-08-10-agile-todo-app-design.md) (the approved design spec — product authority)
@@ -22,7 +22,7 @@ Browser-only fortnight (2-week, workdays-only) todo board. No backend, no networ
 | Command | What it does |
 |---|---|
 | `npm run dev` | Dev server at `http://localhost:5173` |
-| `npm test` | `vitest run` — 205 tests, ~3s |
+| `npm test` | `vitest run` — 253 tests, ~3s |
 | `npm run typecheck` | `tsc -b --noEmit` — the real typecheck, ~0.3s |
 | `npm run verify` | typecheck + test — **this is the definition of done** |
 | `npm run build` | `tsc -b && vite build` — production build |
@@ -80,8 +80,8 @@ Numbered so they can be cited precisely (a hook message might say "violates INV-
 **Check.** `src/domain/rollover.test.ts`, `src/domain/carryOver.test.ts`, `src/store/dayTick.test.ts`.
 
 ### INV-6. `partialize` is an allowlist — schema changes need a ritual
-**Rule.** `PersistedState` (`src/domain/types.ts`) has 6 fields; `partialize` in `src/store/store.ts` explicitly lists all 6. **Adding a field to `PersistedState` and forgetting to add it to `partialize` means it silently never persists** — no error, no warning, just data loss on reload.
-**Why.** An allowlist (vs. "persist everything except UI state") is the safer default for a store that also holds ephemeral fields (`viewedFortnightId`, `selectedDay`, `rehydrationError`, `announcement`, `composeIntent`) — an accidental leak the other direction would be much harder to notice. When adding a new ephemeral field, the correct amount of ritual is *none*: put it on `AppState` only, never `PersistedState`, and don't bump `SCHEMA_VERSION`. Add one assertion to `storePersistence.test.ts` confirming it's absent from the persisted blob — that's the whole checklist, and it's the opposite of the 6-step recipe below.
+**Rule.** `PersistedState` (`src/domain/types.ts`) has 7 fields (schema v2 added `pomodoroSettings`); `partialize` in `src/store/store.ts` explicitly lists all 7. **Adding a field to `PersistedState` and forgetting to add it to `partialize` means it silently never persists** — no error, no warning, just data loss on reload.
+**Why.** An allowlist (vs. "persist everything except UI state") is the safer default for a store that also holds ephemeral fields (`viewedFortnightId`, `selectedDay`, `rehydrationError`, `announcement`, `composeIntent`, `theme`, `pomodoro`) — an accidental leak the other direction would be much harder to notice. When adding a new ephemeral field, the correct amount of ritual is *none*: put it on `AppState` only, never `PersistedState`, and don't bump `SCHEMA_VERSION`. Add one assertion to `storePersistence.test.ts` confirming it's absent from the persisted blob — that's the whole checklist, and it's the opposite of the 6-step recipe below.
 **Check.** `src/store/storePersistence.test.ts` asserts the ephemeral fields are absent from the persisted blob.
 → See the schema-change recipe below for the full 6-step ritual.
 
@@ -107,7 +107,7 @@ Numbered so they can be cited precisely (a hook message might say "violates INV-
 ### INV-10. Test conventions
 **Rule.**
 - `globals: true` in Vitest config — never `import { describe, it, expect, vi } from 'vitest'`.
-- Tests are colocated. Component tests are grouped **per feature folder**, not per component — one `todos.test.tsx` covers `TodoItem` + `TodoForm` together, similarly `notes.test.tsx`, `history.test.tsx`, `reminders.test.tsx`, `standup.test.tsx`, `backup.test.tsx`.
+- Tests are colocated. Component tests are grouped **per feature folder**, not per component — one `todos.test.tsx` covers `TodoItem` + `TodoForm` together, similarly `notes.test.tsx`, `history.test.tsx`, `reminders.test.tsx`, `standup.test.tsx`, `backup.test.tsx`, `pomodoro.test.tsx` (+ its sibling `notify.test.ts` for the feature-detected platform shims).
 - The clock is mocked by **mocking the module**, never `vi.setSystemTime`:
   ```ts
   vi.mock('../../store/clock', () => ({

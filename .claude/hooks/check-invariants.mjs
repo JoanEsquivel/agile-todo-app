@@ -128,8 +128,9 @@ function main() {
       'persist), extend validatePersistedState, and test migration + export/import round-trip.');
   }
   if (rel === 'src/store/store.ts' && /partialize/.test(src)) {
-    hint.push('Reminder: partialize is an explicit allowlist of the 6 PersistedState fields. ' +
-      'Ephemeral state (viewedFortnightId, selectedDay, rehydrationError, announcement, composeIntent) ' +
+    hint.push('Reminder: partialize is an explicit allowlist of the 7 PersistedState fields. ' +
+      'Ephemeral state (viewedFortnightId, selectedDay, rehydrationError, announcement, composeIntent, ' +
+      'theme, pomodoro) ' +
       'must stay out of it. Adding a NEW ephemeral field needs no ritual at all: put it on AppState only, ' +
       "don't bump SCHEMA_VERSION, and add one storePersistence.test.ts assertion that it's absent from " +
       'the persisted blob.');

@@ -4,9 +4,11 @@ A browser-only todo board built around a two-week sprint. No backend, no account
 
 **[Live demo →](https://joanesquivel.github.io/agile-todo-app/)**
 
-205 tests · TypeScript strict · zero backend
+253 tests · TypeScript strict · zero backend
 
-![Screenshot of the Agile Todo App showing the fortnight tape (each day as a stacked column of priority-colored segments), a high-priority overdue todo, a blocker note, an info note, and the reminders panel](docs/screenshot.png)
+Built by [Joan Esquivel](https://www.linkedin.com/in/joanesquivel/) · [source code](https://github.com/JoanEsquivel/agile-todo-app)
+
+![Screenshot of the Agile Todo App: a single-row header with a running Pomodoro timer and theme toggle, the fortnight tape (each day as a stacked column of priority-colored segments), and the selected day's Todos and Notes side by side with a high-priority todo and a blocker note](docs/screenshot.png)
 
 ## What it does
 
@@ -16,6 +18,8 @@ A browser-only todo board built around a two-week sprint. No backend, no account
 - **Visual reminders** — an Overdue/Upcoming panel, no browser notification permissions needed
 - **Per-day notes** — flag a `blocker` (resolvable) or leave an `info` note
 - **Read-only fortnight history** — generate a new fortnight any time; old ones stay browsable, never editable
+- **Pomodoro timer** — an always-visible header widget with classic cycles (25/5, long break every 4th), configurable durations, and an optional sound + browser notification when a phase ends
+- **Light / dark / system theme** — follows your OS by default, with a manual toggle that persists on your device
 - **Keyboard-first** — a command palette and a full set of shortcuts; see below
 
 ## Keyboard shortcuts
@@ -30,6 +34,7 @@ A browser-only todo board built around a two-week sprint. No backend, no account
 | `N` | New todo |
 | `Shift+N` | New note |
 | `S` | Standup |
+| `P` | Pomodoro timer |
 | `Esc` | Close the open form or dialog |
 
 Every shortcut but `⌘K` stays out of the way while you're typing in a field. `N`/`Shift+N` (and the palette's Add actions) refuse to open a form while you're viewing read-only fortnight history; day navigation always works, since it isn't a mutation.
@@ -81,7 +86,7 @@ Full architecture rationale, data model, and edge-case decisions: [`docs/superpo
 
 ## Testing
 
-Vitest + React Testing Library, 205 tests across 27 files, all colocated with the code they test. Coverage spans pure domain logic, store transitions, persistence/migration behavior, component interaction, and accessibility.
+Vitest + React Testing Library, 253 tests across 31 files, all colocated with the code they test. Coverage spans pure domain logic, store transitions, persistence/migration behavior, component interaction, and accessibility.
 
 ```sh
 npm test                              # everything
@@ -90,7 +95,7 @@ npx vitest run src/domain/dates.test.ts   # one file
 
 ## Data & privacy
 
-Everything is stored under a single `localStorage` key (`agile-todo-app.v-state`). Nothing is ever sent over the network. Clearing your browser's site data deletes everything — export a JSON backup first if you want to keep it.
+Everything is stored under a single `localStorage` key (`agile-todo-app.v-state`), plus one tiny `agile-todo-app.theme` key when you pick a manual theme. Nothing is ever sent over the network. Clearing your browser's site data deletes everything — export a JSON backup first if you want to keep it.
 
 ## Deployment
 
@@ -102,6 +107,10 @@ GitHub Actions builds, tests, and deploys to GitHub Pages on every push to `main
 - [`docs/superpowers/specs/2026-08-10-agile-todo-app-design.md`](docs/superpowers/specs/2026-08-10-agile-todo-app-design.md) — the design spec
 - [`docs/TECH-DEBT.md`](docs/TECH-DEBT.md) — known, triaged gaps
 - [`docs/ARCHIVE.md`](docs/ARCHIVE.md) — how it was originally built (historical)
+
+## Author
+
+Built by **Joan Esquivel** — [LinkedIn](https://www.linkedin.com/in/joanesquivel/) · [GitHub](https://github.com/JoanEsquivel). The header of the app links here too.
 
 ## License
 
