@@ -1,7 +1,9 @@
 import {
   addChecklistItem, removeChecklistItem, setTodoDone, toggleChecklistItem,
 } from './checklist';
-import type { ChecklistItem, Todo } from './types';
+import { applyRollover } from './rollover';
+import { carryOverTodos } from './fortnight';
+import type { ChecklistItem, Fortnight, Todo } from './types';
 
 const NOW = '2026-08-18T12:00:00.000Z';
 const EARLIER = '2026-08-17T09:00:00.000Z';
@@ -174,5 +176,61 @@ describe('setTodoDone', () => {
     setTodoDone(todo, true, NOW);
     expect(todo.done).toBe(false);
     expect(todo.checklist![0].checked).toBe(false);
+  });
+});
+
+describe('checklist auto-completion vs rollover/carry-over (INV-5 consequence, spec §2)', () => {
+  // Literal 10-day fortnight fixture (deliberately NOT generateMonthDays —
+  // same living-proof convention as rollover.test.ts / carryOver.test.ts).
+  const f1: Fortnight = {
+    id: 'f1', startDay: '2026-08-10',
+    days: [
+      '2026-08-10', '2026-08-11', '2026-08-12', '2026-08-13', '2026-08-14',
+      '2026-08-17', '2026-08-18', '2026-08-19', '2026-08-20', '2026-08-21',
+    ],
+    createdAt: '2026-08-10T12:00:00.000Z',
+  };
+
+  /** A todo completed BY ITS CHECKLIST (never a manual toggle): checking the
+   *  last unchecked item is what flips done. */
+  function autoCompleted(id: string): Todo {
+    const base = makeTodo({
+      id, scheduledDay: '2026-08-10', checklist: [item('c1', true), item('c2', false)],
+    });
+    const completed = toggleChecklistItem(base, 'c2', NOW);
+    expect(completed.done).toBe(true); // sanity: completion came from the checklist
+    return completed;
+  }
+
+  it('applyRollover skips a checklist-auto-completed todo, exactly like a manually completed one', () => {
+    const todos = {
+      a: autoCompleted('a'),
+      control: makeTodo({ id: 'control', scheduledDay: '2026-08-10' }),
+    };
+    const res = applyRollover(todos, f1, '2026-08-12');
+    expect(res.todos.control.scheduledDay).toBe('2026-08-12'); // the run itself did move things
+    expect(res.todos.a.scheduledDay).toBe('2026-08-10');       // ...but not the completed todo
+    expect(res.todos.a.rolledOver).toBe(false);
+    expect(res.todos.a.checklist).toEqual([item('c1', true), item('c2', true)]);
+  });
+
+  it('carryOverTodos leaves a checklist-auto-completed todo pinned to its old fortnight', () => {
+    const f2: Fortnight = {
+      id: 'f2', startDay: '2026-08-17',
+      days: [
+        '2026-08-17', '2026-08-18', '2026-08-19', '2026-08-20', '2026-08-21',
+        '2026-08-24', '2026-08-25', '2026-08-26', '2026-08-27', '2026-08-28',
+      ],
+      createdAt: '2026-08-19T12:00:00.000Z',
+    };
+    const todos = {
+      a: autoCompleted('a'),
+      control: makeTodo({ id: 'control', scheduledDay: '2026-08-11' }),
+    };
+    const res = carryOverTodos(todos, 'f1', f2, '2026-08-19');
+    expect(res.control.fortnightId).toBe('f2'); // the run itself did migrate things
+    expect(res.a.fortnightId).toBe('f1');       // ...but the completed todo stays in history
+    expect(res.a.scheduledDay).toBe('2026-08-10');
+    expect(res.a.checklist).toEqual([item('c1', true), item('c2', true)]); // rides along untouched
   });
 });
