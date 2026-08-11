@@ -1,6 +1,9 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { HelpModal } from './HelpModal';
+import App from '../../App';
+import { seedApp } from '../../test/seed';
+import { useAppStore } from '../../store/store';
 
 vi.mock('../../store/clock', () => ({
   todayLocal: () => '2026-08-18',
@@ -63,5 +66,58 @@ describe('HelpModal', () => {
     render(<HelpModal initialTab="guide" onClose={onClose} />);
     await user.keyboard('{Escape}');
     expect(onClose).toHaveBeenCalled();
+  });
+});
+
+describe('help via App entry points', () => {
+  beforeEach(() => seedApp());
+
+  it('header Help button opens the modal on the Guide tab', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole('button', { name: 'Help' }));
+    const dialog = screen.getByRole('dialog', { name: 'Help' });
+    expect(within(dialog).getByRole('tab', { name: 'Guide' })).toHaveAttribute('aria-selected', 'true');
+    expect(within(dialog).getByRole('tabpanel')).toHaveTextContent('Monthly board');
+  });
+
+  it('? opens the modal on the Shortcuts tab', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    (document.activeElement as HTMLElement | null)?.blur();
+    await user.keyboard('?');
+    const dialog = screen.getByRole('dialog', { name: 'Help' });
+    expect(within(dialog).getByRole('tab', { name: 'Shortcuts' })).toHaveAttribute('aria-selected', 'true');
+    expect(within(dialog).getByRole('tabpanel')).toHaveTextContent('Command palette');
+  });
+
+  it('? does not fire while typing in a text field (? is a real character)', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole('button', { name: 'Add todo' }));
+    const title = screen.getByLabelText('Title');
+    await user.type(title, 'wait, what?');
+    expect(title).toHaveValue('wait, what?');
+    expect(screen.queryByRole('dialog', { name: 'Help' })).not.toBeInTheDocument();
+  });
+
+  it('closes on Escape, like every other Modal', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    (document.activeElement as HTMLElement | null)?.blur();
+    await user.keyboard('?');
+    expect(screen.getByRole('dialog', { name: 'Help' })).toBeInTheDocument();
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog', { name: 'Help' })).not.toBeInTheDocument();
+  });
+
+  it('still opens while viewing a read-only month (help is not a mutation)', async () => {
+    const user = userEvent.setup();
+    const activeId = useAppStore.getState().activeFortnightId!;
+    useAppStore.getState().regenerateFortnight();
+    useAppStore.getState().viewFortnight(activeId);
+    render(<App />);
+    await user.click(screen.getByRole('button', { name: 'Help' }));
+    expect(screen.getByRole('dialog', { name: 'Help' })).toBeInTheDocument();
   });
 });

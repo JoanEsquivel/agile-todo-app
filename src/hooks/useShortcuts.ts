@@ -12,9 +12,9 @@ function isTypingTarget(target: EventTarget | null): boolean {
 
 /**
  * Global keyboard shortcuts, active anywhere in the app: ⌘K/Ctrl+K opens
- * the command palette, ? opens the shortcuts overlay, arrows/Home/End move
- * the selected day, T jumps to today, N/Shift+N open the todo/note compose
- * form, S opens Standup.
+ * the command palette, ? opens the Help modal on its Shortcuts tab,
+ * arrows/Home/End move the selected day, T jumps to today, N/Shift+N open
+ * the todo/note compose form, S opens Standup.
  *
  * Escape is deliberately NOT handled here — each overlay/form owns its own
  * (Modal.tsx; TodoForm/NoteForm), which is what lets it work while focus is
@@ -27,10 +27,10 @@ function isTypingTarget(target: EventTarget | null): boolean {
  * palette back to the palette, or open it over the shortcuts overlay), so
  * it's checked before both of those guards, not after.
  */
-export function useShortcuts({ onOpenStandup, onOpenPalette, onOpenShortcutsOverlay, onOpenPomodoro }: {
+export function useShortcuts({ onOpenStandup, onOpenPalette, onOpenHelp, onOpenPomodoro }: {
   onOpenStandup: () => void;
   onOpenPalette: () => void;
-  onOpenShortcutsOverlay: () => void;
+  onOpenHelp: () => void;
   onOpenPomodoro: () => void;
 }) {
   useEffect(() => {
@@ -54,7 +54,7 @@ export function useShortcuts({ onOpenStandup, onOpenPalette, onOpenShortcutsOver
       switch (e.key) {
         case '?':
           e.preventDefault();
-          onOpenShortcutsOverlay();
+          onOpenHelp();
           return;
 
         case 's':
@@ -119,5 +119,5 @@ export function useShortcuts({ onOpenStandup, onOpenPalette, onOpenShortcutsOver
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [onOpenStandup, onOpenPalette, onOpenShortcutsOverlay, onOpenPomodoro]);
+  }, [onOpenStandup, onOpenPalette, onOpenHelp, onOpenPomodoro]);
 }
