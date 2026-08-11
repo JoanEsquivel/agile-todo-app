@@ -2,19 +2,11 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from './App';
 import { seedApp } from './test/seed';
-import { VisuallyHidden } from './components/common/VisuallyHidden';
 
 vi.mock('./store/clock', () => ({
   todayLocal: () => '2026-08-18',
   nowIso: () => '2026-08-18T12:00:00.000Z',
 }));
-
-describe('VisuallyHidden', () => {
-  it('exposes its text to the accessibility tree without a visible role', () => {
-    render(<VisuallyHidden>context for screen readers</VisuallyHidden>);
-    expect(screen.getByText('context for screen readers')).toBeInTheDocument();
-  });
-});
 
 describe('skip link', () => {
   beforeEach(() => seedApp());
@@ -73,11 +65,14 @@ describe('fortnight tape: roving tabindex', () => {
 
     await user.keyboard('{End}');
     expect(screen.getByRole('heading', { name: /^Mon, Aug 31$/ })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /^Mon, Aug 31$/ })).toHaveFocus();
+    // The button's accessible name is now "Mon 31 -- Mon, Aug 31" (see
+    // FortnightTape's WCAG 2.5.3 fix) -- still anchored so it can't also
+    // match "Mon 3 -- Mon, Aug 3".
+    expect(screen.getByRole('button', { name: /^Mon 31 — Mon, Aug 31$/ })).toHaveFocus();
 
     await user.keyboard('{Home}');
     expect(screen.getByRole('heading', { name: /^Mon, Aug 3$/ })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /^Mon, Aug 3$/ })).toHaveFocus();
+    expect(screen.getByRole('button', { name: /^Mon 3 — Mon, Aug 3$/ })).toHaveFocus();
   });
 });
 

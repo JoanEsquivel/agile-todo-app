@@ -77,7 +77,16 @@ export function FortnightTape() {
         className={styles.day}
         data-today={isToday ? '' : undefined}
         aria-current={day === selected ? 'date' : undefined}
-        aria-label={isToday ? `${formatDayLabel(day)} (today)` : formatDayLabel(day)}
+        // WCAG 2.5.3 Label in Name: the visible text is "Tue 18" (the dow +
+        // dom spans below) -- it must be a literal prefix/substring of the
+        // accessible name, not replaced by it, so voice-input users saying
+        // "click Tue 18" can find the control. The full date and the todo
+        // count (visible via the segment bars, but otherwise invisible to
+        // screen readers since the segments track is aria-hidden) are
+        // appended rather than substituted.
+        aria-label={`${formatWeekdayShort(day)} ${dayOfMonth(day)} — ${formatDayLabel(day)}${
+          segments.length > 0 ? `, ${segments.length} todos` : ''
+        }${isToday ? ' (today)' : ''}`}
         tabIndex={day === selected ? 0 : -1}
         onClick={() => state.selectDay(day)}
         onKeyDown={onKeyDown}
