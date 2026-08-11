@@ -61,3 +61,32 @@ describe('fortnight tape workload', () => {
     expect(screen.queryByRole('button', { name: /Wed, Aug 19.*today/i })).not.toBeInTheDocument();
   });
 });
+
+// Regression test for the ~5.67px column-misalignment bug: DayColumn must
+// render its <h2> heading and its .column (the Todos/Notes sections wrapper)
+// as SIBLINGS -- both direct children of <main id="main">, alongside
+// RemindersPanel's <aside>. If the heading is ever re-nested inside .column,
+// all 297+ other tests stay green (nothing else asserts on this), but the
+// grid-alignment bug this fixed comes back silently. See the comment above
+// the `return` in DayColumn.tsx and DayColumn.module.css for why the split
+// is required.
+describe('board row-alignment DOM contract', () => {
+  beforeEach(() => seedApp());
+
+  it('keeps the day heading a sibling of the sections wrapper and the reminders aside — all direct children of <main> (row-alignment contract)', () => {
+    render(<App />);
+    const board = screen.getByRole('main');
+    const heading = screen.getByRole('heading', { level: 2, name: /Tue, Aug 18/ });
+    const todosRegion = screen.getByRole('region', { name: 'Todos' });
+    const remindersAside = screen.getByRole('complementary', { name: 'Reminders' });
+
+    // The heading is a direct child of <main> -- NOT nested inside .column.
+    expect(heading.parentElement).toBe(board);
+    // Todos lives inside .column, which is itself the direct child of <main>
+    // -- so the region's grandparent (not parent) is the board.
+    expect(todosRegion.parentElement?.parentElement).toBe(board);
+    expect(todosRegion.parentElement).not.toBe(board);
+    // Reminders is a direct child of <main>, same row as .column.
+    expect(remindersAside.parentElement).toBe(board);
+  });
+});
