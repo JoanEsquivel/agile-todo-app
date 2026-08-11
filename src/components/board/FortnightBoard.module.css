@@ -11,16 +11,28 @@
    renders (empty state included), so there is no 2-column fallback.
    Two row tracks -- the day heading alone on row 1, then Todos/Notes/
    Reminders content sharing row 2 -- are what let all three column labels
-   start on the same line: DayColumn subgrids both axes so its heading
-   lands in row 1 and its sections land in row 2, while RemindersPanel
-   is placed directly in row 2. See DayColumn.module.css and
-   RemindersPanel.module.css. */
+   start on the same line: DayColumn's heading is a plain row-1 item and
+   its sections wrapper (.column) is a plain row-2 item that subgrids only
+   the *column* axis, while RemindersPanel is placed directly in row 2 too
+   -- three siblings sharing the same row-2 grid line, none of them
+   subgridding the row axis. See DayColumn.module.css and
+   RemindersPanel.module.css.
+
+   row-gap is explicit here (not left to inherit from the base rule's
+   `gap: var(--space-4)` flex shorthand above) so every row-2 item resolves
+   the row 1/2 boundary against the exact same value. An earlier version
+   subgridded the row axis too (heading nested inside .column), which let
+   row 1's auto-sizing diverge by a couple of px from RemindersPanel's
+   plain placement -- a real, measured alignment bug -- because a
+   subgrid's own row-gap can resolve independently of a non-subgrid
+   sibling using the same grid line. */
 @media (min-width: 1024px) {
   .board {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     grid-template-rows: auto 1fr;
     column-gap: var(--board-gap);
+    row-gap: var(--space-3);
     align-items: start;
   }
 }
