@@ -2,6 +2,7 @@ import {
   toISODate, parseISODate, addDays, isWorkday, mondayOfWeek,
   previousWorkday, nextWorkday, localDateOf,
   firstOfMonth, firstOfNextMonth, chunkByWeek, formatWeekdayShort, dayOfMonth,
+  formatMonthLabel,
 } from './dates';
 
 describe('dates', () => {
@@ -64,6 +65,11 @@ describe('dates', () => {
   it('formatWeekdayShort formats a short weekday name', () => {
     expect(formatWeekdayShort('2026-08-18')).toBe('Tue'); // Tuesday
     expect(formatWeekdayShort('2026-08-10')).toBe('Mon'); // Monday
+  });
+
+  it('formatMonthLabel formats the month name and year', () => {
+    expect(formatMonthLabel('2026-08-03')).toBe('August 2026');
+    expect(formatMonthLabel('2026-12-31')).toBe('December 2026');
   });
 
   describe('chunkByWeek', () => {

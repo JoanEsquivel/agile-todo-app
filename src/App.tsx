@@ -7,7 +7,7 @@ import { formatDayLabel } from './domain/dates';
 import { FortnightBoard } from './components/board/FortnightBoard';
 import { FortnightTape } from './components/board/FortnightTape';
 import { StandupModal } from './components/standup/StandupModal';
-import { FortnightSwitcher } from './components/history/FortnightSwitcher';
+import { FortnightNav } from './components/history/FortnightNav';
 import { BackupControls } from './components/common/BackupControls';
 import { AuthorLinks } from './components/common/AuthorLinks';
 import { ThemeToggle } from './components/common/ThemeToggle';
@@ -66,7 +66,7 @@ export default function App() {
         </div>
         <div className={styles.headerActions}>
           <button className={styles.primaryAction} onClick={() => setStandupOpen(true)}>Standup</button>
-          <FortnightSwitcher />
+          <FortnightNav />
           <BackupControls />
           <PomodoroWidget onOpenModal={() => setPomodoroOpen(true)} />
           <ThemeToggle />
