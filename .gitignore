@@ -5,3 +5,4 @@ dist/
 .superpowers/
 coverage/
 .worktrees/
+.claude/worktrees/
