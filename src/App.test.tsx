@@ -19,6 +19,19 @@ describe('App shell', () => {
     expect(screen.getByRole('button', { name: /Tue, Aug 18/ })).toHaveAttribute('data-today');
   });
 
+  it('credits the author with LinkedIn and source-code links in the header', () => {
+    render(<App />);
+    const linkedin = screen.getByRole('link', { name: 'Joan Esquivel on LinkedIn' });
+    expect(linkedin).toHaveAttribute('href', 'https://www.linkedin.com/in/joanesquivel/');
+    expect(linkedin).toHaveAttribute('target', '_blank');
+    expect(linkedin.getAttribute('rel')).toContain('noopener');
+
+    const source = screen.getByRole('link', { name: 'Source code on GitHub' });
+    expect(source).toHaveAttribute('href', 'https://github.com/JoanEsquivel/agile-todo-app');
+    expect(source).toHaveAttribute('target', '_blank');
+    expect(source.getAttribute('rel')).toContain('noopener');
+  });
+
   it('navigates days via chips and prev/next, clamped at the ends', async () => {
     const user = userEvent.setup();
     render(<App />);

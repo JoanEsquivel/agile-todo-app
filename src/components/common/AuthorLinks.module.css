@@ -1,0 +1,29 @@
+.links {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  border-left: 1px solid var(--color-border);
+  padding-left: var(--space-2);
+}
+
+.link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.875rem;
+  height: 1.875rem;
+  border-radius: var(--radius-md);
+  color: var(--color-text-muted);
+  transition: color var(--transition-fast), background var(--transition-fast);
+}
+
+.link:hover {
+  color: var(--color-text);
+  background: var(--color-surface-hover);
+}
+
+.link svg {
+  width: 1rem;
+  height: 1rem;
+  fill: currentColor;
+}
