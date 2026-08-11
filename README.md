@@ -4,7 +4,7 @@ A browser-only todo board built around a monthly cadence. No backend, no account
 
 **[Live demo →](https://joanesquivel.github.io/agile-todo-app/)**
 
-314 tests · TypeScript strict · zero backend
+334 tests · TypeScript strict · zero backend
 
 Built by [Joan Esquivel](https://www.linkedin.com/in/joanesquivel/) · [source code](https://github.com/JoanEsquivel/agile-todo-app)
 
@@ -13,11 +13,11 @@ Built by [Joan Esquivel](https://www.linkedin.com/in/joanesquivel/) · [source c
 ## What it does
 
 - **Month board** — the workdays of the current calendar month, grouped by week, with weekend-anchor rules and roll-forward past month-end handled for you. The day bar is an accordion: the current week expands to full-width day chips, every other week folds to a compact date range you can click to jump there
-- **Daily rollover** — incomplete todos and unresolved blocker notes from past days automatically move forward, flagged as "rolled over"; unresolved blockers also carry into a newly generated month, so they never get stranded in read-only history
+- **Daily rollover** — incomplete todos and unresolved blocker notes from past days automatically move forward, flagged as "rolled over"; unresolved blockers also carry forward automatically when a new month begins, so they never get stranded in history
 - **Standup generator** — one click produces a Yesterday/Today/Blockers summary, copyable straight to Slack
 - **Visual reminders** — an Overdue/Upcoming panel, no browser notification permissions needed
 - **Per-day notes** — flag a `blocker` (resolvable) or leave an `info` note
-- **Read-only month history** — generate a new month any time; old ones stay browsable, never editable
+- **Automatic month rollover, three months of history** — when the active month ends, the next one is generated for you, nothing to click; the three most recent calendar months stay browsable (read-only, never editable) through a `‹ Month YYYY ›` stepper, and anything older is quietly pruned
 - **Pomodoro timer** — an always-visible header widget with classic cycles (25/5, long break every 4th), configurable durations, and an optional sound + browser notification when a phase ends
 - **Light / dark / system theme** — follows your OS by default, with a manual toggle that persists on your device
 - **Keyboard-first** — a command palette and a full set of shortcuts; see below
@@ -82,11 +82,11 @@ src/
 
 Dependencies point one way: `domain → store → components`. The domain layer has zero framework dependencies, which is what makes the date logic unit-testable in isolation.
 
-Full architecture rationale, data model, and edge-case decisions: [`docs/superpowers/specs/2026-08-10-agile-todo-app-design.md`](docs/superpowers/specs/2026-08-10-agile-todo-app-design.md), amended by [`docs/superpowers/specs/2026-08-10-monthly-board-redesign-design.md`](docs/superpowers/specs/2026-08-10-monthly-board-redesign-design.md) for the month board, scheduling horizon, and navigation UI, and by [`docs/superpowers/specs/2026-08-11-tape-accordion-blocker-rollover-design.md`](docs/superpowers/specs/2026-08-11-tape-accordion-blocker-rollover-design.md) for the day-bar accordion and blocker rollover/carry-over.
+Full architecture rationale, data model, and edge-case decisions: [`docs/superpowers/specs/2026-08-10-agile-todo-app-design.md`](docs/superpowers/specs/2026-08-10-agile-todo-app-design.md), amended by [`docs/superpowers/specs/2026-08-10-monthly-board-redesign-design.md`](docs/superpowers/specs/2026-08-10-monthly-board-redesign-design.md) for the month board, scheduling horizon, and navigation UI, by [`docs/superpowers/specs/2026-08-11-tape-accordion-blocker-rollover-design.md`](docs/superpowers/specs/2026-08-11-tape-accordion-blocker-rollover-design.md) for the day-bar accordion and blocker rollover/carry-over, and by [`docs/superpowers/specs/2026-08-11-three-month-window-auto-rollover-design.md`](docs/superpowers/specs/2026-08-11-three-month-window-auto-rollover-design.md) for automatic month rollover, the three-month retention window, and the `‹ Month ›` stepper.
 
 ## Testing
 
-Vitest + React Testing Library, 314 tests across 31 files, all colocated with the code they test. Coverage spans pure domain logic, store transitions, persistence/migration behavior, component interaction, and accessibility.
+Vitest + React Testing Library, 334 tests across 31 files, all colocated with the code they test. Coverage spans pure domain logic, store transitions, persistence/migration behavior, component interaction, and accessibility.
 
 ```sh
 npm test                              # everything
@@ -104,7 +104,7 @@ GitHub Actions builds, tests, and deploys to GitHub Pages on every push to `main
 ## Docs
 
 - [`CLAUDE.md`](CLAUDE.md) — architecture invariants and conventions, for anyone (human or AI) making changes
-- [`docs/superpowers/specs/2026-08-10-agile-todo-app-design.md`](docs/superpowers/specs/2026-08-10-agile-todo-app-design.md) — the design spec, amended by [`docs/superpowers/specs/2026-08-10-monthly-board-redesign-design.md`](docs/superpowers/specs/2026-08-10-monthly-board-redesign-design.md) (the month-board redesign) and [`docs/superpowers/specs/2026-08-11-tape-accordion-blocker-rollover-design.md`](docs/superpowers/specs/2026-08-11-tape-accordion-blocker-rollover-design.md) (the day-bar accordion + blocker rollover)
+- [`docs/superpowers/specs/2026-08-10-agile-todo-app-design.md`](docs/superpowers/specs/2026-08-10-agile-todo-app-design.md) — the design spec, amended by [`docs/superpowers/specs/2026-08-10-monthly-board-redesign-design.md`](docs/superpowers/specs/2026-08-10-monthly-board-redesign-design.md) (the month-board redesign), [`docs/superpowers/specs/2026-08-11-tape-accordion-blocker-rollover-design.md`](docs/superpowers/specs/2026-08-11-tape-accordion-blocker-rollover-design.md) (the day-bar accordion + blocker rollover), and [`docs/superpowers/specs/2026-08-11-three-month-window-auto-rollover-design.md`](docs/superpowers/specs/2026-08-11-three-month-window-auto-rollover-design.md) (automatic month rollover, three-month retention, and stepper navigation)
 - [`docs/TECH-DEBT.md`](docs/TECH-DEBT.md) — known, triaged gaps
 - [`docs/ARCHIVE.md`](docs/ARCHIVE.md) — how it was originally built (historical)
 
