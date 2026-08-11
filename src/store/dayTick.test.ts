@@ -292,6 +292,43 @@ describe('automatic month generation (checkDayTick expiry branch)', () => {
     expect(stuck).toMatchObject({ fortnightId: s.activeFortnightId, scheduledDay: '2026-08-18', rolledOver: true });
   });
 
+  it('recovers via buildGeneration when activeFortnightId is dangling (no matching fortnight), rescuing todos tagged with it', () => {
+    // Corrupted-state simulation: activeFortnightId points at nothing, but a
+    // real fortnight from before the corruption is still sitting in history,
+    // and a pending todo is still tagged with the now-dangling id -- exactly
+    // the shape a "new day, stale/corrupted localStorage" app open produces.
+    const historical = useAppStore.getState().fortnights[0];
+    useAppStore.setState({
+      activeFortnightId: 'dangling-id',
+      lastRolloverDay: '2026-08-17', // past day: the latch does not block
+      todos: {
+        orphan: {
+          id: 'orphan', fortnightId: 'dangling-id', title: 'orphaned', priority: 'low',
+          scheduledDay: '2026-08-10', done: false,
+          createdAt: '2026-08-10T09:00:00.000Z', rolledOver: false,
+        },
+      },
+    });
+
+    useAppStore.getState().checkDayTick();
+
+    const s = useAppStore.getState();
+    // A new month was generated through buildGeneration and installed active
+    // -- not a bare buildFortnight append with no rescue.
+    expect(s.activeFortnightId).not.toBe('dangling-id');
+    const active = s.fortnights.find((f) => f.id === s.activeFortnightId);
+    expect(active).toBeDefined();
+    expect(s.lastRolloverDay).toBe('2026-08-18');
+    // The orphaned todo was rescued: re-keyed off the new month and landed
+    // on today's effective board day (it was scheduled in the past).
+    const orphan = s.todos.orphan;
+    expect(orphan).toMatchObject({ fortnightId: s.activeFortnightId, scheduledDay: '2026-08-18', rolledOver: true });
+    // The pre-existing real fortnight is retained, not dropped -- only 2
+    // months exist total, well within the 3-month retention window.
+    expect(s.fortnights.some((f) => f.id === historical.id)).toBe(true);
+    expect(s.fortnights).toHaveLength(2);
+  });
+
   it('importing an expired backup generates immediately and prunes imported history to the window (spec §4, deliberate)', () => {
     // A 5-month archive whose active month (July) is already expired at the
     // mocked "today" (Sept 1). importState's trailing checkDayTick() call

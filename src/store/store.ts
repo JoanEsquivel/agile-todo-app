@@ -224,20 +224,31 @@ export const useAppStore = create<AppState>()(
             return;
           }
           if (s.lastRolloverDay === today) return;
+          if (!found) {
+            // activeFortnightId doesn't resolve to any known fortnight (e.g.
+            // corrupted state, a dropped fortnight, an external edit) -- the
+            // most likely time to land here is the first tick of a new day.
+            // Route through the same generation pipeline as the expiry
+            // branch above rather than silently appending a bare fresh month:
+            // buildGeneration keys carry-over on the string s.activeFortnightId,
+            // not on a resolved Fortnight object, so it still rescues
+            // todos/notes tagged with the dangling id even though no
+            // fortnight with that id exists in s.fortnights (INV-5).
+            set(buildGeneration(s, today));
+            return;
+          }
           const wasViewingActive = s.viewedFortnightId === s.activeFortnightId;
-          const active = found ?? buildFortnight(today);
-          const fortnights = found ? s.fortnights : [...s.fortnights, active];
-          const { todos } = applyRollover(s.todos, active, today);
-          const { notes } = applyNoteRollover(s.notes, active, today);
-          const effective = effectiveBoardDay(active, today);
+          const { todos } = applyRollover(s.todos, found, today);
+          const { notes } = applyNoteRollover(s.notes, found, today);
+          const effective = effectiveBoardDay(found, today);
           set({
-            fortnights,
-            activeFortnightId: active.id,
+            fortnights: s.fortnights,
+            activeFortnightId: found.id,
             todos,
             notes,
             lastRolloverDay: today,
             selectedDay: wasViewingActive && effective !== null ? effective : s.selectedDay,
-            viewedFortnightId: wasViewingActive ? active.id : s.viewedFortnightId,
+            viewedFortnightId: wasViewingActive ? found.id : s.viewedFortnightId,
           });
         },
 
