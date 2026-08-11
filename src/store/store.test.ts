@@ -27,7 +27,7 @@ describe('store', () => {
     useAppStore.getState().initApp();
     const s = useAppStore.getState();
     expect(s.fortnights).toHaveLength(1);
-    expect(s.fortnights[0].days[0]).toBe('2026-08-17'); // Monday of 2026-08-18's week
+    expect(s.fortnights[0].days[0]).toBe('2026-08-03'); // first workday of August 2026
     expect(s.activeFortnightId).toBe(s.fortnights[0].id);
     expect(s.viewedFortnightId).toBe(s.fortnights[0].id);
     expect(s.selectedDay).toBe('2026-08-18');

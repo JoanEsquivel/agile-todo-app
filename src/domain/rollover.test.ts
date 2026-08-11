@@ -1,10 +1,15 @@
 import { applyRollover } from './rollover';
-import { generateFortnightDays } from './fortnight';
 import type { Fortnight, Todo } from './types';
 
+// Literal 10-day fortnight fixture (deliberately NOT generateMonthDays — see
+// INV-5/domain notes: this is the living proof the domain still works with
+// fortnight-length (not just month-length) periods).
 const fn: Fortnight = {
   id: 'f1', startDay: '2026-08-10',
-  days: generateFortnightDays('2026-08-10'),
+  days: [
+    '2026-08-10', '2026-08-11', '2026-08-12', '2026-08-13', '2026-08-14',
+    '2026-08-17', '2026-08-18', '2026-08-19', '2026-08-20', '2026-08-21',
+  ],
   createdAt: '2026-08-10T12:00:00.000Z',
 };
 

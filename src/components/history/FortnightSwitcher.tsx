@@ -14,7 +14,7 @@ export function FortnightSwitcher() {
       onChange={(e) => viewFortnight(e.target.value)}>
       {[...fortnights].reverse().map((f) => (
         <option key={f.id} value={f.id}>
-          {formatDayLabel(f.days[0])} – {formatDayLabel(f.days[9])}
+          {formatDayLabel(f.days[0])} – {formatDayLabel(f.days[f.days.length - 1])}
           {f.id === activeId ? ' (current)' : ''}
         </option>
       ))}

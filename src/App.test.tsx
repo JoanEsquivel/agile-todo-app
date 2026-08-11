@@ -12,11 +12,11 @@ vi.mock('./store/clock', () => ({
 describe('App shell', () => {
   beforeEach(() => seedApp());
 
-  it('renders the title and 10 day chips with today highlighted', () => {
+  it('renders the title and 21 day chips (calendar month) with today highlighted', () => {
     render(<App />);
     expect(screen.getByRole('heading', { name: 'Agile Todo' })).toBeInTheDocument();
     const chips = screen.getAllByRole('button', { name: /Aug \d+/ });
-    expect(chips).toHaveLength(10);
+    expect(chips).toHaveLength(21);
     expect(screen.getByRole('button', { name: /Tue, Aug 18/ })).toHaveAttribute('data-today');
   });
 
@@ -61,8 +61,8 @@ describe('App shell', () => {
 
   it('shows a progress indicator for the active fortnight, but not for a past one', () => {
     const { unmount } = render(<App />);
-    // Today (Aug 18) is the 2nd of the 10 days in the Aug 17-28 fortnight.
-    expect(screen.getByText('Day 2 of 10')).toBeInTheDocument();
+    // Today (Aug 18) is the 12th of the 21 workdays in August 2026.
+    expect(screen.getByText('Day 12 of 21')).toBeInTheDocument();
     unmount();
 
     const oldFortnightId = useAppStore.getState().activeFortnightId!;

@@ -34,12 +34,12 @@ describe('fortnight tape: roving tabindex', () => {
   beforeEach(() => seedApp());
 
   it('is exactly one tab stop, not thirteen', async () => {
-    // The old chip strip was a focusable <nav> plus prev + 10 chips + next
-    // -- 13 consecutive stops. The tape must be exactly one: whichever day
+    // The old chip strip was a focusable <nav> plus prev + N chips + next
+    // -- N+3 consecutive stops. The tape must be exactly one: whichever day
     // button is selected, every other day button is tabIndex=-1.
     render(<App />);
     const dayButtons = screen.getAllByRole('button', { name: /Aug \d+/ });
-    expect(dayButtons).toHaveLength(10);
+    expect(dayButtons).toHaveLength(21);
     const tabbable = dayButtons.filter((b) => b.tabIndex === 0);
     expect(tabbable).toHaveLength(1);
     // The chip's visible text is now the compact "Tue 18"; the full label
@@ -64,18 +64,20 @@ describe('fortnight tape: roving tabindex', () => {
     expect(screen.getByRole('heading', { name: /Mon, Aug 17/ })).toBeInTheDocument();
   });
 
-  it('Home and End jump to the first and last day of the fortnight', async () => {
+  it('Home and End jump to the first and last day of the month', async () => {
+    // Anchored names: with 21 days the month has both Aug 3 and Aug 31, and
+    // an unanchored /Aug 3/ would match both -- see task-3 brief.
     const user = userEvent.setup();
     render(<App />);
     screen.getByRole('button', { name: /Tue, Aug 18/ }).focus();
 
     await user.keyboard('{End}');
-    expect(screen.getByRole('heading', { name: /Fri, Aug 28/ })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Fri, Aug 28/ })).toHaveFocus();
+    expect(screen.getByRole('heading', { name: /^Mon, Aug 31$/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^Mon, Aug 31$/ })).toHaveFocus();
 
     await user.keyboard('{Home}');
-    expect(screen.getByRole('heading', { name: /Mon, Aug 17/ })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Mon, Aug 17/ })).toHaveFocus();
+    expect(screen.getByRole('heading', { name: /^Mon, Aug 3$/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^Mon, Aug 3$/ })).toHaveFocus();
   });
 });
 

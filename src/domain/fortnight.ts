@@ -1,14 +1,5 @@
 import type { Fortnight, ISODate, Todo } from './types';
-import { addDays, firstOfMonth, firstOfNextMonth, isWorkday, mondayOfWeek, nextWorkday } from './dates';
-
-export function generateFortnightDays(anchor: ISODate): ISODate[] {
-  const monday = mondayOfWeek(anchor);
-  const days: ISODate[] = [];
-  for (const weekStart of [monday, addDays(monday, 7)]) {
-    for (let i = 0; i < 5; i++) days.push(addDays(weekStart, i));
-  }
-  return days;
-}
+import { addDays, firstOfMonth, firstOfNextMonth, isWorkday, nextWorkday } from './dates';
 
 /** Workdays (Mon–Fri) of the calendar month containing `anchor`, ascending.
  *  If `anchor` falls AFTER the month's last workday (a weekend tail like

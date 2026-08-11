@@ -42,7 +42,11 @@ describe('regenerateFortnight', () => {
     const shipped = Object.values(useAppStore.getState().todos).find((t) => t.title === 'shipped')!;
     useAppStore.getState().toggleDone(shipped.id);
 
-    clock.today = '2026-08-25'; // fortnight (Aug 17-28 workdays) still active; regenerate mid-flight
+    // The active period (Aug 3-31, the calendar month) is still active; force
+    // a regenerate mid-flight. Regenerating within the same month produces a
+    // second period with the SAME days but a new id -- permitted (INV-5); the
+    // switcher tells them apart with "(current)".
+    clock.today = '2026-08-25';
     const oldId = useAppStore.getState().activeFortnightId!;
     useAppStore.getState().regenerateFortnight();
 
@@ -53,6 +57,7 @@ describe('regenerateFortnight', () => {
     const pending = Object.values(s.todos).find((t) => t.title === 'pending')!;
     expect(pending.fortnightId).toBe(s.activeFortnightId);
     expect(pending.scheduledDay).toBe('2026-08-25');
+    expect(pending.rolledOver).toBe(true);
     expect(Object.values(s.todos).find((t) => t.title === 'shipped')!.fortnightId).toBe(oldId);
   });
 });

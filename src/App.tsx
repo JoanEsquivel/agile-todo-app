@@ -64,7 +64,7 @@ export default function App() {
           <h1 className={styles.heading}>Agile Todo</h1>
           {fn && (
             <p className={styles.range}>
-              {formatDayLabel(fn.days[0])} – {formatDayLabel(fn.days[9])}
+              {formatDayLabel(fn.days[0])} – {formatDayLabel(fn.days[fn.days.length - 1])}
             </p>
           )}
         </div>

@@ -3,7 +3,7 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 import type {
   Fortnight, ISODate, LocalDateTime, Note, NoteCategory, PersistedState, Priority, Todo,
 } from '../domain/types';
-import { generateFortnightDays, effectiveBoardDay, carryOverTodos } from '../domain/fortnight';
+import { generateMonthDays, effectiveBoardDay, carryOverTodos } from '../domain/fortnight';
 import { applyRollover } from '../domain/rollover';
 import {
   DEFAULT_POMODORO_SETTINGS, startRun, pauseRun, resumeRun, completePhase, skipPhase,
@@ -73,7 +73,7 @@ export interface AppState extends PersistedState {
 }
 
 function buildFortnight(anchor: ISODate): Fortnight {
-  const days = generateFortnightDays(anchor);
+  const days = generateMonthDays(anchor);
   return { id: crypto.randomUUID(), startDay: days[0], days, createdAt: nowIso() };
 }
 

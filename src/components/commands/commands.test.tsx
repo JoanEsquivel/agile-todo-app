@@ -21,7 +21,7 @@ describe('command palette', () => {
     expect(screen.getByRole('dialog', { name: 'Command palette' })).toBeInTheDocument();
   });
 
-  it('lists actions and all 10 days by default, filters as you type', async () => {
+  it('lists actions and all 21 days by default, filters as you type', async () => {
     const user = userEvent.setup();
     render(<App />);
     await user.keyboard('{Control>}k{/Control}');
@@ -29,7 +29,7 @@ describe('command palette', () => {
 
     expect(listbox).toHaveTextContent('Add todo');
     expect(listbox).toHaveTextContent('Standup');
-    expect(listbox.querySelectorAll('[role="option"]').length).toBeGreaterThanOrEqual(10 + 4);
+    expect(listbox.querySelectorAll('[role="option"]').length).toBeGreaterThanOrEqual(21 + 4);
 
     await user.type(screen.getByRole('combobox'), 'thu');
     expect(listbox).toHaveTextContent('Go to Thu, Aug 20');
