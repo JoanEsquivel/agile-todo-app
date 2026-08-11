@@ -24,15 +24,21 @@ const defaultSteps: Record<number, (s: unknown) => unknown> = {
   // put them (effectiveBoardDay).
   2: (s) => {
     const state = s as PersistedState;
-    // Guard against malformed pre-v3 backups (missing/non-array `fortnights`)
-    // reaching `.find` before `validatePersistedState` gets a chance to
+    // Guard against malformed pre-v3 backups reaching `.find`/`.some`/
+    // `Object.values` below before `validatePersistedState` gets a chance to
     // report a readable "malformed backup" error — parseBackup runs
     // migrations on unvalidated raw JSON (exportImport.ts), so a corrupt v1/
     // v2 backup must fall through to validation rather than throw a raw
-    // TypeError the UI would surface verbatim.
-    if (!Array.isArray(state?.fortnights)) return s;
-    const active = state.fortnights.find((f) => f.id === state.activeFortnightId);
-    if (!active) return s;
+    // TypeError the UI would surface verbatim. Covers every shape
+    // `adaptFortnightToMonth` and this step touch: a non-array `fortnights`
+    // (`.find`), a missing/non-array `active.days` (`fortnight.days.some`
+    // inside `adaptFortnightToMonth`), and a non-object `todos`/`notes`
+    // (`Object.values` inside `adaptFortnightToMonth`).
+    if (!Array.isArray(state?.fortnights)
+      || typeof state?.todos !== 'object' || state.todos === null
+      || typeof state?.notes !== 'object' || state.notes === null) return s;
+    const active = state.fortnights.find((f) => f?.id === state.activeFortnightId);
+    if (!active || !Array.isArray(active.days)) return s;
     const adapted = adaptFortnightToMonth(active, state.todos, state.notes, todayLocal());
     if (!adapted) return s;
     return {

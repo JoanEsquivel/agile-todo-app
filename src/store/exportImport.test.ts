@@ -78,6 +78,35 @@ describe('backup export/import', () => {
     expect(() => parseBackup(malformedV1)).toThrow(/malformed/i);
   });
 
+  it('rejects a pre-v3 backup with a well-formed fortnights array but null todos/notes or a non-array active.days, instead of a raw TypeError', () => {
+    // Beyond the `fortnights` guard above, the v2->v3 step's own body
+    // (adaptFortnightToMonth) does `fortnight.days.some(...)` and
+    // `Object.values(todos/notes)` -- each one throws a raw TypeError on a
+    // corrupt backup unless the step's guard also covers `active.days` and
+    // non-object `todos`/`notes`.
+    const fortnight = {
+      id: 'fn-1', startDay: '2026-08-17', days: ['2026-08-17'], createdAt: '2026-08-17T00:00:00.000Z',
+    };
+
+    const nullTodos = JSON.stringify({
+      schemaVersion: 2, fortnights: [fortnight], activeFortnightId: 'fn-1', todos: null, notes: {},
+    });
+    expect(() => parseBackup(nullTodos)).toThrow(/malformed/i);
+
+    const nullNotes = JSON.stringify({
+      schemaVersion: 2, fortnights: [fortnight], activeFortnightId: 'fn-1', todos: {}, notes: null,
+    });
+    expect(() => parseBackup(nullNotes)).toThrow(/malformed/i);
+
+    const nonArrayDays = JSON.stringify({
+      schemaVersion: 2,
+      fortnights: [{ ...fortnight, days: 'not-an-array' }],
+      activeFortnightId: 'fn-1',
+      todos: {}, notes: {},
+    });
+    expect(() => parseBackup(nonArrayDays)).toThrow(/malformed/i);
+  });
+
   it('rejects missing or malformed pomodoro settings', () => {
     const { pomodoroSettings: _dropped, ...withoutSettings } = good;
     expect(validatePersistedState(withoutSettings)).toBe(false);
