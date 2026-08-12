@@ -82,13 +82,63 @@ describe('backup modal', () => {
     }
   });
 
-  it('imports a valid backup file and replaces state', async () => {
+  it('asks for confirmation and changes nothing until it is given', async () => {
+    const user = userEvent.setup();
+    const json = emptyBackupJson();
+    useAppStore.getState().addTodo({ title: 'to be replaced', priority: 'low', scheduledDay: '2026-08-18' });
+    const dialog = await openBackupDialog(user);
+    await user.upload(screen.getByLabelText('Choose file…'), backupFile(json));
+
+    expect(await within(dialog).findByText('Replace your current board?')).toBeInTheDocument();
+    expect(within(dialog).getByText('agile-todo-app-backup-2026-08-10.json')).toBeInTheDocument();
+    // Singular/plural, and the two sides of the trade.
+    expect(dialog).toHaveTextContent(/1 todo,/);
+    expect(dialog).toHaveTextContent(/0 todos,/);
+    // The whole point: nothing has been written yet.
+    expect(Object.keys(useAppStore.getState().todos)).toHaveLength(1);
+  });
+
+  it('replaces the board once confirmed, and closes', async () => {
     const user = userEvent.setup();
     const json = emptyBackupJson();
     useAppStore.getState().addTodo({ title: 'to be replaced', priority: 'low', scheduledDay: '2026-08-18' });
     await openBackupDialog(user);
     await user.upload(screen.getByLabelText('Choose file…'), backupFile(json));
+    await user.click(await screen.findByRole('button', { name: 'Replace board' }));
+
     expect(useAppStore.getState().todos).toEqual({});
+    expect(screen.queryByRole('dialog', { name: 'Backup' })).not.toBeInTheDocument();
+  });
+
+  it('leaves the board untouched when the confirmation is cancelled', async () => {
+    const user = userEvent.setup();
+    const json = emptyBackupJson();
+    useAppStore.getState().addTodo({ title: 'keep me', priority: 'low', scheduledDay: '2026-08-18' });
+    const dialog = await openBackupDialog(user);
+    await user.upload(screen.getByLabelText('Choose file…'), backupFile(json));
+    await user.click(await screen.findByRole('button', { name: 'Cancel' }));
+
+    expect(Object.keys(useAppStore.getState().todos)).toHaveLength(1);
+    expect(within(dialog).getByRole('button', { name: 'Download backup' })).toBeInTheDocument();
+  });
+
+  it('focuses Cancel, not the destructive button, when the confirmation appears', async () => {
+    const user = userEvent.setup();
+    await openBackupDialog(user);
+    await user.upload(screen.getByLabelText('Choose file…'), backupFile(emptyBackupJson()));
+    expect(await screen.findByRole('button', { name: 'Cancel' })).toHaveFocus();
+  });
+
+  it('discards a pending import when the dialog is dismissed with Escape', async () => {
+    const user = userEvent.setup();
+    useAppStore.getState().addTodo({ title: 'keep me', priority: 'low', scheduledDay: '2026-08-18' });
+    await openBackupDialog(user);
+    await user.upload(screen.getByLabelText('Choose file…'), backupFile(emptyBackupJson()));
+    await screen.findByRole('button', { name: 'Replace board' });
+    await user.keyboard('{Escape}');
+
+    expect(screen.queryByRole('dialog', { name: 'Backup' })).not.toBeInTheDocument();
+    expect(Object.keys(useAppStore.getState().todos)).toHaveLength(1);
   });
 
   it('shows a parse error inside the dialog, not in the header', async () => {
@@ -96,5 +146,6 @@ describe('backup modal', () => {
     const dialog = await openBackupDialog(user);
     await user.upload(screen.getByLabelText('Choose file…'), backupFile('not json', 'bad.json'));
     expect(await within(dialog).findByRole('alert')).toHaveTextContent(/not valid JSON/i);
+    expect(within(dialog).queryByRole('button', { name: 'Replace board' })).not.toBeInTheDocument();
   });
 });

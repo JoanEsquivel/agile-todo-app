@@ -74,3 +74,46 @@
   font-size: var(--text-sm);
   color: var(--color-attention);
 }
+
+.compare {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-1) var(--space-3);
+  margin: 0;
+  font-size: var(--text-sm);
+}
+
+.compareTerm {
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  overflow-wrap: anywhere;
+}
+
+.compareValue {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.danger {
+  font-size: var(--text-sm);
+  color: var(--color-attention);
+  font-weight: var(--font-weight-medium);
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.destructive {
+  background: var(--color-attention);
+  border-color: var(--color-attention);
+  color: var(--color-surface);
+  font-weight: var(--font-weight-medium);
+}
+
+.destructive:hover:not(:disabled) {
+  background: var(--color-attention);
+  filter: brightness(1.08);
+}
