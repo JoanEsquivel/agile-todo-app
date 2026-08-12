@@ -1,3 +1,4 @@
+import { Profiler } from 'react';
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import App from '../../App';
 import { seedApp } from '../../test/seed';
@@ -254,5 +255,105 @@ describe('pointer drag reorder', () => {
     fireEvent.pointerDown(handle, { pointerId: 1, clientY: 100 });
     fireEvent.pointerCancel(handle, { pointerId: 1 });
     expect(Object.values(useAppStore.getState().todos).every((t) => t.sortIndex === undefined)).toBe(true);
+  });
+});
+
+// MIN-3 from the drag & drop reorder final review: useDragReorder used to
+// hold dragOffset as React state and write a brand-new target object on
+// every single pointermove, so the whole column re-rendered at pointer-event
+// frequency (~60-120 Hz) during a drag. It now writes the transform directly
+// to the dragged <li>'s DOM node and only touches React state when the drop
+// target actually changes.
+describe('drag render discipline', () => {
+  beforeEach(() => seedApp());
+
+  it('writes the drag transform directly to the dragged element on every pointermove, and clears it on drop', () => {
+    const st = useAppStore.getState();
+    st.addTodo({ title: 'A', priority: 'medium', scheduledDay: '2026-08-18' });
+    st.addTodo({ title: 'B', priority: 'medium', scheduledDay: '2026-08-18' });
+    const { container } = render(<App />);
+    const handle = screen.getByRole('button', { name: 'Reorder todo: A' });
+    fireEvent.pointerDown(handle, { pointerId: 1, clientY: 100 });
+    const seps = Array.from(container.querySelectorAll('[class*="bandSeparator"]')) as HTMLElement[];
+    const items = screen.getAllByRole('listitem').filter((li) =>
+      within(li).queryByRole('button', { name: /^Reorder todo: / }));
+    mockRects([
+      { el: seps[0], top: 0, height: 20 }, { el: seps[1], top: 40, height: 20 },
+      { el: seps[2], top: 400, height: 20 },
+      { el: items[0], top: 80, height: 60 }, { el: items[1], top: 160, height: 60 },
+    ]);
+    const draggedItem = items[0];
+
+    fireEvent.pointerMove(handle, { pointerId: 1, clientY: 140 });
+    expect(draggedItem.style.transform).toBe('translateY(40px)');
+    fireEvent.pointerMove(handle, { pointerId: 1, clientY: 90 });
+    expect(draggedItem.style.transform).toBe('translateY(-10px)');
+
+    fireEvent.pointerUp(handle, { pointerId: 1, clientY: 90 });
+    expect(draggedItem.style.transform).toBe('');
+  });
+
+  it('pointercancel after a move also clears the transform', () => {
+    const st = useAppStore.getState();
+    st.addTodo({ title: 'A', priority: 'medium', scheduledDay: '2026-08-18' });
+    st.addTodo({ title: 'B', priority: 'medium', scheduledDay: '2026-08-18' });
+    const { container } = render(<App />);
+    const handle = screen.getByRole('button', { name: 'Reorder todo: A' });
+    fireEvent.pointerDown(handle, { pointerId: 1, clientY: 100 });
+    const seps = Array.from(container.querySelectorAll('[class*="bandSeparator"]')) as HTMLElement[];
+    const items = screen.getAllByRole('listitem').filter((li) =>
+      within(li).queryByRole('button', { name: /^Reorder todo: / }));
+    mockRects([
+      { el: seps[0], top: 0, height: 20 }, { el: seps[1], top: 40, height: 20 },
+      { el: seps[2], top: 400, height: 20 },
+      { el: items[0], top: 80, height: 60 }, { el: items[1], top: 160, height: 60 },
+    ]);
+    const draggedItem = items[0];
+
+    fireEvent.pointerMove(handle, { pointerId: 1, clientY: 140 });
+    expect(draggedItem.style.transform).toBe('translateY(40px)');
+
+    fireEvent.pointerCancel(handle, { pointerId: 1 });
+    expect(draggedItem.style.transform).toBe('');
+  });
+
+  it('does not commit the tree on pointermoves that stay in the same slot, and commits exactly once when the drop target changes', () => {
+    const st = useAppStore.getState();
+    st.addTodo({ title: 'A', priority: 'medium', scheduledDay: '2026-08-18' });
+    st.addTodo({ title: 'B', priority: 'medium', scheduledDay: '2026-08-18' });
+    st.addTodo({ title: 'C', priority: 'medium', scheduledDay: '2026-08-18' });
+    let commits = 0;
+    const { container } = render(
+      <Profiler id="board" onRender={() => { commits += 1; }}>
+        <App />
+      </Profiler>,
+    );
+    const handle = screen.getByRole('button', { name: 'Reorder todo: A' });
+    fireEvent.pointerDown(handle, { pointerId: 1, clientY: 80 });
+    const seps = Array.from(container.querySelectorAll('[class*="bandSeparator"]')) as HTMLElement[];
+    const items = screen.getAllByRole('listitem').filter((li) =>
+      within(li).queryByRole('button', { name: /^Reorder todo: / }));
+    // Same layout as the "downward same-band drag" indicator test above:
+    // separators High@0, Medium@40, Low@400; items A@80, B@160, C@240
+    // (height 60) -- B's midpoint is 190, C's is 270.
+    mockRects([
+      { el: seps[0], top: 0, height: 20 }, { el: seps[1], top: 40, height: 20 },
+      { el: seps[2], top: 400, height: 20 },
+      { el: items[0], top: 80, height: 60 }, { el: items[1], top: 160, height: 60 },
+      { el: items[2], top: 240, height: 60 },
+    ]);
+    const baseline = commits;
+
+    // All three stay above B's midpoint (190) -- A's drop target (index 0)
+    // never changes, so none of these should commit.
+    fireEvent.pointerMove(handle, { pointerId: 1, clientY: 85 });
+    fireEvent.pointerMove(handle, { pointerId: 1, clientY: 95 });
+    fireEvent.pointerMove(handle, { pointerId: 1, clientY: 100 });
+    expect(commits).toBe(baseline);
+
+    // Past B's midpoint (190) -- the drop target moves to index 1: exactly
+    // one commit.
+    fireEvent.pointerMove(handle, { pointerId: 1, clientY: 230 });
+    expect(commits).toBe(baseline + 1);
   });
 });

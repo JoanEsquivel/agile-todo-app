@@ -129,7 +129,6 @@ export function DayColumn() {
                             handleProps: drag.getHandleProps(t),
                             itemRef: drag.registerItem(t.id),
                             dragging: drag.dragId === t.id,
-                            dragOffset: drag.dragOffset,
                           }} />,
                       );
                       if (!isDragged) excludedIndex += 1;

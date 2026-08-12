@@ -12,17 +12,41 @@ export interface DragTarget { priority: Priority; index: number }
 export function useDragReorder(pendingTodos: Todo[], viewKey: string) {
   const reorderTodo = useAppStore((s) => s.reorderTodo);
   const [dragId, setDragId] = useState<string | null>(null);
-  const [dragOffset, setDragOffset] = useState(0);
   const [target, setTarget] = useState<DragTarget | null>(null);
   const startY = useRef(0);
   const items = useRef(new Map<string, HTMLElement>());
   const separators = useRef(new Map<Priority, HTMLElement>());
+  // Mirrors `target` so onPointerMove can compare against the latest value
+  // without depending on React state (which lags a render behind inside the
+  // same closure) -- updateTarget is the single place that writes both, so
+  // they can never diverge.
+  const targetRef = useRef<DragTarget | null>(null);
+  // Cleared on drop/cancel/view-change -- see the pointer-up ordering note
+  // below for why clearing this (a plain DOM write, not React state) must
+  // always happen BEFORE the store commit that triggers the next render.
+  const draggedId = useRef<string | null>(null);
+
+  const clearTransform = () => {
+    const id = draggedId.current;
+    if (id === null) return;
+    const el = items.current.get(id);
+    if (el) el.style.transform = '';
+    draggedId.current = null;
+  };
+
+  const updateTarget = (next: DragTarget | null) => {
+    targetRef.current = next;
+    setTarget(next);
+  };
+
+  const sameTarget = (a: DragTarget | null, b: DragTarget) =>
+    a !== null && a.priority === b.priority && a.index === b.index;
 
   // A view switch mid-drag must not commit onto the new view (spec §4).
   useEffect(() => {
+    clearTransform();
     setDragId(null);
-    setTarget(null);
-    setDragOffset(0);
+    updateTarget(null);
   }, [viewKey]);
 
   const registerItem = useCallback((id: string) => (el: HTMLElement | null) => {
@@ -59,30 +83,38 @@ export function useDragReorder(pendingTodos: Todo[], viewKey: string) {
       // jsdom (and old browsers) lack pointer capture — optional call.
       (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
       startY.current = e.clientY;
+      draggedId.current = todo.id;
       setDragId(todo.id);
-      setDragOffset(0);
       const pos = bandPosition(useAppStore.getState().todos, todo.id);
-      setTarget(pos ? { priority: pos.priority, index: pos.index } : null);
+      updateTarget(pos ? { priority: pos.priority, index: pos.index } : null);
     },
     onPointerMove: (e) => {
       if (dragId !== todo.id) return;
-      setDragOffset(e.clientY - startY.current);
-      setTarget(computeTarget(e.clientY, todo.id));
+      const el = items.current.get(todo.id);
+      if (el) el.style.transform = `translateY(${e.clientY - startY.current}px)`;
+      const next = computeTarget(e.clientY, todo.id);
+      if (!sameTarget(targetRef.current, next)) updateTarget(next);
     },
     onPointerUp: (e) => {
       if (dragId !== todo.id) return;
       const final = computeTarget(e.clientY, todo.id);
+      // Clear the DOM transform BEFORE the store commit below: React reuses
+      // the same keyed DOM node across the reorder, and `style` is no longer
+      // a React-managed prop once we've written to it directly -- a residual
+      // transform would leave the card visually offset in its new slot
+      // forever if this happened after (or was skipped for) the render the
+      // commit triggers.
+      clearTransform();
       setDragId(null);
-      setTarget(null);
-      setDragOffset(0);
+      updateTarget(null);
       reorderTodo(todo.id, final.priority, final.index);
     },
     onPointerCancel: () => {
+      clearTransform();
       setDragId(null);
-      setTarget(null);
-      setDragOffset(0);
+      updateTarget(null);
     },
   });
 
-  return { dragId, dragOffset, target, getHandleProps, registerItem, registerSeparator };
+  return { dragId, target, getHandleProps, registerItem, registerSeparator };
 }

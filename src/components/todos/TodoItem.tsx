@@ -12,7 +12,6 @@ export interface ReorderProps {
   handleProps: React.HTMLAttributes<HTMLButtonElement>;
   itemRef: (el: HTMLElement | null) => void;
   dragging: boolean;
-  dragOffset: number;
 }
 
 export function TodoItem({ todo, readOnly, reorder }: {
@@ -91,7 +90,6 @@ export function TodoItem({ todo, readOnly, reorder }: {
     <li
       ref={reorder?.itemRef}
       className={reorder?.dragging ? `${styles.item} ${styles.itemDragging}` : styles.item}
-      style={reorder?.dragging ? { transform: `translateY(${reorder.dragOffset}px)` } : undefined}
       data-done={todo.done ? '' : undefined}
     >
       <div className={styles.row}>
