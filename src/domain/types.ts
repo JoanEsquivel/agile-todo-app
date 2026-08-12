@@ -32,6 +32,12 @@ export interface Todo {
   // only that `todos` is an object (INV-6 is for top-level PersistedState
   // fields, not nested value types).
   checklist?: ChecklistItem[];
+  // Optional: position within its priority band (same fortnightId +
+  // scheduledDay + priority, pending only). Absent = never manually
+  // ordered -- sorts after indexed todos, createdAt tie-break. Same
+  // no-schema-bump precedent as `checklist` above: validatePersistedState
+  // never inspects todo internals.
+  sortIndex?: number;
 }
 
 export interface Note {
