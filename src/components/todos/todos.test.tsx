@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from '../../App';
 import { seedApp } from '../../test/seed';
@@ -275,5 +275,19 @@ describe('keyboard reorder on the drag handle', () => {
     screen.getByRole('button', { name: 'Reorder todo: B' }).focus();
     await user.keyboard('{ArrowUp}');
     expect(titlesOnBoard()).toEqual(['A', 'B']);
+  });
+
+  it('starting a pointer drag on an already-grabbed handle clears the keyboard grab', async () => {
+    const user = userEvent.setup();
+    const st = useAppStore.getState();
+    st.addTodo({ title: 'A', priority: 'medium', scheduledDay: '2026-08-18' });
+    st.addTodo({ title: 'B', priority: 'medium', scheduledDay: '2026-08-18' });
+    render(<App />);
+    const handle = screen.getByRole('button', { name: 'Reorder todo: B' });
+    handle.focus();
+    await user.keyboard(' ');
+    expect(handle).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.pointerDown(handle, { pointerId: 1, clientY: 0 });
+    expect(handle).toHaveAttribute('aria-pressed', 'false');
   });
 });

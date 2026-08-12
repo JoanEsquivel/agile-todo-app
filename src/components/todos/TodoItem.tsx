@@ -105,6 +105,17 @@ export function TodoItem({ todo, readOnly, reorder }: {
             onKeyDown={onHandleKeyDown}
             onBlur={onHandleBlur}
             {...reorder.handleProps}
+            onPointerDown={(e) => {
+              // A pointer drag starting on an already-grabbed handle must
+              // clear the keyboard grab first — otherwise a later Escape
+              // reorders back to the stale grab-time snapshot and silently
+              // undoes the pointer move the user just committed.
+              if (grabbed) {
+                setGrabbed(false);
+                grabSnapshot.current = null;
+              }
+              reorder.handleProps.onPointerDown?.(e);
+            }}
           >
             <span aria-hidden="true">⋮⋮</span>
           </button>
