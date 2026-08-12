@@ -33,7 +33,8 @@ describe('HelpModal', () => {
     expect(panel).toHaveTextContent('Checklists');
     expect(panel).toHaveTextContent('When every item is checked the todo completes itself');
     expect(panel).toHaveTextContent('Standup');
-    expect(panel).toHaveTextContent('Backup & theme');
+    expect(panel).toHaveTextContent('Backup');
+    expect(panel).toHaveTextContent('Theme');
     expect(panel).toHaveTextContent('Privacy & analytics');
     // Placed right after the todos section, where the feature lives.
     const text = panel.textContent ?? '';
@@ -242,5 +243,17 @@ describe('help via App entry points', () => {
     render(<App />);
     await user.click(screen.getByRole('button', { name: 'Help' }));
     expect(screen.getByRole('dialog', { name: 'Help' })).toBeInTheDocument();
+  });
+
+  it('documents backup and theme as separate guide sections', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole('button', { name: 'Help' }));
+    const dialog = screen.getByRole('dialog', { name: 'Help' });
+
+    expect(within(dialog).getByText('Backup')).toBeInTheDocument();
+    expect(within(dialog).getByText('Theme')).toBeInTheDocument();
+    expect(within(dialog).queryByText('Backup & theme')).not.toBeInTheDocument();
+    expect(dialog).toHaveTextContent(/asks you to confirm first/i);
   });
 });

@@ -47,8 +47,12 @@ const GUIDE_SECTIONS: Array<{ title: string; body: string }> = [
     body: 'The header timer runs focus and break sessions; press P to configure durations. Settings are saved between visits.',
   },
   {
-    title: 'Backup & theme',
-    body: 'Export downloads your whole board as a JSON file; Import restores it. The sun/moon button switches between light, dark and system theme.',
+    title: 'Backup',
+    body: 'The archive button in the header exports your whole board as a JSON file and restores one. Importing replaces everything you have now, so it asks you to confirm first. Clearing your browser\'s site data erases the board — export a backup if you want to keep it.',
+  },
+  {
+    title: 'Theme',
+    body: 'The sun/moon button switches between light, dark and system theme.',
   },
   {
     title: 'Privacy & analytics',

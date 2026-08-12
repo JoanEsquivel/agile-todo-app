@@ -82,7 +82,7 @@ export default function App() {
       {state.rehydrationError && (
         <p className={styles.banner} role="alert">
           Stored data could not be loaded (it may be from a newer version of the app) and has not
-          been modified. Try reloading, or import a backup below.
+          been modified. Try reloading, or use the Backup button in the header to import a backup.
         </p>
       )}
       {selectIsReadOnly(state) && (
