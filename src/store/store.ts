@@ -7,6 +7,7 @@ import {
   generateMonthDays, effectiveBoardDay, carryOverTodos, carryOverNotes, pruneToRetention,
 } from '../domain/fortnight';
 import { applyRollover, applyNoteRollover } from '../domain/rollover';
+import { bandPosition, reorderTodo as domainReorderTodo } from '../domain/reorder';
 import {
   setTodoDone,
   addChecklistItem as domainAddChecklistItem,
@@ -65,6 +66,7 @@ export interface AppState extends PersistedState {
   rescheduleTodo: (id: string, day: ISODate) => void;
   toggleDone: (id: string) => void;
   deleteTodo: (id: string) => void;
+  reorderTodo: (id: string, targetPriority: Priority, targetIndex: number) => void;
   /** Generates the item id (crypto.randomUUID(), same mechanism as addTodo),
    *  trims the text, and silently rejects empty/whitespace-only input. */
   addChecklistItem: (todoId: string, text: string) => void;
@@ -297,6 +299,25 @@ export const useAppStore = create<AppState>()(
           set((s) => {
             const { [id]: removed, ...rest } = s.todos;
             return { todos: rest, announcement: removed ? `Deleted todo: ${removed.title}` : s.announcement };
+          }),
+
+        // Refuses in the reducer, same INV-9 pattern as setComposeIntent:
+        // the UI never renders drag handles in read-only mode, but this is
+        // the guard a keyboard path can't route around.
+        reorderTodo: (id, targetPriority, targetIndex) =>
+          set((s) => {
+            if (s.viewedFortnightId !== s.activeFortnightId) return {};
+            const before = s.todos[id];
+            if (!before || before.done) return {};
+            const todos = domainReorderTodo(s.todos, id, targetPriority, targetIndex);
+            if (todos === s.todos) return {};
+            const pos = bandPosition(todos, id);
+            if (!pos) return { todos };
+            const label = targetPriority.charAt(0).toUpperCase() + targetPriority.slice(1);
+            return {
+              todos,
+              announcement: `Moved "${before.title}" to ${label}, position ${pos.index + 1} of ${pos.size}`,
+            };
           }),
 
         addChecklistItem: (todoId, text) => {

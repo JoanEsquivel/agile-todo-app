@@ -236,6 +236,31 @@ describe('store persistence', () => {
     expect(useAppStore.getState().todos.t1.checklist).toEqual(checklist);
   });
 
+  it('round-trips todo.sortIndex through export -> import', () => {
+    useAppStore.getState().initApp();
+    const fn = useAppStore.getState().fortnights[0];
+    const snapshot = {
+      schemaVersion: SCHEMA_VERSION,
+      fortnights: useAppStore.getState().fortnights,
+      activeFortnightId: useAppStore.getState().activeFortnightId,
+      todos: {
+        t1: {
+          id: 't1', fortnightId: fn.id, title: 'with sortIndex', priority: 'medium' as const,
+          scheduledDay: '2026-08-18', done: false, createdAt: '2026-08-10T09:00:00.000Z',
+          rolledOver: false, sortIndex: 3,
+        },
+      },
+      notes: {},
+      lastRolloverDay: '2026-08-18',
+      pomodoroSettings: { workMinutes: 25, breakMinutes: 5, longBreakMinutes: 15 },
+    };
+    const parsed = parseBackup(serializeState(snapshot));
+    expect(parsed.todos.t1.sortIndex).toBe(3);
+
+    useAppStore.getState().importState(parsed);
+    expect(useAppStore.getState().todos.t1.sortIndex).toBe(3);
+  });
+
   it('onRehydrateStorage sets rehydrationError on corrupt storage, and initApp does not silently create+persist over it (Important 3)', async () => {
     // Write directly through appStorage (not localStorage) so this doesn't
     // race a debounced write already pending from this test's own beforeEach

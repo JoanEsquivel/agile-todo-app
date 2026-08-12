@@ -150,6 +150,49 @@ describe('store', () => {
       expect(useAppStore.getState().composeIntent).toBeNull();
     });
   });
+
+  describe('reorderTodo', () => {
+    it('reorders and announces the new position (1-based)', () => {
+      const st = useAppStore.getState();
+      st.initApp();
+      st.addTodo({ title: 'A', priority: 'medium', scheduledDay: '2026-08-18' });
+      st.addTodo({ title: 'B', priority: 'medium', scheduledDay: '2026-08-18' });
+      const b = Object.values(useAppStore.getState().todos).find((t) => t.title === 'B')!;
+      useAppStore.getState().reorderTodo(b.id, 'medium', 0);
+      expect(useAppStore.getState().todos[b.id].sortIndex).toBe(0);
+      expect(useAppStore.getState().announcement).toBe('Moved "B" to Medium, position 1 of 2');
+    });
+
+    it('cross-band call re-prioritizes', () => {
+      const st = useAppStore.getState();
+      st.initApp();
+      st.addTodo({ title: 'A', priority: 'medium', scheduledDay: '2026-08-18' });
+      const a = Object.values(useAppStore.getState().todos)[0];
+      useAppStore.getState().reorderTodo(a.id, 'high', 0);
+      expect(useAppStore.getState().todos[a.id].priority).toBe('high');
+    });
+
+    it('refuses while viewing a read-only fortnight (INV-9)', () => {
+      const st = useAppStore.getState();
+      st.initApp();
+      st.addTodo({ title: 'A', priority: 'medium', scheduledDay: '2026-08-18' });
+      st.addTodo({ title: 'B', priority: 'medium', scheduledDay: '2026-08-18' });
+      const b = Object.values(useAppStore.getState().todos).find((t) => t.title === 'B')!;
+      useAppStore.setState({ viewedFortnightId: 'some-old-fortnight' });
+      useAppStore.getState().reorderTodo(b.id, 'medium', 0);
+      expect(useAppStore.getState().todos[b.id].sortIndex).toBeUndefined();
+    });
+
+    it('no-op on done todos', () => {
+      const st = useAppStore.getState();
+      st.initApp();
+      st.addTodo({ title: 'A', priority: 'medium', scheduledDay: '2026-08-18' });
+      const a = Object.values(useAppStore.getState().todos)[0];
+      useAppStore.getState().toggleDone(a.id);
+      useAppStore.getState().reorderTodo(a.id, 'high', 0);
+      expect(useAppStore.getState().todos[a.id].priority).toBe('medium');
+    });
+  });
 });
 
 describe('pomodoro actions', () => {
