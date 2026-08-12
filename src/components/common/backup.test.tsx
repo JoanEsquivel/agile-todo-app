@@ -148,4 +148,13 @@ describe('backup modal', () => {
     expect(await within(dialog).findByRole('alert')).toHaveTextContent(/not valid JSON/i);
     expect(within(dialog).queryByRole('button', { name: 'Replace board' })).not.toBeInTheDocument();
   });
+
+  it('opens from the command palette', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.keyboard('{Control>}k{/Control}');
+    await user.type(screen.getByRole('combobox'), 'backup');
+    await user.keyboard('{Enter}');
+    expect(screen.getByRole('dialog', { name: 'Backup' })).toBeInTheDocument();
+  });
 });

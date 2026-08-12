@@ -29,7 +29,7 @@ describe('command palette', () => {
 
     expect(listbox).toHaveTextContent('Add todo');
     expect(listbox).toHaveTextContent('Standup');
-    expect(listbox.querySelectorAll('[role="option"]').length).toBeGreaterThanOrEqual(21 + 5);
+    expect(listbox.querySelectorAll('[role="option"]').length).toBeGreaterThanOrEqual(21 + 6);
 
     await user.type(screen.getByRole('combobox'), 'thu');
     expect(listbox).toHaveTextContent('Go to Thu, Aug 20');

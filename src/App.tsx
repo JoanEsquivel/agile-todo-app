@@ -51,6 +51,7 @@ export default function App() {
     // Not board mutation, so no read-only gate — the timer works while
     // viewing a past fortnight.
     { id: 'pomodoro', label: 'Pomodoro timer', run: () => setPomodoroOpen(true) },
+    { id: 'backup', label: 'Backup & restore', run: () => setBackupOpen(true) },
     { id: 'help-guide', label: 'Help guide', run: () => setHelpOpen('guide') },
     { id: 'keyboard-shortcuts', label: 'Keyboard shortcuts', run: () => setHelpOpen('shortcuts') },
   ];
