@@ -92,6 +92,21 @@ describe('HelpModal', () => {
     expect(within(dialog).getByText('Enjoying the app? Support its development!')).toBeInTheDocument();
   });
 
+  it('shows the visitor badge in the support footer once loaded, visible from both tabs', async () => {
+    (fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ count_unique: '99', count: '99' }),
+    });
+    const user = userEvent.setup();
+    render(<HelpModal initialTab="guide" onClose={vi.fn()} />);
+    const dialog = screen.getByRole('dialog', { name: 'Help' });
+
+    expect(await within(dialog).findByRole('link', { name: '99 visits — view public analytics' })).toBeInTheDocument();
+
+    await user.click(within(dialog).getByRole('tab', { name: 'Shortcuts' }));
+    expect(within(dialog).getByRole('link', { name: '99 visits — view public analytics' })).toBeInTheDocument();
+  });
+
   it('closes on Escape via the shared Modal', async () => {
     const user = userEvent.setup();
     const onClose = vi.fn();
