@@ -1,6 +1,6 @@
 # CLAUDE.md — Agile Todo App
 
-> This app is **finished, tested (433 tests), and deployed**. It is not a scaffold to build out — it's a working product. Changes here should be surgical, not exploratory. Every change ships with tests. Read the invariants below before editing anything under `src/`.
+> This app is **finished, tested (449 tests), and deployed**. It is not a scaffold to build out — it's a working product. Changes here should be surgical, not exploratory. Every change ships with tests. Read the invariants below before editing anything under `src/`.
 
 ## Orientation
 
@@ -22,7 +22,7 @@ Browser-only monthly (calendar-month, workdays-only) todo board, plus a header P
 | Command | What it does |
 |---|---|
 | `npm run dev` | Dev server at `http://localhost:5173` |
-| `npm test` | `vitest run` — 433 tests, ~4s |
+| `npm test` | `vitest run` — 449 tests, ~4s |
 | `npm run typecheck` | `tsc -b --noEmit` — the real typecheck, ~0.3s |
 | `npm run verify` | typecheck + test — **this is the definition of done** |
 | `npm run build` | `tsc -b && vite build` — production build |
@@ -96,7 +96,7 @@ The board's scheduling horizon changed from a 10-workday fortnight to a calendar
 
 ### INV-8. `importState` enumerates fields, never spreads
 **Rule.** `importState` in `src/store/store.ts` builds the new state object by explicitly listing the known `PersistedState` fields — it never does `set({ ...backupObject, ... })`.
-**Why.** A backup JSON file is untrusted input. `validatePersistedState` only requires the 6 known fields to be present; it doesn't forbid extras. A spread would let a backup file containing e.g. `"toggleDone": null` clobber a store action function.
+**Why.** A backup JSON file is untrusted input. `validatePersistedState` only requires the 6 known fields to be present; it doesn't forbid extras. A spread would let a backup file containing e.g. `"toggleDone": null` clobber a store action function. The "replace your board?" confirmation lives in `BackupModal`, not in this action: `importState` is unconditionally destructive on its own, so any future caller has to supply its own confirmation rather than assuming one already happened.
 **Check.** `src/store/storePersistence.test.ts` — the test that imports a backup with an extra key matching an action name and asserts the action still works.
 
 ### INV-9. Read-only history mode is derived, passed down, and must gate the *form*

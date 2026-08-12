@@ -4,7 +4,7 @@
 
 <!-- - Quiero agregar un icono o boton a la derecha de de github que sea tipo "buy me a coffe, muy llamativo para que la persona que quiera colaborar conmigo lo lleve a paypal payme (https://www.paypal.com/paypalme/joanmedia) y pueda donarme por el trabajo hecho. Este debe ser agregado al help modal.  -->
 
-- Es buena idea juntar el boton de export backup y import en uno solo y cuando se quiera hacer una de dos se abra un modal? Si esto es una buena mejora, tambien debe modificarse el help modal. 
+<!-- - ~~Es buena idea juntar el boton de export backup y import en uno solo y cuando se quiera hacer una de dos se abra un modal? Si esto es una buena mejora, tambien debe modificarse el help modal.~~ Shipped: one header Backup button opening a dialog, with a confirmation step before an import replaces the board (see `docs/superpowers/specs/2026-08-12-backup-modal-design.md`). --> 
 
 <!-- - ~~Analizar si es posible ver que tantas personas usan la pagina web...~~ Shipped a scaled-down version: GoatCounter anonymous tracking + a visit-count badge in the Help modal footer linking to the public dashboard (see `docs/superpowers/specs/2026-08-11-visitor-count-badge-design.md`). The original idea — an in-app stats modal with its own charts and auto-refresh — is parked; revisit once traffic is high enough that in-app social proof is worth the build cost. The service facts needed to build it (endpoint, CORS, response shape) are already verified and recorded in that spec. -->
 

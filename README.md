@@ -4,7 +4,7 @@ A browser-only todo board built around a monthly cadence. No backend, no account
 
 **[Live demo →](https://joanesquivel.github.io/agile-todo-app/)**
 
-433 tests · TypeScript strict · zero backend
+449 tests · TypeScript strict · zero backend
 
 Built by [Joan Esquivel](https://www.linkedin.com/in/joanesquivel/) · [source code](https://github.com/JoanEsquivel/agile-todo-app) · [☕ Buy me a coffee](https://www.paypal.com/paypalme/joanmedia)
 
@@ -93,7 +93,7 @@ Full architecture rationale, data model, and edge-case decisions: [`docs/superpo
 
 ## Testing
 
-Vitest + React Testing Library, 433 tests across 34 files, all colocated with the code they test. Coverage spans pure domain logic, store transitions, persistence/migration behavior, component interaction, and accessibility.
+Vitest + React Testing Library, 449 tests across 35 files, all colocated with the code they test. Coverage spans pure domain logic, store transitions, persistence/migration behavior, component interaction, and accessibility.
 
 ```sh
 npm test                              # everything
@@ -102,7 +102,7 @@ npx vitest run src/domain/dates.test.ts   # one file
 
 ## Data & privacy
 
-Everything is stored under a single `localStorage` key (`agile-todo-app.v-state`), plus one tiny `agile-todo-app.theme` key when you pick a manual theme. Your data itself never leaves the browser — the only network traffic is an anonymous GoatCounter visit beacon and read, blockable with zero effect on the app. Clearing your browser's site data deletes everything — export a JSON backup first if you want to keep it.
+Everything is stored under a single `localStorage` key (`agile-todo-app.v-state`), plus one tiny `agile-todo-app.theme` key when you pick a manual theme. Your data itself never leaves the browser — the only network traffic is an anonymous GoatCounter visit beacon and read, blockable with zero effect on the app. Clearing your browser's site data deletes everything — export a JSON backup first if you want to keep it. Importing a backup replaces everything currently on the board, so the app shows you what you have versus what the file holds and asks you to confirm before it writes anything.
 
 ## Deployment
 
