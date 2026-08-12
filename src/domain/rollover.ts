@@ -1,5 +1,6 @@
 import type { Fortnight, ISODate, Note, Todo } from './types';
 import { effectiveBoardDay } from './fortnight';
+import { appendToDay, movedOrder } from './reorder';
 
 export function applyRollover(
   todos: Record<string, Todo>,
@@ -8,14 +9,16 @@ export function applyRollover(
 ): { todos: Record<string, Todo>; changed: boolean } {
   const target = effectiveBoardDay(fortnight, today);
   if (target === null) return { todos, changed: false };
-  let changed = false;
+  // Sorted BEFORE relocation: movedOrder keys on the original day/index.
+  const moved = Object.values(todos)
+    .filter((t) => t.fortnightId === fortnight.id && !t.done && t.scheduledDay < today)
+    .sort(movedOrder);
+  if (moved.length === 0) return { todos, changed: false };
   const out: Record<string, Todo> = { ...todos };
-  for (const t of Object.values(todos)) {
-    if (t.fortnightId !== fortnight.id || t.done || t.scheduledDay >= today) continue;
-    out[t.id] = { ...t, scheduledDay: target, rolledOver: true };
-    changed = true;
-  }
-  return { todos: out, changed };
+  for (const t of moved) out[t.id] = { ...t, scheduledDay: target, rolledOver: true };
+  // Ordering policy (spec §2): what was already arranged on the target day
+  // keeps its curated order; incoming todos queue behind, relative order kept.
+  return { todos: appendToDay(out, moved.map((t) => t.id), fortnight.id, target), changed: true };
 }
 
 /** Sibling of applyRollover for blocker notes (INV-5 disjointness: keys on

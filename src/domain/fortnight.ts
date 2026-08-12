@@ -1,5 +1,6 @@
 import type { Fortnight, ISODate, Note, Todo } from './types';
 import { addDays, firstOfMonth, firstOfNextMonth, isWorkday, nextWorkday } from './dates';
+import { appendToDay, movedOrder } from './reorder';
 
 /** Workdays (Mon–Fri) of the calendar month containing `anchor`, ascending.
  *  If `anchor` falls AFTER the month's last workday (a weekend tail like
@@ -43,6 +44,7 @@ export function carryOverTodos(
   const target = effectiveBoardDay(newFortnight, today);
   if (target === null) return todos; // unreachable: newFortnight is anchored to today
   const out: Record<string, Todo> = { ...todos };
+  const relocated: Todo[] = []; // originals, for movedOrder's pre-relocation keys
   for (const t of Object.values(todos)) {
     if (t.fortnightId !== oldFortnightId || t.done) continue;
     if (newFortnight.days.includes(t.scheduledDay) && t.scheduledDay >= target) {
@@ -54,9 +56,13 @@ export function carryOverTodos(
         scheduledDay: target,
         rolledOver: t.scheduledDay < today ? true : t.rolledOver,
       };
+      relocated.push(t);
     }
   }
-  return out;
+  if (relocated.length === 0) return out;
+  relocated.sort(movedOrder);
+  // Same ordering policy as applyRollover (spec §2).
+  return appendToDay(out, relocated.map((t) => t.id), newFortnight.id, target);
 }
 
 /** Sibling of carryOverTodos for blocker notes: unresolved blockers move to

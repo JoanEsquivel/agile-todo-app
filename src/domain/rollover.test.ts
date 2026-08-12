@@ -65,6 +65,38 @@ describe('applyRollover', () => {
     expect(res.todos.a.createdAt).toBe('2026-08-10T09:00:00.000Z');
     expect(res.todos.a.reminderAt).toBe('2026-08-10T09:00');
   });
+
+  describe('rollover ordering policy (spec 2026-08-11 drag-reorder §2)', () => {
+    it('appends rolled todos after the destination band, preserving their relative order', () => {
+      const todos = {
+        here: makeTodo({ id: 'here', scheduledDay: '2026-08-18', priority: 'medium', sortIndex: 0 }),
+        oldB: makeTodo({ id: 'oldB', scheduledDay: '2026-08-17', priority: 'medium', sortIndex: 1 }),
+        oldA: makeTodo({ id: 'oldA', scheduledDay: '2026-08-17', priority: 'medium', sortIndex: 0 }),
+      };
+      const { todos: out } = applyRollover(todos, fn, '2026-08-18');
+      expect(out['here'].sortIndex).toBe(0);   // curated order untouched
+      expect(out['oldA'].sortIndex).toBe(1);   // preserved relative order…
+      expect(out['oldB'].sortIndex).toBe(2);   // …behind the existing member
+      expect(out['oldA'].scheduledDay).toBe('2026-08-18');
+      expect(out['oldA'].rolledOver).toBe(true);
+    });
+
+    it('multi-day catch-up appends earlier source days first', () => {
+      const todos = {
+        mon: makeTodo({ id: 'mon', scheduledDay: '2026-08-17', priority: 'high' }),
+        fri: makeTodo({ id: 'fri', scheduledDay: '2026-08-14', priority: 'high' }),
+      };
+      const { todos: out } = applyRollover(todos, fn, '2026-08-18');
+      expect(out['fri'].sortIndex).toBe(0);
+      expect(out['mon'].sortIndex).toBe(1);
+    });
+
+    it('never writes fortnightId (INV-5)', () => {
+      const todos = { old: makeTodo({ id: 'old', scheduledDay: '2026-08-17' }) };
+      const { todos: out } = applyRollover(todos, fn, '2026-08-18');
+      expect(out['old'].fortnightId).toBe(todos['old'].fortnightId);
+    });
+  });
 });
 
 function makeNote(over: Partial<Note>): Note {

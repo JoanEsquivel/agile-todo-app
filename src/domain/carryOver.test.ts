@@ -80,6 +80,34 @@ describe('carryOverTodos (mixed history: 10-day fortnight -> calendar month)', (
   });
 });
 
+describe('carry-over ordering policy (spec 2026-08-11 drag-reorder §2)', () => {
+  // oldFortnight ('f2') ended; newFortnight ('m-aug') is the calendar-month
+  // period anchored so effectiveBoardDay = today ('2026-08-19', a
+  // Wednesday inside the month). 'planned' already lives on the target day
+  // inside the NEW fortnight window (the carried-with-unchanged-day
+  // branch); 'x2'/'x1' are scheduled in the past and relocate.
+  const monthFortnight: Fortnight = {
+    id: 'm-aug', startDay: '2026-08-03',
+    days: generateMonthDays('2026-08-19'),
+    createdAt: '2026-08-19T12:00:00.000Z',
+  };
+  const today = '2026-08-19';
+  const pastDay = '2026-08-11';
+
+  it('relocated todos queue behind what already sits on the target day, relative order kept', () => {
+    const todos = {
+      planned: makeTodo({ id: 'planned', fortnightId: 'f2', scheduledDay: today, priority: 'low', sortIndex: 0 }),
+      x2: makeTodo({ id: 'x2', fortnightId: 'f2', scheduledDay: pastDay, priority: 'low', sortIndex: 1 }),
+      x1: makeTodo({ id: 'x1', fortnightId: 'f2', scheduledDay: pastDay, priority: 'low', sortIndex: 0 }),
+    };
+    const out = carryOverTodos(todos, 'f2', monthFortnight, today);
+    expect(out['planned'].sortIndex).toBe(0);
+    expect(out['x1'].sortIndex).toBe(1);
+    expect(out['x2'].sortIndex).toBe(2);
+    expect(out['x1'].fortnightId).toBe(monthFortnight.id); // always rewritten (INV-5)
+  });
+});
+
 function makeNote(over: Partial<Note>): Note {
   return {
     id: over.id ?? 'n1', fortnightId: 'f1', day: '2026-08-17', category: 'blocker',
