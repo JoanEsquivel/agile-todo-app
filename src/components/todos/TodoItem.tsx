@@ -1,7 +1,8 @@
-import { useState } from 'react';
-import type { Todo } from '../../domain/types';
+import { useRef, useState } from 'react';
+import type { Priority, Todo } from '../../domain/types';
 import { useAppStore } from '../../store/store';
 import { selectViewedFortnight } from '../../store/selectors';
+import { bandPosition, moveTarget } from '../../domain/reorder';
 import { PriorityBadge } from '../common/PriorityBadge';
 import { TodoForm } from './TodoForm';
 import { useNow } from '../../hooks/useNow';
@@ -21,11 +22,15 @@ export function TodoItem({ todo, readOnly, reorder }: {
   // Ephemeral by spec: collapsed by default, dies with the card, never persisted.
   const [checklistOpen, setChecklistOpen] = useState(false);
   const [newItemText, setNewItemText] = useState('');
+  const [grabbed, setGrabbed] = useState(false);
+  const grabSnapshot = useRef<{ priority: Priority; index: number } | null>(null);
   const toggleDone = useAppStore((s) => s.toggleDone);
   const deleteTodo = useAppStore((s) => s.deleteTodo);
   const addChecklistItem = useAppStore((s) => s.addChecklistItem);
   const toggleChecklistItem = useAppStore((s) => s.toggleChecklistItem);
   const removeChecklistItem = useAppStore((s) => s.removeChecklistItem);
+  const reorderTodo = useAppStore((s) => s.reorderTodo);
+  const announce = useAppStore((s) => s.announce);
   const fn = useAppStore(selectViewedFortnight);
   const now = useNow();
   const overdue = !todo.done && todo.reminderAt !== undefined && new Date(todo.reminderAt) <= now;
@@ -45,6 +50,43 @@ export function TodoItem({ todo, readOnly, reorder }: {
     setNewItemText('');
   };
 
+  const toggleGrab = () => {
+    if (grabbed) {
+      setGrabbed(false);
+      grabSnapshot.current = null;
+      announce(`Dropped "${todo.title}"`);
+    } else {
+      const pos = bandPosition(useAppStore.getState().todos, todo.id);
+      if (!pos) return;
+      grabSnapshot.current = { priority: pos.priority, index: pos.index };
+      setGrabbed(true);
+      announce(`Grabbed "${todo.title}" — use arrow keys to move, Space to drop, Escape to cancel`);
+    }
+  };
+
+  const onHandleKeyDown = (e: React.KeyboardEvent) => {
+    if (!grabbed) return;
+    if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+      e.preventDefault();
+      const t = moveTarget(useAppStore.getState().todos, todo.id, e.key === 'ArrowUp' ? -1 : 1);
+      if (t) reorderTodo(todo.id, t.priority, t.index);
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      const snap = grabSnapshot.current;
+      setGrabbed(false);
+      grabSnapshot.current = null;
+      if (snap) reorderTodo(todo.id, snap.priority, snap.index);
+      announce(`Cancelled — "${todo.title}" returned to its place`);
+    }
+  };
+
+  const onHandleBlur = () => {
+    if (!grabbed) return;
+    setGrabbed(false);
+    grabSnapshot.current = null;
+    announce(`Dropped "${todo.title}"`);
+  };
+
   return (
     <li
       ref={reorder?.itemRef}
@@ -58,6 +100,10 @@ export function TodoItem({ todo, readOnly, reorder }: {
             type="button"
             className={styles.handle}
             aria-label={`Reorder todo: ${todo.title}`}
+            aria-pressed={grabbed}
+            onClick={(e) => { if (e.detail === 0) toggleGrab(); }}
+            onKeyDown={onHandleKeyDown}
+            onBlur={onHandleBlur}
             {...reorder.handleProps}
           >
             <span aria-hidden="true">⋮⋮</span>

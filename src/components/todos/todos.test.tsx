@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import App from '../../App';
 import { seedApp } from '../../test/seed';
 import { useAppStore } from '../../store/store';
+import { selectTodosForDay } from '../../store/selectors';
 
 vi.mock('../../store/clock', () => ({
   todayLocal: () => '2026-08-18',
@@ -209,5 +210,70 @@ describe('todo checklists', () => {
     // A checklist-less read-only todo shows nothing new at all.
     expect(screen.queryByRole('button', { name: 'Add checklist to todo: Archived plain' }))
       .not.toBeInTheDocument();
+  });
+});
+
+describe('keyboard reorder on the drag handle', () => {
+  beforeEach(() => seedApp());
+
+  function titlesOnBoard() {
+    const s = useAppStore.getState();
+    const fn = s.fortnights.find((f) => f.id === s.activeFortnightId)!;
+    return selectTodosForDay(s, fn.id, '2026-08-18').map((t) => t.title);
+  }
+
+  it('grabs with Space, moves with arrows, drops with Space', async () => {
+    const user = userEvent.setup();
+    const st = useAppStore.getState();
+    st.addTodo({ title: 'A', priority: 'medium', scheduledDay: '2026-08-18' });
+    st.addTodo({ title: 'B', priority: 'medium', scheduledDay: '2026-08-18' });
+    render(<App />);
+    const handle = screen.getByRole('button', { name: 'Reorder todo: B' });
+    handle.focus();
+    await user.keyboard(' ');
+    expect(handle).toHaveAttribute('aria-pressed', 'true');
+    await user.keyboard('{ArrowUp}');
+    expect(titlesOnBoard()).toEqual(['B', 'A']);
+    expect(useAppStore.getState().announcement).toBe('Moved "B" to Medium, position 1 of 2');
+    await user.keyboard(' ');
+    expect(screen.getByRole('button', { name: 'Reorder todo: B' })).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  it('crossing a band boundary with arrows changes priority', async () => {
+    const user = userEvent.setup();
+    const st = useAppStore.getState();
+    st.addTodo({ title: 'H', priority: 'high', scheduledDay: '2026-08-18' });
+    st.addTodo({ title: 'M', priority: 'medium', scheduledDay: '2026-08-18' });
+    render(<App />);
+    const handle = screen.getByRole('button', { name: 'Reorder todo: M' });
+    handle.focus();
+    await user.keyboard(' {ArrowUp}');
+    const m = Object.values(useAppStore.getState().todos).find((t) => t.title === 'M')!;
+    expect(m.priority).toBe('high');
+  });
+
+  it('Escape cancels back to the grab-time position and priority', async () => {
+    const user = userEvent.setup();
+    const st = useAppStore.getState();
+    st.addTodo({ title: 'H', priority: 'high', scheduledDay: '2026-08-18' });
+    st.addTodo({ title: 'M', priority: 'medium', scheduledDay: '2026-08-18' });
+    render(<App />);
+    const handle = screen.getByRole('button', { name: 'Reorder todo: M' });
+    handle.focus();
+    await user.keyboard(' {ArrowUp}{Escape}');
+    const m = Object.values(useAppStore.getState().todos).find((t) => t.title === 'M')!;
+    expect(m.priority).toBe('medium');
+    expect(screen.getByRole('button', { name: 'Reorder todo: M' })).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  it('arrow keys on an ungrabbed handle do nothing', async () => {
+    const user = userEvent.setup();
+    const st = useAppStore.getState();
+    st.addTodo({ title: 'A', priority: 'medium', scheduledDay: '2026-08-18' });
+    st.addTodo({ title: 'B', priority: 'medium', scheduledDay: '2026-08-18' });
+    render(<App />);
+    screen.getByRole('button', { name: 'Reorder todo: B' }).focus();
+    await user.keyboard('{ArrowUp}');
+    expect(titlesOnBoard()).toEqual(['A', 'B']);
   });
 });
