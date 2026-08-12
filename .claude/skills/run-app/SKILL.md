@@ -63,7 +63,7 @@ Copy it in, don't `import` it from the repo path — Node's ESM resolution for a
 - **Standup section headings are visually uppercased by CSS** (`text-transform: uppercase` on `<h3>`), so `element.innerText` returns `"BLOCKERS"`, not `"Blockers"`. A case-sensitive `.includes('Blockers')` on `innerText` will incorrectly report failure — the underlying text content and the clipboard output are correctly capitalized. Assert case-insensitively, or check `textContent` directly.
 - **"Generate new fortnight" opens an in-app `ConfirmDialog`, not a native `window.confirm`** — no `page.on('dialog', ...)` handler needed or wanted (registering one is dead code now, it'll simply never fire). Wait for the dialog, then click its "Generate" button: `await page.getByRole('dialog', { name: 'Generate new fortnight?' }).waitFor(); await page.getByRole('button', { name: 'Generate' }).click();`.
 - **Clipboard access** ("Copy to clipboard" in the standup modal) needs explicit permission: `context.grantPermissions(['clipboard-read', 'clipboard-write'])`.
-- **File downloads** (Export backup) — `Promise.all([page.waitForEvent('download'), page.click(...)])`, then `download.saveAs(path)`.
+- **File downloads** (the Backup dialog's "Download backup" button) — `Promise.all([page.waitForEvent('download'), page.click(...)])`, then `download.saveAs(path)`.
 
 ## 4. The full smoke flow
 
@@ -75,7 +75,7 @@ Copy it in, don't `import` it from the repo path — Node's ESM resolution for a
 4. Open the standup modal, copy to clipboard, verify the exact copied text
 5. Reload the page → confirms `localStorage` persistence for real (not mocked)
 6. Confirm exactly one `localStorage` key exists (`agile-todo-app.v-state`)
-7. Export a backup, clear storage, reload, import the backup → confirms the full round trip
+7. Open the Backup dialog, download a backup, clear storage, reload, reopen the Backup dialog, pick the downloaded file, and confirm the "Replace board" step → confirms the full round trip
 8. Generate a new fortnight (accepting the confirm dialog) → confirms the switcher lists both fortnights
 9. Resize to a 360px mobile viewport, then switch to dark mode (`emulateMedia({ colorScheme: 'dark' })`)
 10. Keyboard layer — `?` opens the shortcuts overlay, `Cmd`/`Ctrl+K` opens the command palette and finds "Standup" by filtering

@@ -94,24 +94,33 @@ async function run() {
   record('6. single localStorage key', lsKeys.length === 1 && lsKeys[0] === 'agile-todo-app.v-state',
     JSON.stringify(lsKeys));
 
-  // 7. Export -> clear -> import round trip
+  // 7. Backup modal: download -> clear -> import round trip (with confirm step)
+  await page.getByRole('button', { name: 'Backup' }).click();
+  await page.getByRole('dialog', { name: 'Backup' }).waitFor();
+  await shot(page, 'backup-modal');
   const [download] = await Promise.all([
     page.waitForEvent('download'),
-    page.getByRole('button', { name: 'Export backup' }).click(),
+    page.getByRole('button', { name: 'Download backup' }).click(),
   ]);
   const backupPath = path.join(SHOT_DIR, 'backup.json');
   await download.saveAs(backupPath);
   const backupBytes = readFileSync(backupPath, 'utf-8').length;
+  await page.getByRole('button', { name: 'Close' }).click();
 
   await page.evaluate(() => localStorage.clear());
   await page.reload({ waitUntil: 'networkidle' });
   const clearedCount = await page.getByText('Write smoke test').count();
   await shot(page, 'after-clear-storage');
 
-  await page.getByLabel('Import backup').setInputFiles(backupPath);
+  await page.getByRole('button', { name: 'Backup' }).click();
+  await page.getByRole('dialog', { name: 'Backup' }).waitFor();
+  await page.getByLabel('Choose file…').setInputFiles(backupPath);
+  await page.getByRole('button', { name: 'Replace board' }).waitFor();
+  await shot(page, 'backup-confirm');
+  await page.getByRole('button', { name: 'Replace board' }).click();
   await page.getByText('Write smoke test').first().waitFor();
   await shot(page, 'after-import-restored');
-  record('7. export/clear/import round trip', backupBytes > 0 && clearedCount === 0,
+  record('7. backup export/clear/import round trip', backupBytes > 0 && clearedCount === 0,
     `backup=${backupBytes}B, cleared-count=${clearedCount}`);
 
   // 8. Regenerate fortnight (in-app ConfirmDialog, not a native browser dialog)
