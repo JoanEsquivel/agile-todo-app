@@ -115,6 +115,19 @@ describe('HelpModal', () => {
     await user.keyboard('{Escape}');
     expect(onClose).toHaveBeenCalled();
   });
+
+  it('Guide tab documents reorder & re-prioritize', () => {
+    render(<HelpModal initialTab="guide" onClose={vi.fn()} />);
+    expect(screen.getByText('Reorder & re-prioritize')).toBeInTheDocument();
+    expect(screen.getByText(/Drag a todo by its handle/)).toBeInTheDocument();
+  });
+
+  it('Shortcuts tab lists the handle keys', () => {
+    render(<HelpModal initialTab="shortcuts" onClose={vi.fn()} />);
+    expect(screen.getByText('Grab or drop the focused todo handle')).toBeInTheDocument();
+    expect(screen.getByText('Move a grabbed todo (crossing a group changes its priority)')).toBeInTheDocument();
+    expect(screen.getByText('Cancel a grab')).toBeInTheDocument();
+  });
 });
 
 describe('VisitorBadge', () => {

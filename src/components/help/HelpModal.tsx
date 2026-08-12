@@ -31,6 +31,10 @@ const GUIDE_SECTIONS: Array<{ title: string; body: string }> = [
     body: 'Use a todo\'s Add checklist action to break it into sub-items, then expand its counter (e.g. 2/5) to add, check off or remove them. When every item is checked the todo completes itself; unchecking an item reopens it. Checking the todo itself checks or clears the whole list.',
   },
   {
+    title: 'Reorder & re-prioritize',
+    body: 'Drag a todo by its handle to reorder it within its priority group, or drop it in another group to change its priority. Incomplete todos that roll over to today line up after the ones you already arranged.',
+  },
+  {
     title: 'Notes: blockers & info',
     body: 'Press Shift+N to add a note. Unresolved blockers follow you from day to day and appear in the standup until you resolve them; info notes stay where you put them.',
   },
@@ -65,6 +69,9 @@ const SHORTCUTS: Array<{ combo: string[]; description: string }> = [
   { combo: ['⇧', 'N'], description: 'New note' },
   { combo: ['S'], description: 'Standup' },
   { combo: ['P'], description: 'Pomodoro timer' },
+  { combo: ['Space'], description: 'Grab or drop the focused todo handle' },
+  { combo: ['↑', '↓'], description: 'Move a grabbed todo (crossing a group changes its priority)' },
+  { combo: ['Esc'], description: 'Cancel a grab' },
   { combo: ['Esc'], description: 'Close the open form or dialog' },
 ];
 
