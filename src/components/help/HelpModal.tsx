@@ -24,6 +24,10 @@ const GUIDE_SECTIONS: Array<{ title: string; body: string }> = [
     body: 'Press N to add a todo to the selected day, with high, medium or low priority. Click the checkbox to mark it done.',
   },
   {
+    title: 'Checklists',
+    body: 'Use a todo\'s Add checklist action to break it into sub-items, then expand its counter (e.g. 2/5) to add, check off or remove them. When every item is checked the todo completes itself; unchecking an item reopens it. Checking the todo itself checks or clears the whole list.',
+  },
+  {
     title: 'Notes: blockers & info',
     body: 'Press Shift+N to add a note. Unresolved blockers follow you from day to day and appear in the standup until you resolve them; info notes stay where you put them.',
   },

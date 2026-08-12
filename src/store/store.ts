@@ -8,6 +8,12 @@ import {
 } from '../domain/fortnight';
 import { applyRollover, applyNoteRollover } from '../domain/rollover';
 import {
+  setTodoDone,
+  addChecklistItem as domainAddChecklistItem,
+  toggleChecklistItem as domainToggleChecklistItem,
+  removeChecklistItem as domainRemoveChecklistItem,
+} from '../domain/checklist';
+import {
   DEFAULT_POMODORO_SETTINGS, startRun, pauseRun, resumeRun, completePhase, skipPhase,
   type PomodoroRun,
 } from '../domain/pomodoro';
@@ -59,6 +65,11 @@ export interface AppState extends PersistedState {
   rescheduleTodo: (id: string, day: ISODate) => void;
   toggleDone: (id: string) => void;
   deleteTodo: (id: string) => void;
+  /** Generates the item id (crypto.randomUUID(), same mechanism as addTodo),
+   *  trims the text, and silently rejects empty/whitespace-only input. */
+  addChecklistItem: (todoId: string, text: string) => void;
+  toggleChecklistItem: (todoId: string, itemId: string) => void;
+  removeChecklistItem: (todoId: string, itemId: string) => void;
   addNote: (input: { day: ISODate; category: NoteCategory; text: string }) => void;
   updateNote: (id: string, patch: Partial<Pick<Note, 'text' | 'category'>>) => void;
   resolveBlocker: (id: string) => void;
@@ -280,17 +291,35 @@ export const useAppStore = create<AppState>()(
           set((s) => ({ todos: { ...s.todos, [id]: { ...s.todos[id], scheduledDay: day, rolledOver: false } } })),
 
         toggleDone: (id) =>
-          set((s) => {
-            const t = s.todos[id];
-            const done = !t.done;
-            return { todos: { ...s.todos, [id]: { ...t, done, completedAt: done ? nowIso() : undefined } } };
-          }),
+          set((s) => ({ todos: { ...s.todos, [id]: setTodoDone(s.todos[id], !s.todos[id].done, nowIso()) } })),
 
         deleteTodo: (id) =>
           set((s) => {
             const { [id]: removed, ...rest } = s.todos;
             return { todos: rest, announcement: removed ? `Deleted todo: ${removed.title}` : s.announcement };
           }),
+
+        addChecklistItem: (todoId, text) => {
+          const trimmed = text.trim();
+          if (trimmed === '') return;
+          const itemId = crypto.randomUUID();
+          set((s) => ({
+            todos: {
+              ...s.todos,
+              [todoId]: domainAddChecklistItem(s.todos[todoId], { id: itemId, text: trimmed }, nowIso()),
+            },
+          }));
+        },
+
+        toggleChecklistItem: (todoId, itemId) =>
+          set((s) => ({
+            todos: { ...s.todos, [todoId]: domainToggleChecklistItem(s.todos[todoId], itemId, nowIso()) },
+          })),
+
+        removeChecklistItem: (todoId, itemId) =>
+          set((s) => ({
+            todos: { ...s.todos, [todoId]: domainRemoveChecklistItem(s.todos[todoId], itemId, nowIso()) },
+          })),
 
         addNote: (input) => {
           const id = crypto.randomUUID();

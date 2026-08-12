@@ -4,7 +4,7 @@ A browser-only todo board built around a monthly cadence. No backend, no account
 
 **[Live demo →](https://joanesquivel.github.io/agile-todo-app/)**
 
-344 tests · TypeScript strict · zero backend
+377 tests · TypeScript strict · zero backend
 
 Built by [Joan Esquivel](https://www.linkedin.com/in/joanesquivel/) · [source code](https://github.com/JoanEsquivel/agile-todo-app)
 
@@ -14,6 +14,7 @@ Built by [Joan Esquivel](https://www.linkedin.com/in/joanesquivel/) · [source c
 
 - **Month board** — the workdays of the current calendar month, grouped by week, with weekend-anchor rules and roll-forward past month-end handled for you. The day bar is an accordion: the current week expands to full-width day chips, every other week folds to a compact date range you can click to jump there
 - **Daily rollover** — incomplete todos and unresolved blocker notes from past days automatically move forward, flagged as "rolled over"; unresolved blockers also carry forward automatically when a new month begins, so they never get stranded in history
+- **Todo checklists** — break a todo into sub-items you add, check off and remove inline behind a `2/5` counter; when every item is checked the todo completes itself, unchecking one reopens it, and checking the todo itself checks or clears the whole list
 - **Standup generator** — one click produces a Yesterday/Today/Blockers summary, copyable straight to Slack
 - **Visual reminders** — an Overdue/Upcoming panel, no browser notification permissions needed
 - **Per-day notes** — flag a `blocker` (resolvable) or leave an `info` note
@@ -87,7 +88,7 @@ Full architecture rationale, data model, and edge-case decisions: [`docs/superpo
 
 ## Testing
 
-Vitest + React Testing Library, 344 tests across 32 files, all colocated with the code they test. Coverage spans pure domain logic, store transitions, persistence/migration behavior, component interaction, and accessibility.
+Vitest + React Testing Library, 377 tests across 33 files, all colocated with the code they test. Coverage spans pure domain logic, store transitions, persistence/migration behavior, component interaction, and accessibility.
 
 ```sh
 npm test                              # everything

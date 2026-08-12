@@ -213,3 +213,79 @@ describe('pomodoro actions', () => {
     expect(useAppStore.getState().pomodoroSettings.longBreakMinutes).toBe(15);
   });
 });
+
+describe('checklist actions', () => {
+  beforeEach(reset);
+
+  function seedTodo(): string {
+    useAppStore.getState().initApp();
+    useAppStore.getState().addTodo({ title: 'Big task', priority: 'medium', scheduledDay: '2026-08-18' });
+    return Object.values(useAppStore.getState().todos)[0].id;
+  }
+
+  it('addChecklistItem appends an unchecked item with trimmed text and a generated id', () => {
+    const id = seedTodo();
+    useAppStore.getState().addChecklistItem(id, '  first part  ');
+    const checklist = useAppStore.getState().todos[id].checklist!;
+    expect(checklist).toHaveLength(1);
+    expect(checklist[0]).toMatchObject({ text: 'first part', checked: false });
+    expect(checklist[0].id).toEqual(expect.any(String));
+    expect(checklist[0].id).not.toBe('');
+  });
+
+  it('addChecklistItem rejects empty and whitespace-only text', () => {
+    const id = seedTodo();
+    useAppStore.getState().addChecklistItem(id, '');
+    useAppStore.getState().addChecklistItem(id, '   ');
+    expect(useAppStore.getState().todos[id].checklist).toBeUndefined();
+  });
+
+  it('toggleChecklistItem checking the last item completes the todo; unchecking reopens it', () => {
+    const id = seedTodo();
+    useAppStore.getState().addChecklistItem(id, 'only part');
+    const itemId = useAppStore.getState().todos[id].checklist![0].id;
+
+    useAppStore.getState().toggleChecklistItem(id, itemId);
+    let todo = useAppStore.getState().todos[id];
+    expect(todo.checklist![0].checked).toBe(true);
+    expect(todo.done).toBe(true);
+    expect(todo.completedAt).toBe('2026-08-18T12:00:00.000Z');
+
+    useAppStore.getState().toggleChecklistItem(id, itemId);
+    todo = useAppStore.getState().todos[id];
+    expect(todo.done).toBe(false);
+    expect(todo.completedAt).toBeUndefined();
+  });
+
+  it('toggleDone on a checklist todo syncs every item both ways', () => {
+    const id = seedTodo();
+    useAppStore.getState().addChecklistItem(id, 'one');
+    useAppStore.getState().addChecklistItem(id, 'two');
+
+    useAppStore.getState().toggleDone(id);
+    let todo = useAppStore.getState().todos[id];
+    expect(todo.done).toBe(true);
+    expect(todo.completedAt).toBe('2026-08-18T12:00:00.000Z');
+    expect(todo.checklist!.every((i) => i.checked)).toBe(true);
+
+    useAppStore.getState().toggleDone(id);
+    todo = useAppStore.getState().todos[id];
+    expect(todo.done).toBe(false);
+    expect(todo.completedAt).toBeUndefined();
+    expect(todo.checklist!.every((i) => !i.checked)).toBe(true);
+  });
+
+  it('removeChecklistItem removes one item; removing the final item clears the checklist field', () => {
+    const id = seedTodo();
+    useAppStore.getState().addChecklistItem(id, 'one');
+    useAppStore.getState().addChecklistItem(id, 'two');
+    const [a, b] = useAppStore.getState().todos[id].checklist!;
+
+    useAppStore.getState().removeChecklistItem(id, a.id);
+    expect(useAppStore.getState().todos[id].checklist).toHaveLength(1);
+    expect(useAppStore.getState().todos[id].checklist![0].id).toBe(b.id);
+
+    useAppStore.getState().removeChecklistItem(id, b.id);
+    expect(useAppStore.getState().todos[id].checklist).toBeUndefined();
+  });
+});
