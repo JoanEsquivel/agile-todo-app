@@ -1,6 +1,6 @@
 # CLAUDE.md — Agile Todo App
 
-> This app is **finished, tested (390 tests), and deployed**. It is not a scaffold to build out — it's a working product. Changes here should be surgical, not exploratory. Every change ships with tests. Read the invariants below before editing anything under `src/`.
+> This app is **finished, tested (430 tests), and deployed**. It is not a scaffold to build out — it's a working product. Changes here should be surgical, not exploratory. Every change ships with tests. Read the invariants below before editing anything under `src/`.
 
 ## Orientation
 
@@ -8,7 +8,7 @@ Browser-only monthly (calendar-month, workdays-only) todo board, plus a header P
 
 **Stack:** React 19 + TypeScript 7 (strict) + Vite 8 + Zustand 5 (`persist` middleware) + Vitest 4 + React Testing Library + CSS Modules. **No ESLint, no Prettier** — `tsc` with `strict` + `noUnusedLocals` + `noUnusedParameters` is the linter.
 
-**Keyboard model.** `src/hooks/useShortcuts.ts` is a global `keydown` listener mounted once in `App.tsx`: `⌘K`/`Ctrl+K` opens the command palette (`src/components/commands/CommandPalette.tsx`), `?` opens the Help modal on its Shortcuts tab (`src/components/help/HelpModal.tsx` — the header's `HelpButton` opens the same modal on its Guide tab), `←`/`→`/`Home`/`End` move the selected day (the fortnight tape, `src/components/board/FortnightTape.tsx`, has its own roving-tabindex handler for when focus is already on a day button — the two compose via `e.preventDefault()`/`e.defaultPrevented`, not by one knowing about the other), `T` jumps to today, `N`/`Shift+N` open the todo/note compose form, `S` opens Standup, `P` opens the Pomodoro modal (`src/components/pomodoro/`). Every shortcut but `⌘K` bails while focus is in a text-entry control or a `[role=dialog]` is mounted — which is why the always-mounted `PomodoroWidget` in the header uses plain buttons: they stay operable while a dialog has the shortcuts dead. Escape is deliberately *not* handled there — `Modal.tsx` and `TodoForm`/`NoteForm` each own their own, which is what lets Escape work from inside a text field.
+**Keyboard model.** `src/hooks/useShortcuts.ts` is a global `keydown` listener mounted once in `App.tsx`: `⌘K`/`Ctrl+K` opens the command palette (`src/components/commands/CommandPalette.tsx`), `?` opens the Help modal on its Shortcuts tab (`src/components/help/HelpModal.tsx` — the header's `HelpButton` opens the same modal on its Guide tab), `←`/`→`/`Home`/`End` move the selected day (the fortnight tape, `src/components/board/FortnightTape.tsx`, has its own roving-tabindex handler for when focus is already on a day button — the two compose via `e.preventDefault()`/`e.defaultPrevented`, not by one knowing about the other), `T` jumps to today, `N`/`Shift+N` open the todo/note compose form, `S` opens Standup, `P` opens the Pomodoro modal (`src/components/pomodoro/`). Every shortcut but `⌘K` bails while focus is in a text-entry control or a `[role=dialog]` is mounted — which is why the always-mounted `PomodoroWidget` in the header uses plain buttons: they stay operable while a dialog has the shortcuts dead. Escape is deliberately *not* handled there — `Modal.tsx` and `TodoForm`/`NoteForm` each own their own, which is what lets Escape work from inside a text field. Todo cards additionally carry a drag handle with element-local keys (`Space` grab/drop, `↑`/`↓` move, `Escape` cancel — see `TodoItem.tsx`); they coexist with the global listener by living on the handle element itself, and `↑`/`↓` are deliberately unclaimed globally.
 
 **Where to look for what:**
 - Product behavior, edge cases, the "why" behind a rule → [`docs/superpowers/specs/2026-08-10-agile-todo-app-design.md`](docs/superpowers/specs/2026-08-10-agile-todo-app-design.md) (the original approved design spec — product authority), amended by [`docs/superpowers/specs/2026-08-10-monthly-board-redesign-design.md`](docs/superpowers/specs/2026-08-10-monthly-board-redesign-design.md) (the monthly-board redesign — also product authority, for the board grid, scheduling horizon, and navigation UI it amends) and by [`docs/superpowers/specs/2026-08-11-three-month-window-auto-rollover-design.md`](docs/superpowers/specs/2026-08-11-three-month-window-auto-rollover-design.md) (also product authority, for the fixed 3-month retention window, automatic month generation, and the `FortnightNav` stepper it amends)
@@ -22,7 +22,7 @@ Browser-only monthly (calendar-month, workdays-only) todo board, plus a header P
 | Command | What it does |
 |---|---|
 | `npm run dev` | Dev server at `http://localhost:5173` |
-| `npm test` | `vitest run` — 390 tests, ~4s |
+| `npm test` | `vitest run` — 430 tests, ~4s |
 | `npm run typecheck` | `tsc -b --noEmit` — the real typecheck, ~0.3s |
 | `npm run verify` | typecheck + test — **this is the definition of done** |
 | `npm run build` | `tsc -b && vite build` — production build |

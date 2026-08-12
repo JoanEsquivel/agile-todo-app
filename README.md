@@ -4,7 +4,7 @@ A browser-only todo board built around a monthly cadence. No backend, no account
 
 **[Live demo →](https://joanesquivel.github.io/agile-todo-app/)**
 
-390 tests · TypeScript strict · zero backend
+430 tests · TypeScript strict · zero backend
 
 Built by [Joan Esquivel](https://www.linkedin.com/in/joanesquivel/) · [source code](https://github.com/JoanEsquivel/agile-todo-app) · [☕ Buy me a coffee](https://www.paypal.com/paypalme/joanmedia)
 
@@ -15,6 +15,7 @@ Built by [Joan Esquivel](https://www.linkedin.com/in/joanesquivel/) · [source c
 - **Month board** — the workdays of the current calendar month, grouped by week, with weekend-anchor rules and roll-forward past month-end handled for you. The day bar is an accordion: the current week expands to full-width day chips, every other week folds to a compact date range you can click to jump there
 - **Daily rollover** — incomplete todos and unresolved blocker notes from past days automatically move forward, flagged as "rolled over"; unresolved blockers also carry forward automatically when a new month begins, so they never get stranded in history
 - **Todo checklists** — break a todo into sub-items you add, check off and remove inline behind a `2/5` counter; when every item is checked the todo completes itself, unchecking one reopens it, and checking the todo itself checks or clears the whole list
+- **Reorder & re-prioritize** — drag a todo by its handle to reorder it within its priority group, or drop it in another group to change its priority; a full keyboard alternative (`Space` grab/drop, `↑`/`↓` move, `Esc` cancel) works without a mouse
 - **Standup generator** — one click produces a Yesterday/Today/Blockers summary, copyable straight to Slack
 - **Visual reminders** — an Overdue/Upcoming panel, no browser notification permissions needed
 - **Per-day notes** — flag a `blocker` (resolvable) or leave an `info` note
@@ -39,6 +40,9 @@ Built by [Joan Esquivel](https://www.linkedin.com/in/joanesquivel/) · [source c
 | `S` | Standup |
 | `P` | Pomodoro timer |
 | `Esc` | Close the open form or dialog |
+| `Space` (on a todo's drag handle) | Grab or drop the focused todo handle |
+| `↑` / `↓` (on a todo's drag handle) | Move a grabbed todo (crossing a group changes its priority) |
+| `Esc` (on a todo's drag handle) | Cancel a grab |
 
 Every shortcut but `⌘K` stays out of the way while you're typing in a field. `N`/`Shift+N` (and the palette's Add actions) refuse to open a form while you're viewing read-only month history; day navigation always works, since it isn't a mutation.
 
@@ -89,7 +93,7 @@ Full architecture rationale, data model, and edge-case decisions: [`docs/superpo
 
 ## Testing
 
-Vitest + React Testing Library, 390 tests across 33 files, all colocated with the code they test. Coverage spans pure domain logic, store transitions, persistence/migration behavior, component interaction, and accessibility.
+Vitest + React Testing Library, 430 tests across 34 files, all colocated with the code they test. Coverage spans pure domain logic, store transitions, persistence/migration behavior, component interaction, and accessibility.
 
 ```sh
 npm test                              # everything
