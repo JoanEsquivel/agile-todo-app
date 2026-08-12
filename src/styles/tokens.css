@@ -6,12 +6,15 @@
  * brand color at all. Primary and selected states are an *ink fill*
  * (near-black on light, near-white on dark).
  *
- * Saturation is rationed to exactly two roles, and this is the whole idea:
+ * Saturation is rationed to exactly three roles, and this is the whole idea:
  *
  *   1. Semantic content — priority, blocker, overdue, rollover, success.
  *      The only saturated color in the content area *means* something.
  *   2. The focus ring — one violet, used for NOTHING else in the entire app,
  *      so a focus indicator can never be misread as a status color.
+ *   3. The donate CTA — one amber trio, used ONLY for the "Buy me a coffee"
+ *      pill (header + Help modal footer). It lives in the chrome, never as
+ *      a badge in the content area, so it can't be misread as a status color.
  *
  * Most dashboards run a brand accent in direct competition with their status
  * colors. Refusing one is what keeps the semantic palette legible here.
@@ -67,6 +70,13 @@
   --color-focus-ring: light-dark(#5b3df5, #a08cff);
   --focus-ring-width: 2px;
   --focus-ring-offset: 2px;
+
+  /* ---- Color: donate CTA ---- */
+  /* The third saturation role (see header). Same warm amber in both modes —
+   * the pill is its own light surface, so the dark half only tunes hover. */
+  --color-donate-bg: light-dark(#f5b942, #f5b942);
+  --color-donate-bg-hover: light-dark(#eaa92f, #ffc95e);
+  --color-donate-text: light-dark(#3a2a08, #3a2a08);
 
   /* ---- Color: semantic — priority ---- */
   --color-priority-high: light-dark(#c0341c, #f08a6e);
