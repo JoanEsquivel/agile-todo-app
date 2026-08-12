@@ -4,9 +4,9 @@ A browser-only todo board built around a monthly cadence. No backend, no account
 
 **[Live demo →](https://joanesquivel.github.io/agile-todo-app/)**
 
-377 tests · TypeScript strict · zero backend
+383 tests · TypeScript strict · zero backend
 
-Built by [Joan Esquivel](https://www.linkedin.com/in/joanesquivel/) · [source code](https://github.com/JoanEsquivel/agile-todo-app)
+Built by [Joan Esquivel](https://www.linkedin.com/in/joanesquivel/) · [source code](https://github.com/JoanEsquivel/agile-todo-app) · [☕ Buy me a coffee](https://www.paypal.com/paypalme/joanmedia)
 
 ![Screenshot of the Agile Todo App: a single-row header with a running Pomodoro timer and theme toggle, the month tape as an accordion (the current week expanded into day chips, other weeks folded to compact date ranges), and the selected day's Todos and Notes side by side with a high-priority todo and a blocker note](docs/screenshot.png)
 
@@ -23,6 +23,7 @@ Built by [Joan Esquivel](https://www.linkedin.com/in/joanesquivel/) · [source c
 - **Light / dark / system theme** — follows your OS by default, with a manual toggle that persists on your device
 - **Built-in help** — an ⓘ button beside the theme toggle opens a guide to every feature above, plus the full shortcut list
 - **Keyboard-first** — a command palette and a full set of shortcuts; see below
+- **Free & open source** — if it helps your day, you can [buy the author a coffee](https://www.paypal.com/paypalme/joanmedia); the amber pill in the header and the Help modal's footer link there too
 
 ## Keyboard shortcuts
 
@@ -88,7 +89,7 @@ Full architecture rationale, data model, and edge-case decisions: [`docs/superpo
 
 ## Testing
 
-Vitest + React Testing Library, 377 tests across 33 files, all colocated with the code they test. Coverage spans pure domain logic, store transitions, persistence/migration behavior, component interaction, and accessibility.
+Vitest + React Testing Library, 383 tests across 33 files, all colocated with the code they test. Coverage spans pure domain logic, store transitions, persistence/migration behavior, component interaction, and accessibility.
 
 ```sh
 npm test                              # everything
@@ -106,13 +107,13 @@ GitHub Actions builds, tests, and deploys to GitHub Pages on every push to `main
 ## Docs
 
 - [`CLAUDE.md`](CLAUDE.md) — architecture invariants and conventions, for anyone (human or AI) making changes
-- [`docs/superpowers/specs/2026-08-10-agile-todo-app-design.md`](docs/superpowers/specs/2026-08-10-agile-todo-app-design.md) — the design spec, amended by [`docs/superpowers/specs/2026-08-10-monthly-board-redesign-design.md`](docs/superpowers/specs/2026-08-10-monthly-board-redesign-design.md) (the month-board redesign), [`docs/superpowers/specs/2026-08-11-tape-accordion-blocker-rollover-design.md`](docs/superpowers/specs/2026-08-11-tape-accordion-blocker-rollover-design.md) (the day-bar accordion + blocker rollover), [`docs/superpowers/specs/2026-08-11-three-month-window-auto-rollover-design.md`](docs/superpowers/specs/2026-08-11-three-month-window-auto-rollover-design.md) (automatic month rollover, three-month retention, and stepper navigation), and [`docs/superpowers/specs/2026-08-11-help-modal-design.md`](docs/superpowers/specs/2026-08-11-help-modal-design.md) (the header help button + unified Help modal)
+- [`docs/superpowers/specs/2026-08-10-agile-todo-app-design.md`](docs/superpowers/specs/2026-08-10-agile-todo-app-design.md) — the design spec, amended by [`docs/superpowers/specs/2026-08-10-monthly-board-redesign-design.md`](docs/superpowers/specs/2026-08-10-monthly-board-redesign-design.md) (the month-board redesign), [`docs/superpowers/specs/2026-08-11-tape-accordion-blocker-rollover-design.md`](docs/superpowers/specs/2026-08-11-tape-accordion-blocker-rollover-design.md) (the day-bar accordion + blocker rollover), [`docs/superpowers/specs/2026-08-11-three-month-window-auto-rollover-design.md`](docs/superpowers/specs/2026-08-11-three-month-window-auto-rollover-design.md) (automatic month rollover, three-month retention, and stepper navigation), [`docs/superpowers/specs/2026-08-11-help-modal-design.md`](docs/superpowers/specs/2026-08-11-help-modal-design.md) (the header help button + unified Help modal), and [`docs/superpowers/specs/2026-08-11-donate-button-design.md`](docs/superpowers/specs/2026-08-11-donate-button-design.md) (the donate button)
 - [`docs/TECH-DEBT.md`](docs/TECH-DEBT.md) — known, triaged gaps
 - [`docs/ARCHIVE.md`](docs/ARCHIVE.md) — how it was originally built (historical)
 
 ## Author
 
-Built by **Joan Esquivel** — [LinkedIn](https://www.linkedin.com/in/joanesquivel/) · [GitHub](https://github.com/JoanEsquivel). The header of the app links here too.
+Built by **Joan Esquivel** — [LinkedIn](https://www.linkedin.com/in/joanesquivel/) · [GitHub](https://github.com/JoanEsquivel). The header of the app links here too. If the app helps your day, you can [buy me a coffee](https://www.paypal.com/paypalme/joanmedia).
 
 ## License
 

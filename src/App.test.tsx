@@ -35,6 +35,17 @@ describe('App shell', () => {
     expect(source.getAttribute('rel')).toContain('noopener');
   });
 
+  it('renders the donate pill in the header, after the source-code link', () => {
+    render(<App />);
+    const donate = screen.getByRole('link', { name: 'Buy me a coffee' });
+    expect(donate).toHaveAttribute('href', 'https://www.paypal.com/paypalme/joanmedia');
+    expect(donate).toHaveAttribute('target', '_blank');
+    expect(donate.getAttribute('rel')).toContain('noopener');
+
+    const source = screen.getByRole('link', { name: 'Source code on GitHub' });
+    expect(source.compareDocumentPosition(donate) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   it('cycles the theme toggle through system, light, and dark', async () => {
     const user = userEvent.setup();
     render(<App />);

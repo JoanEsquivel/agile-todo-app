@@ -130,6 +130,10 @@ const pairs: Array<[fg: string, bg: string, min: number]> = [
   ['--color-rollover', '--color-rollover-bg', TEXT],
   ['--color-success', '--color-surface', TEXT],
   ['--color-success', '--color-success-bg', TEXT],
+
+  // Donate CTA — the third saturation role (see the tokens.css header).
+  ['--color-donate-text', '--color-donate-bg', TEXT],
+  ['--color-donate-text', '--color-donate-bg-hover', TEXT],
 ];
 
 describe('design tokens', () => {
