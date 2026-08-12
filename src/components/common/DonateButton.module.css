@@ -9,6 +9,7 @@
   font-size: var(--text-sm);
   font-weight: var(--font-weight-semibold);
   white-space: nowrap;
+  text-decoration: none;
   transition: background var(--transition-fast);
 }
 
@@ -21,19 +22,4 @@
   height: 1rem;
   fill: currentColor;
   flex: none;
-}
-
-/* Squeezed header: collapse to an icon-only circle; the aria-label keeps
- * the accessible name. Tune the breakpoint if the header wraps earlier. */
-@media (max-width: 720px) {
-  .label {
-    display: none;
-  }
-
-  .donate {
-    width: 1.875rem;
-    height: 1.875rem;
-    justify-content: center;
-    padding: 0;
-  }
 }
