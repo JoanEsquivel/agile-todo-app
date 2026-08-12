@@ -1,5 +1,6 @@
 import { useId, useState } from 'react';
 import { Modal } from '../common/Modal';
+import { DonateButton } from '../common/DonateButton';
 import styles from './HelpModal.module.css';
 
 export type HelpTab = 'guide' | 'shortcuts';
@@ -137,6 +138,10 @@ export function HelpModal({ initialTab, onClose }: { initialTab: HelpTab; onClos
           </ul>
         </div>
       )}
+      <div className={styles.supportFooter}>
+        <p className={styles.supportText}>Enjoying the app? Support its development!</p>
+        <DonateButton />
+      </div>
     </Modal>
   );
 }

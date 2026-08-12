@@ -66,6 +66,22 @@ describe('HelpModal', () => {
     expect(screen.getByRole('tab', { name: 'Shortcuts' })).toHaveAttribute('tabindex', '-1');
   });
 
+  it('shows the support footer with the donate link, visible from both tabs', async () => {
+    const user = userEvent.setup();
+    render(<HelpModal initialTab="guide" onClose={vi.fn()} />);
+    const dialog = screen.getByRole('dialog', { name: 'Help' });
+
+    const donate = within(dialog).getByRole('link', { name: 'Buy me a coffee' });
+    expect(donate).toHaveAttribute('href', 'https://www.paypal.com/paypalme/joanmedia');
+    expect(donate).toHaveAttribute('target', '_blank');
+    expect(donate.getAttribute('rel')).toContain('noopener');
+    expect(within(dialog).getByText('Enjoying the app? Support its development!')).toBeInTheDocument();
+
+    await user.click(within(dialog).getByRole('tab', { name: 'Shortcuts' }));
+    expect(within(dialog).getByRole('link', { name: 'Buy me a coffee' })).toBeInTheDocument();
+    expect(within(dialog).getByText('Enjoying the app? Support its development!')).toBeInTheDocument();
+  });
+
   it('closes on Escape via the shared Modal', async () => {
     const user = userEvent.setup();
     const onClose = vi.fn();
