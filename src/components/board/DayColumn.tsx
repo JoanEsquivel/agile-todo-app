@@ -107,9 +107,20 @@ export function DayColumn() {
                         </li>,
                       );
                     }
+                    // The indicator must be placed in the same index space
+                    // `useDragReorder`'s computeTarget and domain reorderTodo
+                    // use: the band EXCLUDING the dragged todo. `band` here
+                    // (the render list) still INCLUDES it, so we track a
+                    // separate counter that only advances past non-dragged
+                    // items -- comparing drag.target.index against the raw
+                    // array index `i` (full-band space) is the bug this
+                    // replaced: it put the indicator one slot early on a
+                    // downward drag and could double it at the band end.
+                    let excludedIndex = 0;
                     band.forEach((t, i) => {
+                      const isDragged = drag.dragId === t.id;
                       if (drag.dragId !== null && drag.target?.priority === priority
-                          && drag.target.index === i && drag.dragId !== t.id) {
+                          && !isDragged && drag.target.index === excludedIndex) {
                         rows.push(<li key={`ind-${priority}-${i}`} aria-hidden="true" className={styles.dropIndicator} />);
                       }
                       rows.push(
@@ -121,9 +132,10 @@ export function DayColumn() {
                             dragOffset: drag.dragOffset,
                           }} />,
                       );
+                      if (!isDragged) excludedIndex += 1;
                     });
                     if (drag.dragId !== null && drag.target?.priority === priority
-                        && drag.target.index >= band.filter((t) => t.id !== drag.dragId).length
+                        && drag.target.index === excludedIndex
                         && !(band.length === 1 && band[0].id === drag.dragId)) {
                       rows.push(<li key={`ind-${priority}-end`} aria-hidden="true" className={styles.dropIndicator} />);
                     }

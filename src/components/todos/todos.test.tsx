@@ -239,6 +239,24 @@ describe('keyboard reorder on the drag handle', () => {
     expect(screen.getByRole('button', { name: 'Reorder todo: B' })).toHaveAttribute('aria-pressed', 'false');
   });
 
+  it('grabs with Space, moves down with ArrowDown, drops with Space', async () => {
+    const user = userEvent.setup();
+    const st = useAppStore.getState();
+    st.addTodo({ title: 'A', priority: 'medium', scheduledDay: '2026-08-18' });
+    st.addTodo({ title: 'B', priority: 'medium', scheduledDay: '2026-08-18' });
+    render(<App />);
+    const handle = screen.getByRole('button', { name: 'Reorder todo: A' });
+    handle.focus();
+    await user.keyboard(' ');
+    expect(handle).toHaveAttribute('aria-pressed', 'true');
+    await user.keyboard('{ArrowDown}');
+    expect(titlesOnBoard()).toEqual(['B', 'A']);
+    expect(useAppStore.getState().announcement).toBe('Moved "A" to Medium, position 2 of 2');
+    expect(screen.getByRole('button', { name: 'Reorder todo: A' })).toHaveAttribute('aria-pressed', 'true');
+    await user.keyboard(' ');
+    expect(screen.getByRole('button', { name: 'Reorder todo: A' })).toHaveAttribute('aria-pressed', 'false');
+  });
+
   it('crossing a band boundary with arrows changes priority', async () => {
     const user = userEvent.setup();
     const st = useAppStore.getState();

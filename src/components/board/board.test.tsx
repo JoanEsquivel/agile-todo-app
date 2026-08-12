@@ -149,6 +149,80 @@ describe('pointer drag reorder', () => {
     expect(titles).toEqual(['C', 'A', 'B']);
   });
 
+  // Regression coverage for IMP-1: the drop indicator must be placed in the
+  // same index space useDragReorder's computeTarget and domain reorderTodo
+  // use (the band EXCLUDING the dragged todo), not the full render band
+  // (dragged item included). A downward same-band drag used to render the
+  // indicator one slot early; a drag to the very end of a band used to
+  // render it twice.
+  it('places exactly one indicator between the two items straddling the drop point on a downward same-band drag', () => {
+    const st = useAppStore.getState();
+    st.addTodo({ title: 'A', priority: 'medium', scheduledDay: '2026-08-18' });
+    st.addTodo({ title: 'B', priority: 'medium', scheduledDay: '2026-08-18' });
+    st.addTodo({ title: 'C', priority: 'medium', scheduledDay: '2026-08-18' });
+    const { container } = render(<App />);
+    const handle = screen.getByRole('button', { name: 'Reorder todo: A' });
+    fireEvent.pointerDown(handle, { pointerId: 1, clientY: 80 });
+    // Layout: separators High@0, Medium@40, Low@400; items A@80, B@160, C@240 (height 60).
+    const seps = Array.from(container.querySelectorAll('[class*="bandSeparator"]')) as HTMLElement[];
+    const items = screen.getAllByRole('listitem').filter((li) =>
+      within(li).queryByRole('button', { name: /^Reorder todo: / }));
+    mockRects([
+      { el: seps[0], top: 0, height: 20 }, { el: seps[1], top: 40, height: 20 },
+      { el: seps[2], top: 400, height: 20 },
+      { el: items[0], top: 80, height: 60 }, { el: items[1], top: 160, height: 60 },
+      { el: items[2], top: 240, height: 60 },
+    ]);
+    // Between B's midpoint (190) and C's midpoint (270) -> excluded-space index 1.
+    fireEvent.pointerMove(handle, { pointerId: 1, clientY: 230 });
+
+    const indicators = container.querySelectorAll('[class*="dropIndicator"]');
+    expect(indicators).toHaveLength(1);
+    const list = items[0].parentElement!;
+    const domOrder = Array.from(list.children);
+    expect(domOrder.indexOf(indicators[0] as Element)).toBeGreaterThan(domOrder.indexOf(items[1]));
+    expect(domOrder.indexOf(indicators[0] as Element)).toBeLessThan(domOrder.indexOf(items[2]));
+
+    fireEvent.pointerUp(handle, { pointerId: 1, clientY: 230 });
+    const s = useAppStore.getState();
+    const fn = s.fortnights.find((f) => f.id === s.activeFortnightId)!;
+    const titles = selectTodosForDay(s, fn.id, '2026-08-18').map((t) => t.title);
+    expect(titles).toEqual(['B', 'A', 'C']);
+  });
+
+  it('places exactly one indicator after the last item on a drag to the end of the band', () => {
+    const st = useAppStore.getState();
+    st.addTodo({ title: 'A', priority: 'medium', scheduledDay: '2026-08-18' });
+    st.addTodo({ title: 'B', priority: 'medium', scheduledDay: '2026-08-18' });
+    st.addTodo({ title: 'C', priority: 'medium', scheduledDay: '2026-08-18' });
+    const { container } = render(<App />);
+    const handle = screen.getByRole('button', { name: 'Reorder todo: B' });
+    fireEvent.pointerDown(handle, { pointerId: 1, clientY: 160 });
+    const seps = Array.from(container.querySelectorAll('[class*="bandSeparator"]')) as HTMLElement[];
+    const items = screen.getAllByRole('listitem').filter((li) =>
+      within(li).queryByRole('button', { name: /^Reorder todo: / }));
+    mockRects([
+      { el: seps[0], top: 0, height: 20 }, { el: seps[1], top: 40, height: 20 },
+      { el: seps[2], top: 400, height: 20 },
+      { el: items[0], top: 80, height: 60 }, { el: items[1], top: 160, height: 60 },
+      { el: items[2], top: 240, height: 60 },
+    ]);
+    // Below C's midpoint (270) -> excluded-space index 2, the end of the band.
+    fireEvent.pointerMove(handle, { pointerId: 1, clientY: 300 });
+
+    const indicators = container.querySelectorAll('[class*="dropIndicator"]');
+    expect(indicators).toHaveLength(1);
+    const list = items[0].parentElement!;
+    const domOrder = Array.from(list.children);
+    expect(domOrder.indexOf(indicators[0] as Element)).toBeGreaterThan(domOrder.indexOf(items[2]));
+
+    fireEvent.pointerUp(handle, { pointerId: 1, clientY: 300 });
+    const s = useAppStore.getState();
+    const fn = s.fortnights.find((f) => f.id === s.activeFortnightId)!;
+    const titles = selectTodosForDay(s, fn.id, '2026-08-18').map((t) => t.title);
+    expect(titles).toEqual(['A', 'C', 'B']);
+  });
+
   it('dropping in another band re-prioritizes', () => {
     const st = useAppStore.getState();
     st.addTodo({ title: 'H', priority: 'high', scheduledDay: '2026-08-18' });
