@@ -1,6 +1,7 @@
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, within, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { HelpModal } from './HelpModal';
+import { VisitorBadge, _resetVisitorBadgeCacheForTests } from './VisitorBadge';
 import App from '../../App';
 import { seedApp } from '../../test/seed';
 import { useAppStore } from '../../store/store';
@@ -9,6 +10,15 @@ vi.mock('../../store/clock', () => ({
   todayLocal: () => '2026-08-18',
   nowIso: () => '2026-08-18T12:00:00.000Z',
 }));
+
+beforeEach(() => {
+  _resetVisitorBadgeCacheForTests();
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve({ count: '0' }) }));
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
 
 describe('HelpModal', () => {
   it('opens on the Guide tab and lists the feature guide', () => {
@@ -88,6 +98,68 @@ describe('HelpModal', () => {
     render(<HelpModal initialTab="guide" onClose={onClose} />);
     await user.keyboard('{Escape}');
     expect(onClose).toHaveBeenCalled();
+  });
+});
+
+describe('VisitorBadge', () => {
+  it('renders the formatted visit count as a link to the public dashboard once loaded', async () => {
+    (fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ count_unique: '1 234', count: '1 234' }),
+    });
+    render(<VisitorBadge />);
+    const link = await screen.findByRole('link', { name: '1,234 visits — view public analytics' });
+    expect(link).toHaveAttribute('href', 'https://agile-todo-app.goatcounter.com');
+    expect(link).toHaveAttribute('target', '_blank');
+    expect(link.getAttribute('rel')).toContain('noopener');
+    expect(link).toHaveTextContent('1,234 visits');
+  });
+
+  it('calls the exact public counter endpoint', () => {
+    (fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ count_unique: '5', count: '5' }),
+    });
+    render(<VisitorBadge />);
+    expect(fetch).toHaveBeenCalledWith(
+      'https://agile-todo-app.goatcounter.com/counter/TOTAL.json',
+      expect.anything(),
+    );
+  });
+
+  it('renders nothing when the fetch fails (adblocker/offline)', async () => {
+    (fetch as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('blocked'));
+    const { container } = render(<VisitorBadge />);
+    await waitFor(() => expect(fetch).toHaveBeenCalled());
+    expect(container).toBeEmptyDOMElement();
+  });
+
+  it('renders nothing when the response is a non-OK status', async () => {
+    (fetch as ReturnType<typeof vi.fn>).mockResolvedValue({ ok: false, json: () => Promise.resolve({}) });
+    const { container } = render(<VisitorBadge />);
+    await waitFor(() => expect(fetch).toHaveBeenCalled());
+    expect(container).toBeEmptyDOMElement();
+  });
+
+  it('renders nothing when the response body is malformed', async () => {
+    (fetch as ReturnType<typeof vi.fn>).mockResolvedValue({ ok: true, json: () => Promise.resolve({ nope: true }) });
+    const { container } = render(<VisitorBadge />);
+    await waitFor(() => expect(fetch).toHaveBeenCalled());
+    expect(container).toBeEmptyDOMElement();
+  });
+
+  it('caches the count for the session — a second mount does not re-fetch', async () => {
+    (fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ count_unique: '42', count: '42' }),
+    });
+    const first = render(<VisitorBadge />);
+    await screen.findByRole('link', { name: '42 visits — view public analytics' });
+    first.unmount();
+
+    render(<VisitorBadge />);
+    expect(await screen.findByRole('link', { name: '42 visits — view public analytics' })).toBeInTheDocument();
+    expect(fetch).toHaveBeenCalledTimes(1);
   });
 });
 
