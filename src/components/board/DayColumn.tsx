@@ -2,6 +2,7 @@ import { useEffect, useId, useRef } from 'react';
 import { useAppStore } from '../../store/store';
 import { selectIsReadOnly, selectNotesForDay, selectTodosForDay, selectViewedFortnight } from '../../store/selectors';
 import { formatDayLabel } from '../../domain/dates';
+import { useDragReorder } from '../../hooks/useDragReorder';
 import { EmptyState } from '../common/EmptyState';
 import { TodoItem } from '../todos/TodoItem';
 import { TodoForm } from '../todos/TodoForm';
@@ -29,10 +30,13 @@ export function DayColumn() {
     setComposeIntent(null);
   }, [fn?.id, setComposeIntent]);
 
-  if (!fn) return null;
-  const day = state.selectedDay ?? fn.days[0];
+  const day = state.selectedDay ?? fn?.days[0] ?? null;
+  const todos = fn && day ? selectTodosForDay(state, fn.id, day) : [];
+  const pending = todos.filter((t) => !t.done);
+  const doneTodos = todos.filter((t) => t.done);
+  const drag = useDragReorder(pending, `${fn?.id ?? ''}:${day ?? ''}`);
+  if (!fn || !day) return null;
   const readOnly = selectIsReadOnly(state);
-  const todos = selectTodosForDay(state, fn.id, day);
   const notes = selectNotesForDay(state, fn.id, day);
 
   const closeTodoForm = () => {
@@ -80,7 +84,55 @@ export function DayColumn() {
           {!readOnly && adding && <TodoForm id={todoFormId} day={day} days={fn.days} onClose={closeTodoForm} />}
           {todos.length === 0
             ? <EmptyState message="No todos for this day" />
-            : <ul className={styles.list}>{todos.map((t) => <TodoItem key={t.id} todo={t} readOnly={readOnly} />)}</ul>}
+            : (
+              <ul className={styles.list}>
+                {(() => {
+                  // Built as ONE flat array (not separate JSX expressions per
+                  // band/done-section) so every TodoItem — pending or done —
+                  // lives in the same reconciliation context. Splitting it
+                  // into multiple top-level arrays let React treat a todo
+                  // that flips to done (e.g. via its last checklist item) as
+                  // moving out of one array and into another, which remounts
+                  // the component and silently drops local state such as
+                  // `checklistOpen` — a real regression caught by
+                  // todos.test.tsx's "checking the last item" case.
+                  const rows: React.ReactNode[] = [];
+                  for (const priority of ['high', 'medium', 'low'] as const) {
+                    const band = pending.filter((t) => t.priority === priority);
+                    if (drag.dragId !== null) {
+                      rows.push(
+                        <li key={`sep-${priority}`} aria-hidden="true"
+                            ref={drag.registerSeparator(priority)} className={styles.bandSeparator}>
+                          {priority === 'high' ? 'High' : priority === 'medium' ? 'Medium' : 'Low'}
+                        </li>,
+                      );
+                    }
+                    band.forEach((t, i) => {
+                      if (drag.dragId !== null && drag.target?.priority === priority
+                          && drag.target.index === i && drag.dragId !== t.id) {
+                        rows.push(<li key={`ind-${priority}-${i}`} aria-hidden="true" className={styles.dropIndicator} />);
+                      }
+                      rows.push(
+                        <TodoItem key={t.id} todo={t} readOnly={readOnly}
+                          reorder={readOnly ? undefined : {
+                            handleProps: drag.getHandleProps(t),
+                            itemRef: drag.registerItem(t.id),
+                            dragging: drag.dragId === t.id,
+                            dragOffset: drag.dragOffset,
+                          }} />,
+                      );
+                    });
+                    if (drag.dragId !== null && drag.target?.priority === priority
+                        && drag.target.index >= band.filter((t) => t.id !== drag.dragId).length
+                        && !(band.length === 1 && band[0].id === drag.dragId)) {
+                      rows.push(<li key={`ind-${priority}-end`} aria-hidden="true" className={styles.dropIndicator} />);
+                    }
+                  }
+                  doneTodos.forEach((t) => rows.push(<TodoItem key={t.id} todo={t} readOnly={readOnly} />));
+                  return rows;
+                })()}
+              </ul>
+            )}
         </section>
         <section className={styles.section} aria-label="Notes">
           <div className={styles.sectionHead}>

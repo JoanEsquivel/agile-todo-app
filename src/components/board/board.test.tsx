@@ -1,7 +1,8 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import App from '../../App';
 import { seedApp } from '../../test/seed';
 import { useAppStore } from '../../store/store';
+import { selectTodosForDay } from '../../store/selectors';
 
 vi.mock('../../store/clock', () => ({
   todayLocal: () => '2026-08-18',
@@ -87,5 +88,97 @@ describe('board row-alignment DOM contract', () => {
     expect(todosRegion.parentElement).not.toBe(board);
     // Reminders is a direct child of <main>, same row as .column.
     expect(remindersAside.parentElement).toBe(board);
+  });
+});
+
+function mockRects(rows: Array<{ el: HTMLElement; top: number; height: number }>) {
+  for (const { el, top, height } of rows) {
+    vi.spyOn(el, 'getBoundingClientRect').mockReturnValue({
+      top, height, bottom: top + height, left: 0, right: 100, width: 100, x: 0, y: top,
+      toJSON: () => ({}),
+    } as DOMRect);
+  }
+}
+
+describe('pointer drag reorder', () => {
+  beforeEach(() => seedApp());
+
+  it('shows no drag handles in read-only history or on done todos', async () => {
+    useAppStore.getState().addTodo({ title: 'Pending', priority: 'high', scheduledDay: '2026-08-18' });
+    useAppStore.getState().addTodo({ title: 'Finished', priority: 'high', scheduledDay: '2026-08-18' });
+    const done = Object.values(useAppStore.getState().todos).find((t) => t.title === 'Finished')!;
+    useAppStore.getState().toggleDone(done.id);
+    render(<App />);
+    expect(screen.getByRole('button', { name: 'Reorder todo: Pending' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Reorder todo: Finished' })).not.toBeInTheDocument();
+  });
+
+  it('band separators appear only while dragging', () => {
+    useAppStore.getState().addTodo({ title: 'Solo', priority: 'medium', scheduledDay: '2026-08-18' });
+    const { container } = render(<App />);
+    expect(container.querySelector('[class*="bandSeparator"]')).toBeNull();
+    fireEvent.pointerDown(screen.getByRole('button', { name: 'Reorder todo: Solo' }), { pointerId: 1, clientY: 10 });
+    expect(container.querySelectorAll('[class*="bandSeparator"]')).toHaveLength(3); // High, Medium, Low
+    fireEvent.pointerUp(screen.getByRole('button', { name: 'Reorder todo: Solo' }), { pointerId: 1, clientY: 10 });
+    expect(container.querySelector('[class*="bandSeparator"]')).toBeNull();
+  });
+
+  it('drops a todo at a new slot in its own band', () => {
+    const st = useAppStore.getState();
+    st.addTodo({ title: 'A', priority: 'medium', scheduledDay: '2026-08-18' });
+    st.addTodo({ title: 'B', priority: 'medium', scheduledDay: '2026-08-18' });
+    st.addTodo({ title: 'C', priority: 'medium', scheduledDay: '2026-08-18' });
+    const { container } = render(<App />);
+    const handle = screen.getByRole('button', { name: 'Reorder todo: C' });
+    fireEvent.pointerDown(handle, { pointerId: 1, clientY: 250 });
+    // Layout: separators High@0, Medium@40, Low@400; items A@80, B@160, C@240 (height 60).
+    const seps = Array.from(container.querySelectorAll('[class*="bandSeparator"]')) as HTMLElement[];
+    const items = screen.getAllByRole('listitem').filter((li) =>
+      within(li).queryByRole('button', { name: /^Reorder todo: / }));
+    mockRects([
+      { el: seps[0], top: 0, height: 20 }, { el: seps[1], top: 40, height: 20 },
+      { el: seps[2], top: 400, height: 20 },
+      { el: items[0], top: 80, height: 60 }, { el: items[1], top: 160, height: 60 },
+      { el: items[2], top: 240, height: 60 },
+    ]);
+    fireEvent.pointerMove(handle, { pointerId: 1, clientY: 100 }); // above A's midpoint? A mid=110 → index 0
+    fireEvent.pointerUp(handle, { pointerId: 1, clientY: 100 });
+    const s = useAppStore.getState();
+    const fn = s.fortnights.find((f) => f.id === s.activeFortnightId)!;
+    const titles = selectTodosForDay(s, fn.id, '2026-08-18').map((t) => t.title);
+    expect(titles).toEqual(['C', 'A', 'B']);
+  });
+
+  it('dropping in another band re-prioritizes', () => {
+    const st = useAppStore.getState();
+    st.addTodo({ title: 'H', priority: 'high', scheduledDay: '2026-08-18' });
+    st.addTodo({ title: 'M', priority: 'medium', scheduledDay: '2026-08-18' });
+    const { container } = render(<App />);
+    const handle = screen.getByRole('button', { name: 'Reorder todo: M' });
+    fireEvent.pointerDown(handle, { pointerId: 1, clientY: 200 });
+    const seps = Array.from(container.querySelectorAll('[class*="bandSeparator"]')) as HTMLElement[];
+    const items = screen.getAllByRole('listitem').filter((li) =>
+      within(li).queryByRole('button', { name: /^Reorder todo: / }));
+    mockRects([
+      { el: seps[0], top: 0, height: 20 }, { el: seps[1], top: 120, height: 20 },
+      { el: seps[2], top: 400, height: 20 },
+      { el: items[0], top: 40, height: 60 }, { el: items[1], top: 160, height: 60 },
+    ]);
+    fireEvent.pointerMove(handle, { pointerId: 1, clientY: 30 }); // above Medium sep → High band, below H's mid(70)? 30 < 70 → index 0
+    fireEvent.pointerUp(handle, { pointerId: 1, clientY: 30 });
+    const m = Object.values(useAppStore.getState().todos).find((t) => t.title === 'M')!;
+    expect(m.priority).toBe('high');
+    expect(m.sortIndex).toBe(0);
+  });
+
+  it('pointercancel aborts without committing', () => {
+    const st = useAppStore.getState();
+    st.addTodo({ title: 'A', priority: 'medium', scheduledDay: '2026-08-18' });
+    st.addTodo({ title: 'B', priority: 'medium', scheduledDay: '2026-08-18' });
+    render(<App />);
+    const handle = screen.getByRole('button', { name: 'Reorder todo: B' });
+    fireEvent.pointerDown(handle, { pointerId: 1, clientY: 100 });
+    fireEvent.pointerCancel(handle, { pointerId: 1 });
+    expect(Object.values(useAppStore.getState().todos).every((t) => t.sortIndex === undefined)).toBe(true);
   });
 });

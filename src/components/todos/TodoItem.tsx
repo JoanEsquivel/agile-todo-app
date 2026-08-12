@@ -7,7 +7,16 @@ import { TodoForm } from './TodoForm';
 import { useNow } from '../../hooks/useNow';
 import styles from './TodoItem.module.css';
 
-export function TodoItem({ todo, readOnly }: { todo: Todo; readOnly: boolean }) {
+export interface ReorderProps {
+  handleProps: React.HTMLAttributes<HTMLButtonElement>;
+  itemRef: (el: HTMLElement | null) => void;
+  dragging: boolean;
+  dragOffset: number;
+}
+
+export function TodoItem({ todo, readOnly, reorder }: {
+  todo: Todo; readOnly: boolean; reorder?: ReorderProps;
+}) {
   const [editing, setEditing] = useState(false);
   // Ephemeral by spec: collapsed by default, dies with the card, never persisted.
   const [checklistOpen, setChecklistOpen] = useState(false);
@@ -37,8 +46,23 @@ export function TodoItem({ todo, readOnly }: { todo: Todo; readOnly: boolean }) 
   };
 
   return (
-    <li className={styles.item} data-done={todo.done ? '' : undefined}>
+    <li
+      ref={reorder?.itemRef}
+      className={reorder?.dragging ? `${styles.item} ${styles.itemDragging}` : styles.item}
+      style={reorder?.dragging ? { transform: `translateY(${reorder.dragOffset}px)` } : undefined}
+      data-done={todo.done ? '' : undefined}
+    >
       <div className={styles.row}>
+        {!readOnly && !todo.done && reorder && (
+          <button
+            type="button"
+            className={styles.handle}
+            aria-label={`Reorder todo: ${todo.title}`}
+            {...reorder.handleProps}
+          >
+            <span aria-hidden="true">⋮⋮</span>
+          </button>
+        )}
         <input className={styles.checkbox} type="checkbox" aria-label={todo.title} checked={todo.done}
           disabled={readOnly} onChange={() => toggleDone(todo.id)} />
         <div className={styles.body}>
