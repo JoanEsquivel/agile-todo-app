@@ -17,6 +17,7 @@ export function selectTodosForDay(s: AppState, fortnightId: string, day: ISODate
     .sort((a, b) =>
       Number(a.done) - Number(b.done) ||
       PRIORITY_RANK[a.priority] - PRIORITY_RANK[b.priority] ||
+      (a.sortIndex ?? Number.MAX_SAFE_INTEGER) - (b.sortIndex ?? Number.MAX_SAFE_INTEGER) ||
       a.createdAt.localeCompare(b.createdAt),
     );
 }

@@ -36,6 +36,28 @@ describe('selectors', () => {
     expect(titles).toEqual(['high', 'low', 'done-high']);
   });
 
+  it('selectTodosForDay respects sortIndex within a band, absent-index todos last', () => {
+    const st = useAppStore.getState();
+    st.addTodo({ title: 'first-created', priority: 'medium', scheduledDay: '2026-08-18' });
+    st.addTodo({ title: 'second-created', priority: 'medium', scheduledDay: '2026-08-18' });
+    st.addTodo({ title: 'legacy', priority: 'medium', scheduledDay: '2026-08-18' });
+    const byTitle = (title: string) =>
+      Object.values(useAppStore.getState().todos).find((t) => t.title === title)!;
+    useAppStore.setState((prev) => ({
+      todos: {
+        ...prev.todos,
+        [byTitle('second-created').id]: { ...byTitle('second-created'), sortIndex: 0 },
+        [byTitle('first-created').id]: { ...byTitle('first-created'), sortIndex: 1 },
+        // 'legacy' keeps no sortIndex — must sort last despite earliest creation
+      },
+    }));
+
+    const s = useAppStore.getState();
+    const fn = selectViewedFortnight(s)!;
+    const titles = selectTodosForDay(s, fn.id, '2026-08-18').map((t) => t.title);
+    expect(titles).toEqual(['second-created', 'first-created', 'legacy']);
+  });
+
   describe('selectDayWorkload', () => {
     it('omits a day with no todos rather than mapping it to an empty array', () => {
       const s = useAppStore.getState();
