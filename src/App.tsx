@@ -8,7 +8,8 @@ import { FortnightBoard } from './components/board/FortnightBoard';
 import { FortnightTape } from './components/board/FortnightTape';
 import { StandupModal } from './components/standup/StandupModal';
 import { FortnightNav } from './components/history/FortnightNav';
-import { BackupControls } from './components/common/BackupControls';
+import { BackupButton } from './components/common/BackupButton';
+import { BackupModal } from './components/common/BackupModal';
 import { AuthorLinks } from './components/common/AuthorLinks';
 import { ThemeToggle } from './components/common/ThemeToggle';
 import { Announcer } from './components/common/Announcer';
@@ -29,6 +30,7 @@ export default function App() {
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState<HelpTab | null>(null);
   const [pomodoroOpen, setPomodoroOpen] = useState(false);
+  const [backupOpen, setBackupOpen] = useState(false);
   useShortcuts({
     onOpenStandup: () => setStandupOpen(true),
     onOpenPalette: () => setPaletteOpen(true),
@@ -69,7 +71,7 @@ export default function App() {
         <div className={styles.headerActions}>
           <button className={styles.primaryAction} onClick={() => setStandupOpen(true)}>Standup</button>
           <FortnightNav />
-          <BackupControls />
+          <BackupButton onClick={() => setBackupOpen(true)} />
           <PomodoroWidget onOpenModal={() => setPomodoroOpen(true)} />
           <HelpButton onClick={() => setHelpOpen('guide')} />
           <ThemeToggle />
@@ -91,6 +93,7 @@ export default function App() {
       {paletteOpen && <CommandPalette onClose={() => setPaletteOpen(false)} actions={paletteActions} />}
       {helpOpen && <HelpModal initialTab={helpOpen} onClose={() => setHelpOpen(null)} />}
       {pomodoroOpen && <PomodoroModal onClose={() => setPomodoroOpen(false)} />}
+      {backupOpen && <BackupModal onClose={() => setBackupOpen(false)} />}
     </div>
   );
 }
