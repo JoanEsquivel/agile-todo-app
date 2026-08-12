@@ -98,7 +98,7 @@ npx vitest run src/domain/dates.test.ts   # one file
 
 ## Data & privacy
 
-Everything is stored under a single `localStorage` key (`agile-todo-app.v-state`), plus one tiny `agile-todo-app.theme` key when you pick a manual theme. Nothing is ever sent over the network. Clearing your browser's site data deletes everything — export a JSON backup first if you want to keep it.
+Everything is stored under a single `localStorage` key (`agile-todo-app.v-state`), plus one tiny `agile-todo-app.theme` key when you pick a manual theme. Your data itself never leaves the browser — the only network traffic is an anonymous GoatCounter visit beacon and read, blockable with zero effect on the app. Clearing your browser's site data deletes everything — export a JSON backup first if you want to keep it.
 
 ## Deployment
 
@@ -107,7 +107,7 @@ GitHub Actions builds, tests, and deploys to GitHub Pages on every push to `main
 ## Docs
 
 - [`CLAUDE.md`](CLAUDE.md) — architecture invariants and conventions, for anyone (human or AI) making changes
-- [`docs/superpowers/specs/2026-08-10-agile-todo-app-design.md`](docs/superpowers/specs/2026-08-10-agile-todo-app-design.md) — the design spec, amended by [`docs/superpowers/specs/2026-08-10-monthly-board-redesign-design.md`](docs/superpowers/specs/2026-08-10-monthly-board-redesign-design.md) (the month-board redesign), [`docs/superpowers/specs/2026-08-11-tape-accordion-blocker-rollover-design.md`](docs/superpowers/specs/2026-08-11-tape-accordion-blocker-rollover-design.md) (the day-bar accordion + blocker rollover), [`docs/superpowers/specs/2026-08-11-three-month-window-auto-rollover-design.md`](docs/superpowers/specs/2026-08-11-three-month-window-auto-rollover-design.md) (automatic month rollover, three-month retention, and stepper navigation), [`docs/superpowers/specs/2026-08-11-help-modal-design.md`](docs/superpowers/specs/2026-08-11-help-modal-design.md) (the header help button + unified Help modal), and [`docs/superpowers/specs/2026-08-11-donate-button-design.md`](docs/superpowers/specs/2026-08-11-donate-button-design.md) (the donate button)
+- [`docs/superpowers/specs/2026-08-10-agile-todo-app-design.md`](docs/superpowers/specs/2026-08-10-agile-todo-app-design.md) — the design spec, amended by [`docs/superpowers/specs/2026-08-10-monthly-board-redesign-design.md`](docs/superpowers/specs/2026-08-10-monthly-board-redesign-design.md) (the month-board redesign), [`docs/superpowers/specs/2026-08-11-tape-accordion-blocker-rollover-design.md`](docs/superpowers/specs/2026-08-11-tape-accordion-blocker-rollover-design.md) (the day-bar accordion + blocker rollover), [`docs/superpowers/specs/2026-08-11-three-month-window-auto-rollover-design.md`](docs/superpowers/specs/2026-08-11-three-month-window-auto-rollover-design.md) (automatic month rollover, three-month retention, and stepper navigation), [`docs/superpowers/specs/2026-08-11-help-modal-design.md`](docs/superpowers/specs/2026-08-11-help-modal-design.md) (the header help button + unified Help modal), and [`docs/superpowers/specs/2026-08-11-donate-button-design.md`](docs/superpowers/specs/2026-08-11-donate-button-design.md) (the donate button), and [`docs/superpowers/specs/2026-08-11-visitor-count-badge-design.md`](docs/superpowers/specs/2026-08-11-visitor-count-badge-design.md) (anonymous visit tracking + the Help modal badge)
 - [`docs/TECH-DEBT.md`](docs/TECH-DEBT.md) — known, triaged gaps
 - [`docs/ARCHIVE.md`](docs/ARCHIVE.md) — how it was originally built (historical)
 

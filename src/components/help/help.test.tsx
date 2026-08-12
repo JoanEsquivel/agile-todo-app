@@ -34,6 +34,7 @@ describe('HelpModal', () => {
     expect(panel).toHaveTextContent('When every item is checked the todo completes itself');
     expect(panel).toHaveTextContent('Standup');
     expect(panel).toHaveTextContent('Backup & theme');
+    expect(panel).toHaveTextContent('Privacy & analytics');
     // Placed right after the todos section, where the feature lives.
     const text = panel.textContent ?? '';
     expect(text.indexOf('Checklists')).toBeGreaterThan(text.indexOf('Todos & priorities'));

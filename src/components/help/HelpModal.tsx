@@ -6,7 +6,8 @@ import styles from './HelpModal.module.css';
 
 export type HelpTab = 'guide' | 'shortcuts';
 
-// Guide copy is spec-final (docs/superpowers/specs/2026-08-11-help-modal-design.md §4):
+// Guide copy is spec-final (docs/superpowers/specs/2026-08-11-help-modal-design.md §4,
+// amended by docs/superpowers/specs/2026-08-11-visitor-count-badge-design.md §6):
 // every claim must stay verifiable app behavior.
 const GUIDE_SECTIONS: Array<{ title: string; body: string }> = [
   {
@@ -44,6 +45,10 @@ const GUIDE_SECTIONS: Array<{ title: string; body: string }> = [
   {
     title: 'Backup & theme',
     body: 'Export downloads your whole board as a JSON file; Import restores it. The sun/moon button switches between light, dark and system theme.',
+  },
+  {
+    title: 'Privacy & analytics',
+    body: 'The app collects anonymous, cookie-free visit counts — no personal data, no cookies. The badge in the footer below links to the public analytics dashboard.',
   },
 ];
 
