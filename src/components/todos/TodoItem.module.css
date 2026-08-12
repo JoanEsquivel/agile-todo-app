@@ -34,17 +34,22 @@
 }
 
 .handle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   flex: 0 0 auto;
   padding: 0 var(--space-1);
   margin-top: 0.1rem;
   border: none;
   background: none;
   color: var(--color-text-faint);
-  font-size: var(--text-sm);
-  line-height: var(--line-height-tight);
-  letter-spacing: -0.15em;
   cursor: grab;
   touch-action: none; /* pointer events must win over touch scrolling */
+}
+
+.handle svg {
+  width: 0.875rem;
+  height: 0.875rem;
 }
 
 .handle:hover {
