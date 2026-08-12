@@ -1,10 +1,10 @@
 # CLAUDE.md — Agile Todo App
 
-> This app is **finished, tested (383 tests), and deployed**. It is not a scaffold to build out — it's a working product. Changes here should be surgical, not exploratory. Every change ships with tests. Read the invariants below before editing anything under `src/`.
+> This app is **finished, tested (390 tests), and deployed**. It is not a scaffold to build out — it's a working product. Changes here should be surgical, not exploratory. Every change ships with tests. Read the invariants below before editing anything under `src/`.
 
 ## Orientation
 
-Browser-only monthly (calendar-month, workdays-only) todo board, plus a header Pomodoro timer and a manual light/dark/system theme toggle. No backend, no network calls, no accounts — everything lives in one versioned JSON document in `localStorage` (plus one tiny separate key for the theme preference — see INV-12).
+Browser-only monthly (calendar-month, workdays-only) todo board, plus a header Pomodoro timer and a manual light/dark/system theme toggle. No backend, no accounts — everything lives in one versioned JSON document in `localStorage` (plus one tiny separate key for the theme preference — see INV-12). The only network call is anonymous, cookie-free visit tracking (GoatCounter, `index.html` + `src/components/help/VisitorBadge.tsx`); the app works identically if it's blocked.
 
 **Stack:** React 19 + TypeScript 7 (strict) + Vite 8 + Zustand 5 (`persist` middleware) + Vitest 4 + React Testing Library + CSS Modules. **No ESLint, no Prettier** — `tsc` with `strict` + `noUnusedLocals` + `noUnusedParameters` is the linter.
 
@@ -22,7 +22,7 @@ Browser-only monthly (calendar-month, workdays-only) todo board, plus a header P
 | Command | What it does |
 |---|---|
 | `npm run dev` | Dev server at `http://localhost:5173` |
-| `npm test` | `vitest run` — 383 tests, ~4s |
+| `npm test` | `vitest run` — 390 tests, ~4s |
 | `npm run typecheck` | `tsc -b --noEmit` — the real typecheck, ~0.3s |
 | `npm run verify` | typecheck + test — **this is the definition of done** |
 | `npm run build` | `tsc -b && vite build` — production build |

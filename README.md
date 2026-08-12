@@ -1,10 +1,10 @@
 # Agile Todo App
 
-A browser-only todo board built around a monthly cadence. No backend, no accounts, no network calls — everything lives in your browser.
+A browser-only todo board built around a monthly cadence. No backend, no accounts — your data never leaves your browser. The only network call is anonymous, cookie-free visit tracking; the app works identically if it's blocked.
 
 **[Live demo →](https://joanesquivel.github.io/agile-todo-app/)**
 
-383 tests · TypeScript strict · zero backend
+390 tests · TypeScript strict · zero backend
 
 Built by [Joan Esquivel](https://www.linkedin.com/in/joanesquivel/) · [source code](https://github.com/JoanEsquivel/agile-todo-app) · [☕ Buy me a coffee](https://www.paypal.com/paypalme/joanmedia)
 
@@ -21,7 +21,7 @@ Built by [Joan Esquivel](https://www.linkedin.com/in/joanesquivel/) · [source c
 - **Automatic month rollover, three months of history** — when the active month ends, the next one is generated for you, nothing to click; the three most recent calendar months stay browsable (read-only, never editable) through a `‹ Month YYYY ›` stepper, and anything older is quietly pruned
 - **Pomodoro timer** — an always-visible header widget with classic cycles (25/5, long break every 4th), configurable durations, and an optional sound + browser notification when a phase ends
 - **Light / dark / system theme** — follows your OS by default, with a manual toggle that persists on your device
-- **Built-in help** — an ⓘ button beside the theme toggle opens a guide to every feature above, plus the full shortcut list
+- **Built-in help** — an ⓘ button beside the theme toggle opens a guide to every feature above, plus the full shortcut list, plus a small visit-count badge in the footer linking to the public analytics dashboard
 - **Keyboard-first** — a command palette and a full set of shortcuts; see below
 - **Free & open source** — if it helps your day, you can [buy the author a coffee](https://www.paypal.com/paypalme/joanmedia); the amber pill in the header and the Help modal's footer link there too
 
@@ -44,7 +44,7 @@ Every shortcut but `⌘K` stays out of the way while you're typing in a field. `
 
 ## Why it's built this way
 
-- **Browser-only, on purpose.** No backend, no network, no accounts — your data never leaves your device.
+- **Browser-only, on purpose.** No backend, no accounts — your data never leaves your device. The only network call is anonymous, cookie-free visit analytics (GoatCounter); the app works identically if an ad blocker blocks it.
 - **One versioned JSON document** in `localStorage`, with schema migrations and JSON export/import for backups.
 - **A pure, testable domain core.** All the month/rollover/standup date logic lives in framework-free functions that take time as a parameter — no DOM, no mocking, fast tests.
 - **Built test-first.** Every feature shipped with tests before the UI did.
@@ -89,7 +89,7 @@ Full architecture rationale, data model, and edge-case decisions: [`docs/superpo
 
 ## Testing
 
-Vitest + React Testing Library, 383 tests across 33 files, all colocated with the code they test. Coverage spans pure domain logic, store transitions, persistence/migration behavior, component interaction, and accessibility.
+Vitest + React Testing Library, 390 tests across 33 files, all colocated with the code they test. Coverage spans pure domain logic, store transitions, persistence/migration behavior, component interaction, and accessibility.
 
 ```sh
 npm test                              # everything
