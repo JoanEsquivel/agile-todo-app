@@ -43,7 +43,10 @@ export function normalizeBand(
 /** The one user-facing operation (spec §2): move a pending todo to
  *  (targetPriority, targetIndex) within its own day. Clamps the index,
  *  writes `priority` on a band change, re-indexes both bands. No-op for
- *  done/unknown ids. */
+ *  done/unknown ids, AND for a true same-position drop (mirrors
+ *  `normalizeBand`'s early-return spirit): returns the INPUT record
+ *  reference whenever nothing actually moved, so the store layer can treat
+ *  reference equality as "no announcement, no re-render". */
 export function reorderTodo(
   todos: Record<string, Todo>,
   id: string,
@@ -56,16 +59,23 @@ export function reorderTodo(
   if (todo.priority !== targetPriority) {
     out = normalizeBand(out, todo.fortnightId, todo.scheduledDay, targetPriority);
   }
+  let changed = out !== todos;
   const band = bandMembers(out, todo.fortnightId, todo.scheduledDay, targetPriority)
     .filter((t) => t.id !== id);
   const clamped = Math.max(0, Math.min(targetIndex, band.length));
   band.splice(clamped, 0, out[id]);
-  out = { ...out };
-  band.forEach((t, i) => { out[t.id] = { ...t, priority: targetPriority, sortIndex: i }; });
+  const next = { ...out };
+  band.forEach((t, i) => {
+    if (t.priority !== targetPriority || t.sortIndex !== i) {
+      next[t.id] = { ...t, priority: targetPriority, sortIndex: i };
+      changed = true;
+    }
+  });
+  out = changed ? next : out;
   if (todo.priority !== targetPriority) {
     out = normalizeBand(out, todo.fortnightId, todo.scheduledDay, todo.priority);
   }
-  return out;
+  return changed ? out : todos;
 }
 
 /** Relative-order comparator for todos being moved by rollover/carry-over:

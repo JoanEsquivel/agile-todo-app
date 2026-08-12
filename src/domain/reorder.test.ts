@@ -91,6 +91,11 @@ describe('reorderTodo', () => {
     expect(reorderTodo(todos, 'ghost', 'high', 0)).toBe(todos);
   });
 
+  it('returns the input record reference for a true same-position drop (already-normalized band)', () => {
+    const todos = record(mkTodo({ id: 'a', sortIndex: 0 }), mkTodo({ id: 'b', sortIndex: 1 }));
+    expect(reorderTodo(todos, 'b', 'medium', 1)).toBe(todos);
+  });
+
   it('mixes legacy index-less todos safely (normalizes before inserting)', () => {
     const todos = record(mkTodo({ id: 'old1' }), mkTodo({ id: 'old2' }), mkTodo({ id: 'old3' }));
     const out = reorderTodo(todos, 'old3', 'medium', 1);

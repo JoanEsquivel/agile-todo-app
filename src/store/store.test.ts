@@ -192,6 +192,21 @@ describe('store', () => {
       useAppStore.getState().reorderTodo(a.id, 'high', 0);
       expect(useAppStore.getState().todos[a.id].priority).toBe('medium');
     });
+
+    it('is a true no-op when dropped at its current position -- no re-announcement, no todos reference change', () => {
+      const st = useAppStore.getState();
+      st.initApp();
+      st.addTodo({ title: 'A', priority: 'medium', scheduledDay: '2026-08-18' });
+      const a = Object.values(useAppStore.getState().todos)[0];
+      useAppStore.getState().reorderTodo(a.id, 'medium', 0); // real move: materializes sortIndex 0
+      const todosBefore = useAppStore.getState().todos;
+      useAppStore.getState().announce('sentinel');
+
+      useAppStore.getState().reorderTodo(a.id, 'medium', 0); // dropped back at its own position
+
+      expect(useAppStore.getState().announcement).toBe('sentinel');
+      expect(useAppStore.getState().todos).toBe(todosBefore);
+    });
   });
 });
 
