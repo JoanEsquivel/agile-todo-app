@@ -1,6 +1,6 @@
 # CLAUDE.md — Agile Todo App
 
-> This app is **finished, tested (377 tests), and deployed**. It is not a scaffold to build out — it's a working product. Changes here should be surgical, not exploratory. Every change ships with tests. Read the invariants below before editing anything under `src/`.
+> This app is **finished, tested (383 tests), and deployed**. It is not a scaffold to build out — it's a working product. Changes here should be surgical, not exploratory. Every change ships with tests. Read the invariants below before editing anything under `src/`.
 
 ## Orientation
 
