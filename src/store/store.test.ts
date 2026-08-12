@@ -183,6 +183,25 @@ describe('store', () => {
       expect(useAppStore.getState().todos[b.id].sortIndex).toBeUndefined();
     });
 
+    it('refuses when the todo itself belongs to a historical month, even while viewing the active month (INV-9)', () => {
+      // MIN-1: the guard above only checks the *view*. A stale id (from a
+      // shortcut, palette action, or just a rewritten fortnightId) pointing
+      // at a todo that itself belongs to a past month must not be able to
+      // rewrite that immutable history just because the current view happens
+      // to be the active month.
+      const st = useAppStore.getState();
+      st.initApp();
+      st.addTodo({ title: 'A', priority: 'medium', scheduledDay: '2026-08-18' });
+      const a = Object.values(useAppStore.getState().todos)[0];
+      useAppStore.setState({
+        todos: { ...useAppStore.getState().todos, [a.id]: { ...a, fortnightId: 'some-old-fortnight' } },
+      });
+      useAppStore.getState().reorderTodo(a.id, 'high', 0);
+      const after = useAppStore.getState().todos[a.id];
+      expect(after.priority).toBe('medium');
+      expect(after.sortIndex).toBeUndefined();
+    });
+
     it('no-op on done todos', () => {
       const st = useAppStore.getState();
       st.initApp();

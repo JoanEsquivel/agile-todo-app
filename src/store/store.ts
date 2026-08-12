@@ -308,7 +308,12 @@ export const useAppStore = create<AppState>()(
           set((s) => {
             if (s.viewedFortnightId !== s.activeFortnightId) return {};
             const before = s.todos[id];
-            if (!before || before.done) return {};
+            // INV-9: the todo itself must belong to the active month. Viewing
+            // the active month while holding the id of a historical todo (the
+            // shape a shortcut or palette command would take) must not
+            // rewrite immutable history -- domainReorderTodo re-indexes the
+            // band inside the todo's OWN fortnight, not the viewed one.
+            if (!before || before.done || before.fortnightId !== s.activeFortnightId) return {};
             const todos = domainReorderTodo(s.todos, id, targetPriority, targetIndex);
             if (todos === s.todos) return {};
             const pos = bandPosition(todos, id);
