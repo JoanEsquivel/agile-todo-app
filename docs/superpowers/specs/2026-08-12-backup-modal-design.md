@@ -168,6 +168,10 @@ Assert the Guide tab renders a `Backup` section mentioning the confirmation, and
 - `CLAUDE.md` — INV-8 gains one sentence: the "replace your board?" confirmation lives in `BackupModal`, **not** in `importState`; the action itself is unconditionally destructive and any future caller must supply its own confirmation. No new invariant, no renames (`backup.test.tsx` keeps its name and location, so INV-10's test list is still accurate).
 - `README.md` — the storage/privacy clause above, plus the test count.
 - `enhancements.md` — the backup item gets commented out with a pointer to this spec, matching how shipped items are recorded there.
+- `docs/TECH-DEBT.md` — three rows are settled by this work, and per `CLAUDE.md` the debt fixes land as their **own commit**, not folded into a feature commit:
+  - **TD-3** (the export anchor is never attached to the DOM before `.click()`, which historically fails in WebKit) is fixed in the relocated export code: `document.body.appendChild(a)` before the click, `a.remove()` after. Row deleted.
+  - **TD-4** (the export path has no automated test) is settled by the new export test in §6. Row deleted.
+  - The third bullet of the "Final-review Minor findings" paragraph — *"one banner copy line says 'import a backup below' when `BackupControls` actually renders above it in the header"* — is fixed by §5. That clause is struck from the paragraph.
 
 ## 8. What didn't change
 
