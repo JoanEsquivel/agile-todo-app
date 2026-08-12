@@ -113,7 +113,7 @@ GitHub Actions builds, tests, and deploys to GitHub Pages on every push to `main
 
 ## Author
 
-Built by **Joan Esquivel** — [LinkedIn](https://www.linkedin.com/in/joanesquivel/) · [GitHub](https://github.com/JoanEsquivel). The header of the app links here too. If the app helps your day, you can [buy me a coffee](https://www.paypal.com/paypalme/joanmedia).
+Built by **Joan Esquivel** — [LinkedIn](https://www.linkedin.com/in/joanesquivel/) · [GitHub](https://github.com/JoanEsquivel). The header of the app links to LinkedIn too. If the app helps your day, you can [buy me a coffee](https://www.paypal.com/paypalme/joanmedia).
 
 ## License
 

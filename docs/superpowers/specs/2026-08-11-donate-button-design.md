@@ -6,7 +6,7 @@
 
 ## Purpose
 
-Give people who want to support the author a highly visible donation call-to-action that opens the author's PayPal page: `https://www.paypal.com/paypalme/joanmedia`. It appears in two places: the app header (to the right of the GitHub icon) and a footer inside the Help modal.
+Give people who want to support the author a highly visible donation call-to-action that opens the author's PayPal page: `https://www.paypal.com/paypalme/joanmedia`. It appears in two places: the app header (originally to the right of the GitHub icon; the GitHub link was later removed from the header) and a footer inside the Help modal.
 
 ## Scope
 
@@ -26,7 +26,7 @@ Give people who want to support the author a highly visible donation call-to-act
 
 ## Mount point 1: header
 
-In `AuthorLinks` (`src/components/common/AuthorLinks.tsx`), rendered after the GitHub link — rightmost element of the header's link cluster.
+In `AuthorLinks` (`src/components/common/AuthorLinks.tsx`), rendered after the LinkedIn link — rightmost element of the header's link cluster. (At the time this spec was written, it was rendered after a GitHub link that has since been removed.)
 
 ## Mount point 2: Help modal footer
 

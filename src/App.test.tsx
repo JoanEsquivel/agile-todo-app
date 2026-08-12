@@ -22,28 +22,25 @@ describe('App shell', () => {
     expect(screen.getByRole('button', { name: /Tue, Aug 18/ })).toHaveAttribute('data-today');
   });
 
-  it('credits the author with LinkedIn and source-code links in the header', () => {
+  it('credits the author with a LinkedIn link in the header, and no GitHub link', () => {
     render(<App />);
     const linkedin = screen.getByRole('link', { name: 'Joan Esquivel on LinkedIn' });
     expect(linkedin).toHaveAttribute('href', 'https://www.linkedin.com/in/joanesquivel/');
     expect(linkedin).toHaveAttribute('target', '_blank');
     expect(linkedin.getAttribute('rel')).toContain('noopener');
 
-    const source = screen.getByRole('link', { name: 'Source code on GitHub' });
-    expect(source).toHaveAttribute('href', 'https://github.com/JoanEsquivel/agile-todo-app');
-    expect(source).toHaveAttribute('target', '_blank');
-    expect(source.getAttribute('rel')).toContain('noopener');
+    expect(screen.queryByRole('link', { name: 'Source code on GitHub' })).not.toBeInTheDocument();
   });
 
-  it('renders the donate pill in the header, after the source-code link', () => {
+  it('renders the donate pill in the header, after the LinkedIn link', () => {
     render(<App />);
     const donate = screen.getByRole('link', { name: 'Buy me a coffee' });
     expect(donate).toHaveAttribute('href', 'https://www.paypal.com/paypalme/joanmedia');
     expect(donate).toHaveAttribute('target', '_blank');
     expect(donate.getAttribute('rel')).toContain('noopener');
 
-    const source = screen.getByRole('link', { name: 'Source code on GitHub' });
-    expect(source.compareDocumentPosition(donate) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    const linkedin = screen.getByRole('link', { name: 'Joan Esquivel on LinkedIn' });
+    expect(linkedin.compareDocumentPosition(donate) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it('cycles the theme toggle through system, light, and dark', async () => {
