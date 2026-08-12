@@ -48,7 +48,11 @@ export function BackupModal({ onClose }: { onClose: () => void }) {
     const a = document.createElement('a');
     a.href = url;
     a.download = `agile-todo-app-backup-${todayLocal()}.json`;
+    // Attached before the click: WebKit ignores .click() on a detached
+    // anchor, so a detached one silently downloads nothing (TD-3).
+    document.body.appendChild(a);
     a.click();
+    a.remove();
     URL.revokeObjectURL(url);
     useAppStore.getState().announce('Backup downloaded');
   };

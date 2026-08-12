@@ -39,9 +39,13 @@ function stubDownload() {
   Object.defineProperty(URL, 'createObjectURL', { value: createObjectURL, configurable: true });
   Object.defineProperty(URL, 'revokeObjectURL', { value: revokeObjectURL, configurable: true });
   const clicked: HTMLAnchorElement[] = [];
+  const attachedAtClick: boolean[] = [];
   const realClick = HTMLAnchorElement.prototype.click;
-  HTMLAnchorElement.prototype.click = function (this: HTMLAnchorElement) { clicked.push(this); };
-  return { createObjectURL, revokeObjectURL, clicked, restore: () => { HTMLAnchorElement.prototype.click = realClick; } };
+  HTMLAnchorElement.prototype.click = function (this: HTMLAnchorElement) {
+    clicked.push(this);
+    attachedAtClick.push(this.isConnected);
+  };
+  return { createObjectURL, revokeObjectURL, clicked, attachedAtClick, restore: () => { HTMLAnchorElement.prototype.click = realClick; } };
 }
 
 async function openBackupDialog(user: ReturnType<typeof userEvent.setup>) {
@@ -77,6 +81,9 @@ describe('backup modal', () => {
       expect(dl.clicked[0].download).toBe('agile-todo-app-backup-2026-08-18.json');
       expect(dl.createObjectURL).toHaveBeenCalledTimes(1);
       expect(dl.revokeObjectURL).toHaveBeenCalledWith('blob:mock');
+      // TD-3: WebKit historically ignores .click() on a detached anchor.
+      expect(dl.attachedAtClick).toEqual([true]);
+      expect(document.querySelectorAll('a[download]')).toHaveLength(0); // cleaned up after
     } finally {
       dl.restore();
     }
